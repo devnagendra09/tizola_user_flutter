@@ -9,6 +9,7 @@ abstract class CatalogRepository {
   Future<Result<RestaurantPageEntity>> getRestaurants({
     required int page,
     RestaurantFoodFilter foodFilter = RestaurantFoodFilter.all,
+    List<String> cuisineIds = const [],
   });
   Future<Result<({List<OrderEntity> orders, int totalPages})>> getOrders({
     required String type,

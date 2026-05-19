@@ -37,4 +37,8 @@ class MainCubit extends Cubit<MainState> {
   void dismissLoginDialog() {
     emit(state.copyWith(showLoginDialog: false));
   }
+
+  void selectTab(int index) {
+    emit(state.copyWith(currentIndex: index, showLoginDialog: false));
+  }
 }

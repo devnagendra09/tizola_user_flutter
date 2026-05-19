@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/navigation/cuisine_navigation.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/network_image_box.dart';
 import '../../../../injection_container.dart';
@@ -67,37 +68,28 @@ class _CategoryView extends StatelessWidget {
             itemCount: state.cuisines.length,
             itemBuilder: (context, index) {
               final cuisine = state.cuisines[index];
-              return Card(
-                elevation: 2,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(12),
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('${cuisine.name} — restaurants coming soon'),
-                      ),
-                    );
-                  },
+              return InkWell(
+                onTap: () => openCuisineRestaurants(context, cuisine),
+                borderRadius: BorderRadius.circular(12),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       ClipOval(
                         child: NetworkImageBox(
                           url: cuisine.image,
-                          width: 72,
-                          height: 72,
+                          width: 75,
+                          height: 75,
                         ),
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 8),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 8),
                         child: Text(
                           cuisine.name,
                           textAlign: TextAlign.center,
-                          maxLines: 2,
+                          maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             fontWeight: FontWeight.w600,
@@ -105,14 +97,6 @@ class _CategoryView extends StatelessWidget {
                           ),
                         ),
                       ),
-                      if (cuisine.restaurantCount != null)
-                        Text(
-                          '${cuisine.restaurantCount} restaurants',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
                     ],
                   ),
                 ),

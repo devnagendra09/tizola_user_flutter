@@ -6,6 +6,7 @@ class RestaurantEntity extends Equatable {
   const RestaurantEntity({
     required this.id,
     required this.name,
+    this.seoUrl,
     this.imageUrl,
     this.cuisineTypes,
     this.estimateTime,
@@ -22,6 +23,7 @@ class RestaurantEntity extends Equatable {
 
   final String id;
   final String name;
+  final String? seoUrl;
   final String? imageUrl;
   final String? cuisineTypes;
   final String? estimateTime;
@@ -41,6 +43,7 @@ class RestaurantEntity extends Equatable {
   List<Object?> get props => [
         id,
         name,
+        seoUrl,
         imageUrl,
         cuisineTypes,
         estimateTime,

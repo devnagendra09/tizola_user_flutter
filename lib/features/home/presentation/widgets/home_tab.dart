@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/navigation/cuisine_navigation.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/network_image_box.dart';
 import '../../../../injection_container.dart';
@@ -156,15 +157,23 @@ class _HomeViewState extends State<_HomeView> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      Container(
-                        decoration: BoxDecoration(borderRadius: BorderRadius.circular(10),color: AppColors.secondaryBrand.withOpacity(0.5)),
-                        child: Padding(
-                          padding: const EdgeInsets.all(5.0),
-                          child: Text(
-                            'View all',
-
-                          //  '${state.openRestaurantCount} open',
-                            style: TextStyle(color: Colors.black,fontSize: 9),
+                      GestureDetector(
+                        onTap: () =>
+                            context.read<MainCubit>().selectTab(1),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(10),
+                            color: AppColors.secondaryBrand.withOpacity(0.5),
+                          ),
+                          child: const Padding(
+                            padding: EdgeInsets.all(5.0),
+                            child: Text(
+                              'View all',
+                              style: TextStyle(
+                                color: Colors.black,
+                                fontSize: 9,
+                              ),
+                            ),
                           ),
                         ),
                       ),
@@ -299,29 +308,63 @@ class _CuisineChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 12),
-      child: Column(
-        children: [
-          ClipOval(
-            child: NetworkImageBox(
-              url: cuisine.image,
-              width: 56,
-              height: 56,
+    return GestureDetector(
+      onTap: () => openCuisineRestaurants(context, cuisine),
+      child: Padding(
+        padding: const EdgeInsets.only(right: 12),
+        child: Column(
+          children: [
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                ClipOval(
+                  child: ColorFiltered(
+                    colorFilter: cuisine.isOpen
+                        ? const ColorFilter.mode(
+                            Colors.transparent,
+                            BlendMode.multiply,
+                          )
+                        : const ColorFilter.matrix(<double>[
+                            0.2126, 0.7152, 0.0722, 0, 0,
+                            0.2126, 0.7152, 0.0722, 0, 0,
+                            0.2126, 0.7152, 0.0722, 0, 0,
+                            0, 0, 0, 1, 0,
+                          ]),
+                    child: NetworkImageBox(
+                      url: cuisine.image,
+                      width: 56,
+                      height: 56,
+                    ),
+                  ),
+                ),
+                if (!cuisine.isOpen)
+                  Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.25),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+              ],
             ),
-          ),
-          const SizedBox(height: 6),
-          SizedBox(
-            width: 72,
-            child: Text(
-              cuisine.name,
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 9,fontFamily: 'Schyler',fontWeight: FontWeight.w700),
+            const SizedBox(height: 6),
+            SizedBox(
+              width: 72,
+              child: Text(
+                cuisine.name,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 9,
+                  fontFamily: 'Schyler',
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

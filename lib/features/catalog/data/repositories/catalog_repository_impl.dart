@@ -28,11 +28,13 @@ class CatalogRepositoryImpl implements CatalogRepository {
   Future<Result<RestaurantPageEntity>> getRestaurants({
     required int page,
     RestaurantFoodFilter foodFilter = RestaurantFoodFilter.all,
+    List<String> cuisineIds = const [],
   }) async {
     try {
       final data = await _remote.getRestaurants(
         page: page,
         foodFilter: foodFilter,
+        cuisineIds: cuisineIds,
       );
       return Result.success(data);
     } on Failure catch (e) {

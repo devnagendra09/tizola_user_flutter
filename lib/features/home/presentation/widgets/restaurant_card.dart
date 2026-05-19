@@ -1,13 +1,19 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/navigation/restaurant_navigation.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/network_image_box.dart';
 import '../../../catalog/domain/entities/restaurant_entity.dart';
 
 class RestaurantCard extends StatelessWidget {
-  const RestaurantCard({super.key, required this.restaurant});
+  const RestaurantCard({
+    super.key,
+    required this.restaurant,
+    this.onTap,
+  });
 
   final RestaurantEntity restaurant;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -15,11 +21,14 @@ class RestaurantCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       elevation: 3,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      child: Padding(
-        padding: const EdgeInsets.all(10),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: onTap ?? () => openRestaurantDetail(context, restaurant),
+        child: Padding(
+          padding: const EdgeInsets.all(10),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
             NetworkImageBox(
               url: restaurant.imageUrl,
               width: 72,
@@ -174,6 +183,7 @@ class RestaurantCard extends StatelessWidget {
           ],
         ),
       ),
+    ),
     );
   }
 }

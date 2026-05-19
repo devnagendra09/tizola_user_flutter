@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
+import '../utils/image_url_utils.dart';
 
 class NetworkImageBox extends StatelessWidget {
   const NetworkImageBox({
@@ -21,7 +22,8 @@ class NetworkImageBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final child = (url == null || url!.isEmpty)
+    final resolved = resolvePublicImageUrl(url);
+    final child = (resolved == null || resolved.isEmpty)
         ? ColoredBox(
             color: AppColors.brandLite,
             child: Icon(
@@ -31,7 +33,7 @@ class NetworkImageBox extends StatelessWidget {
             ),
           )
         : CachedNetworkImage(
-            imageUrl: url!,
+            imageUrl: resolved,
             width: width,
             height: height,
             fit: fit,

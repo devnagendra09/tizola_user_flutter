@@ -85,6 +85,7 @@ class _NearbyLocationPageState extends State<NearbyLocationPage>
             backgroundColor: Colors.white,
             body: SafeArea(
               child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const SizedBox(height: 48),
                   Text(
@@ -142,10 +143,12 @@ class _NearbyLocationPageState extends State<NearbyLocationPage>
                   ),
                   const Spacer(),
                   if (locating)
-                    const Padding(
-                      padding: EdgeInsets.all(24),
-                      child: CircularProgressIndicator(
-                        color: AppColors.brand,
+                    Center(
+                      child: const Padding(
+                        padding: EdgeInsets.all(24),
+                        child: CircularProgressIndicator(
+                          color: AppColors.brand,
+                        ),
                       ),
                     ),
                   const SizedBox(height: 32),
@@ -170,12 +173,14 @@ class _LocationPin extends StatelessWidget {
       alignment: Alignment.center,
       children: [
         if (pulsing)
-          Container(
-            width: 120,
-            height: 120,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppColors.brand.withValues(alpha: 0.12),
+          Center(
+            child: Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.brand.withValues(alpha: 0.12),
+              ),
             ),
           ),
         Container(

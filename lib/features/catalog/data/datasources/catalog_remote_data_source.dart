@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import '../../../../core/data/app_local_data_source.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/network/api_client.dart';
@@ -15,6 +17,7 @@ abstract class CatalogRemoteDataSource {
   Future<RestaurantPageEntity> getRestaurants({
     required int page,
     RestaurantFoodFilter foodFilter = RestaurantFoodFilter.all,
+    List<String> cuisineIds = const [],
     bool refresh = false,
   });
   Future<({List<OrderEntity> orders, int totalPages})> getOrders({
@@ -50,6 +53,7 @@ class CatalogRemoteDataSourceImpl implements CatalogRemoteDataSource {
   Future<RestaurantPageEntity> getRestaurants({
     required int page,
     RestaurantFoodFilter foodFilter = RestaurantFoodFilter.all,
+    List<String> cuisineIds = const [],
     bool refresh = false,
   }) async {
     final params = _paramsBuilder.baseParams(includeSource: false);
@@ -60,6 +64,9 @@ class CatalogRemoteDataSourceImpl implements CatalogRemoteDataSource {
       RestaurantFoodFilter.nonVeg => 'Non Veg',
       RestaurantFoodFilter.all => '',
     };
+    if (cuisineIds.isNotEmpty) {
+      params['mobile_filters'] = jsonEncode({'cuisines': cuisineIds});
+    }
 
     final response = await _client.post('restaurants/mobile', params);
     final json = ApiResponseParser.decodeMap(response.body);
@@ -147,6 +154,7 @@ class CatalogRemoteDataSourceImpl implements CatalogRemoteDataSource {
     return RestaurantEntity(
       id: json['id']?.toString() ?? '',
       name: json['restaurant_name']?.toString() ?? '',
+      seoUrl: json['seo_url']?.toString(),
       imageUrl: json['display_image']?.toString(),
       cuisineTypes: json['cuisine_types']?.toString(),
       estimateTime: estimate,
