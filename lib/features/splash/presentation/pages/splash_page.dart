@@ -46,28 +46,30 @@ class _SplashView extends StatelessWidget {
       },
       child: Scaffold(
         backgroundColor: Colors.white,
-        body: SafeArea(
-          child: Column(
-            children: [
-              const SizedBox(height: 40),
-              Image.asset(
-                'assets/images/flag.png',
-                height: 120,
-                fit: BoxFit.contain,
-              ),
-              const Spacer(),
-              Image.asset(
-                'assets/images/user_icon.png',
-                height: 220,
-                fit: BoxFit.contain,
-              ),
-              const Spacer(),
-              const Padding(
-                padding: EdgeInsets.all(24),
-                child: CircularProgressIndicator(color: AppColors.brand),
-              ),
-              const SizedBox(height: 16),
-            ],
+        body: Center(
+          child: SafeArea(
+            child: Column(
+              children: [
+                const SizedBox(height: 40),
+                Image.asset(
+                  'assets/images/flag.png',
+                  height: 120,
+                  fit: BoxFit.contain,
+                ),
+                const Spacer(),
+                Image.asset(
+                  'assets/images/user_icon.png',
+                  height: 220,
+                  fit: BoxFit.contain,
+                ),
+                const Spacer(),
+                const Padding(
+                  padding: EdgeInsets.all(24),
+                  child: CircularProgressIndicator(color: AppColors.brand),
+                ),
+                const SizedBox(height: 16),
+              ],
+            ),
           ),
         ),
       ),

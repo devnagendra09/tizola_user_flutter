@@ -4,7 +4,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/widgets/brand_header.dart';
 import '../../../../injection_container.dart';
 import '../cubit/login/login_cubit.dart';
 import '../cubit/login/login_state.dart';
@@ -48,139 +47,231 @@ class _LoginViewState extends State<_LoginView> {
               builder: (_) => OtpPage(mobile: state.mobile),
             ),
           );
+
           context.read<LoginCubit>().reset();
         }
       },
       child: Scaffold(
         backgroundColor: AppColors.brand,
-        body: SingleChildScrollView(
-          child: Column(
-            children: [
-              BrandHeader(
-                child: Column(
-                  children: [
-                    Image.asset(
-                      'assets/images/main_logo.png',
-                      height: 120,
-                      fit: BoxFit.contain,
+
+        body: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  /// LOGO
+                  Image.asset(
+                    'assets/images/main_logo.png',
+                    height: 150,
+                    width: double.infinity,
+                    fit: BoxFit.fill,
+                  ),
+
+                  const SizedBox(height: 18),
+
+                  /// TAGLINE
+                  const Text(
+                    AppConstants.tagline,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      height: 1.4,
                     ),
-                    const SizedBox(height: 12),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 20),
-                      child: Text(
-                        AppConstants.tagline,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Transform.translate(
-                offset: const Offset(0, -24),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Card(
-                    elevation: 6,
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  /// LOGIN CARD
+                  Card(
+                    elevation: 10,
+                    shadowColor: Colors.black.withOpacity(0.2),
+
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(22),
                     ),
+
                     child: Padding(
-                      padding: const EdgeInsets.all(20),
+                      padding: const EdgeInsets.all(22),
                       child: BlocBuilder<LoginCubit, LoginState>(
                         builder: (context, state) {
                           final loading = state.status == LoginStatus.loading;
+
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
+                              /// TITLE
                               const Text(
-                                'Enter your mobile number',
+                                'Login or Signup',
                                 style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
                                   color: AppColors.brand,
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w800,
                                 ),
                               ),
-                              const SizedBox(height: 16),
+
+                              const SizedBox(height: 6),
+
+                              Text(
+                                'Enter your mobile number to continue',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
+
+                              const SizedBox(height: 24),
+
+                              /// MOBILE FIELD
                               Container(
+                                height: 60,
+
                                 decoration: BoxDecoration(
                                   color: AppColors.grey,
-                                  borderRadius: BorderRadius.circular(15),
+                                  borderRadius: BorderRadius.circular(16),
                                 ),
+
                                 padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
+                                  horizontal: 14,
                                 ),
+
                                 child: Row(
                                   children: [
+                                    /// FLAG
                                     const Text(
                                       '🇮🇳',
-                                      style: TextStyle(fontSize: 22),
+                                      style: TextStyle(fontSize: 24),
                                     ),
-                                    const SizedBox(width: 6),
+
+                                    const SizedBox(width: 8),
+
+                                    /// CODE
                                     const Text(
                                       AppConstants.defaultDialCode,
                                       style: TextStyle(
-                                        fontWeight: FontWeight.w600,
                                         fontSize: 16,
+                                        fontWeight: FontWeight.w700,
                                       ),
                                     ),
-                                    const SizedBox(width: 12),
+
+                                    Container(
+                                      margin: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                      ),
+                                      width: 1,
+                                      height: 28,
+                                      color: Colors.grey.shade400,
+                                    ),
+
+                                    /// INPUT
                                     Expanded(
                                       child: TextField(
                                         controller: _mobileController,
+
                                         keyboardType: TextInputType.phone,
-                                        maxLength: 10,
+
                                         enabled: !loading,
+
+                                        maxLength: 10,
+
                                         inputFormatters: [
-                                          FilteringTextInputFormatter.digitsOnly,
+                                          FilteringTextInputFormatter
+                                              .digitsOnly,
                                         ],
+
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+
                                         decoration: const InputDecoration(
                                           counterText: '',
-                                          hintText: 'Mobile number',
+                                          hintText: 'Enter mobile number',
                                           border: InputBorder.none,
-                                          filled: false,
                                         ),
-                                        onSubmitted: (_) => context
-                                            .read<LoginCubit>()
-                                            .sendOtp(_mobileController.text),
+
+                                        onSubmitted: (_) {
+                                          context.read<LoginCubit>().sendOtp(
+                                            _mobileController.text,
+                                          );
+                                        },
                                       ),
                                     ),
                                   ],
                                 ),
                               ),
+
+                              /// ERROR
                               if (state.errorMessage != null) ...[
-                                const SizedBox(height: 8),
+                                const SizedBox(height: 10),
+
                                 Text(
                                   state.errorMessage!,
                                   style: const TextStyle(
-                                    color: AppColors.error,
-                                    fontSize: 14,
+                                    color: Colors.red,
+                                    fontSize: 13,
                                   ),
                                 ),
                               ],
-                              const SizedBox(height: 20),
+
+                              const SizedBox(height: 28),
+
+                              /// BUTTON
                               SizedBox(
-                                width: double.infinity,
+                                height: 54,
                                 child: ElevatedButton(
                                   onPressed: loading
                                       ? null
-                                      : () => context
-                                          .read<LoginCubit>()
-                                          .sendOtp(_mobileController.text),
+                                      : () {
+                                          context.read<LoginCubit>().sendOtp(
+                                            _mobileController.text,
+                                          );
+                                        },
+
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.brand,
+
+                                    foregroundColor: Colors.white,
+
+                                    elevation: 0,
+
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                  ),
+
                                   child: loading
                                       ? const SizedBox(
-                                          height: 22,
-                                          width: 22,
+                                          height: 24,
+                                          width: 24,
                                           child: CircularProgressIndicator(
                                             strokeWidth: 2,
                                             color: Colors.white,
                                           ),
                                         )
-                                      : const Text('Continue'),
+                                      : const Text(
+                                          'Continue',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                ),
+                              ),
+
+                              const SizedBox(height: 18),
+
+                              /// TERMS
+                              Text(
+                                'By continuing, you agree to our Terms & Conditions',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey.shade500,
+                                  height: 1.5,
                                 ),
                               ),
                             ],
@@ -189,9 +280,9 @@ class _LoginViewState extends State<_LoginView> {
                       ),
                     ),
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),

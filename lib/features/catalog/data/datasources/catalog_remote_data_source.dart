@@ -139,10 +139,12 @@ class CatalogRemoteDataSourceImpl implements CatalogRemoteDataSource {
   }
 
   RestaurantEntity _parseRestaurant(Map<String, dynamic> json) {
-    final foodTypeStr = json['food_type']?.toString() ?? '';
-    final foodType = switch (foodTypeStr.toLowerCase()) {
+    final foodTypeStr =
+        json['food_type']?.toString().toLowerCase().trim() ?? '';
+    final foodType = switch (foodTypeStr) {
       'veg' => FoodType.veg,
       'non veg' => FoodType.nonVeg,
+      'both' => FoodType.both,
       _ => FoodType.both,
     };
 
@@ -160,6 +162,8 @@ class CatalogRemoteDataSourceImpl implements CatalogRemoteDataSource {
       estimateTime: estimate,
       offer: json['restaurant_offer']?.toString(),
       isOpened: json['is_opened']?.toString(),
+      fromTime: json['from_time']?.toString(),
+      toTime: json['to_time']?.toString(),
       distance: json['distance']?.toString(),
       address: json['display_address']?.toString(),
       rating: double.tryParse(json['rating']?.toString() ?? ''),

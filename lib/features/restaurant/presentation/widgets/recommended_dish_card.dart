@@ -4,7 +4,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/network_image_box.dart';
 import '../../domain/entities/menu_entity.dart';
 
-/// Horizontal card for the Recommended strip (Android-style).
+/// Horizontal card for the Recommended strip (Android-style)
 class RecommendedDishCard extends StatelessWidget {
   const RecommendedDishCard({
     super.key,
@@ -26,7 +26,6 @@ class RecommendedDishCard extends StatelessWidget {
     final disabled = item.isSoldOut || !item.isRestaurantOpen || isBusy;
 
     return SizedBox(
-
       width: 148,
       child: Card(
         elevation: 2,
