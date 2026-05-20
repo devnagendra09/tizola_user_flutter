@@ -27,10 +27,14 @@ class RestaurantDetailPage extends StatelessWidget {
     super.key,
     required this.seoUrl,
     this.fallbackName,
+    this.sharedItemId,
   });
 
   final String seoUrl;
   final String? fallbackName;
+
+  /// Item id from `https://tizola.in/share/{seoUrl}/{itemId}` (Android `SHARED_ITEM_ID`).
+  final String? sharedItemId;
 
   @override
   Widget build(BuildContext context) {
@@ -39,13 +43,15 @@ class RestaurantDetailPage extends StatelessWidget {
         param1: seoUrl,
         param2: fallbackName,
       )..loadInitial(),
-      child: const _RestaurantDetailView(),
+      child: _RestaurantDetailView(sharedItemId: sharedItemId),
     );
   }
 }
 
 class _RestaurantDetailView extends StatefulWidget {
-  const _RestaurantDetailView();
+  const _RestaurantDetailView({this.sharedItemId});
+
+  final String? sharedItemId;
 
   @override
   State<_RestaurantDetailView> createState() => _RestaurantDetailViewState();
@@ -55,6 +61,8 @@ class _RestaurantDetailViewState extends State<_RestaurantDetailView> {
   final _categoryScrollController = ScrollController();
   final _menuScrollController = ScrollController();
   final _sectionKeys = <GlobalKey>[];
+  final _itemKeys = <String, GlobalKey>{};
+  bool _sharedItemScrollDone = false;
 
   @override
   void dispose() {
@@ -84,6 +92,35 @@ class _RestaurantDetailViewState extends State<_RestaurantDetailView> {
           alignment: 0.05,
         );
       }
+    }
+  }
+
+  void _maybeScrollToSharedItem(RestaurantDetailState state) {
+    final itemId = widget.sharedItemId;
+    if (itemId == null || itemId.isEmpty || _sharedItemScrollDone) return;
+    if (state.status != RestaurantDetailStatus.loaded) return;
+    if (state.displayCategories.isEmpty) return;
+
+    for (var i = 0; i < state.displayCategories.length; i++) {
+      final category = state.displayCategories[i];
+      final match = category.items.any((item) => item.id == itemId);
+      if (!match) continue;
+
+      _sharedItemScrollDone = true;
+      context.read<RestaurantDetailCubit>().selectCategory(i);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final target = _itemKeys[itemId]?.currentContext;
+        if (target != null) {
+          Scrollable.ensureVisible(
+            target,
+            duration: const Duration(milliseconds: 450),
+            curve: Curves.easeInOutCubic,
+            alignment: 0.1,
+          );
+        }
+      });
+      return;
     }
   }
 
@@ -126,6 +163,9 @@ class _RestaurantDetailViewState extends State<_RestaurantDetailView> {
     }
     await cubit.incrementItem(item);
   }
+
+  String _restaurantShareName(RestaurantDetailState state) =>
+      state.detail?.name ?? state.fallbackName ?? state.title;
 
   void _openRecommendedViewAll(
       BuildContext context,
@@ -271,18 +311,28 @@ class _RestaurantDetailViewState extends State<_RestaurantDetailView> {
                 ),
               ),
               ...cat.items.map(
-                    (item) => Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  child: MenuItemTile(
-                    item: item,
-                    isBusy: state.isCartUpdating,
-                    onAdd: () => _onAddItem(context, item),
-                    onIncrement: () => _onIncrementItem(context, item),
-                    onDecrement: () => context
-                        .read<RestaurantDetailCubit>()
-                        .decrementItem(item),
-                  ),
-                ),
+                (item) {
+                  final itemKey =
+                      _itemKeys.putIfAbsent(item.id, GlobalKey.new);
+                  return Padding(
+                    key: itemKey,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 4,
+                    ),
+                    child: MenuItemTile(
+                      item: item,
+                      isBusy: state.isCartUpdating,
+                      shareSeoUrl: state.seoUrl,
+                      restaurantName: _restaurantShareName(state),
+                      onAdd: () => _onAddItem(context, item),
+                      onIncrement: () => _onIncrementItem(context, item),
+                      onDecrement: () => context
+                          .read<RestaurantDetailCubit>()
+                          .decrementItem(item),
+                    ),
+                  );
+                },
               ),
               const Divider(height: 1, thickness: 0.5, indent: 16, endIndent: 16),
             ],
@@ -337,9 +387,12 @@ class _RestaurantDetailViewState extends State<_RestaurantDetailView> {
   Widget build(BuildContext context) {
     return BlocConsumer<RestaurantDetailCubit, RestaurantDetailState>(
       listenWhen: (prev, curr) =>
-      prev.cartConflict != curr.cartConflict ||
-          prev.errorMessage != curr.errorMessage,
+          prev.cartConflict != curr.cartConflict ||
+          prev.errorMessage != curr.errorMessage ||
+          prev.status != curr.status ||
+          prev.displayCategories != curr.displayCategories,
       listener: (context, state) {
+        _maybeScrollToSharedItem(state);
         if (state.cartConflict != null) {
           _showCartConflictDialog(context, state.cartConflict!.message);
         } else if (state.errorMessage != null &&
@@ -360,6 +413,13 @@ class _RestaurantDetailViewState extends State<_RestaurantDetailView> {
       },
       builder: (context, state) {
         _syncSectionKeys(state.displayCategories.length);
+        if (widget.sharedItemId != null &&
+            widget.sharedItemId!.isNotEmpty &&
+            state.status == RestaurantDetailStatus.loaded) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _maybeScrollToSharedItem(state);
+          });
+        }
 
         return Scaffold(
           backgroundColor: Colors.white,
@@ -790,7 +850,7 @@ class _RecommendedSection extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                 ),
                 child: const Text(
-                  'View all',
+                  'View all ',
                   style: TextStyle(fontWeight: FontWeight.w600),
                 ),
               ),

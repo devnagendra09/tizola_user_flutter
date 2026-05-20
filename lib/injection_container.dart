@@ -3,6 +3,8 @@ import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'core/data/app_local_data_source.dart';
+import 'core/deeplink/deep_link_service.dart';
+import 'core/deeplink/deep_link_store.dart';
 import 'core/data/cuisine_filter_store.dart';
 import 'core/network/api_client.dart';
 import 'core/network/api_params_builder.dart';
@@ -58,6 +60,10 @@ Future<void> initDependencies() async {
     () => ApiParamsBuilder(sl(), sl()),
   );
   sl.registerLazySingleton<CuisineFilterStore>(() => CuisineFilterStore());
+  sl.registerLazySingleton<DeepLinkStore>(() => DeepLinkStore());
+  sl.registerLazySingleton<DeepLinkService>(
+    () => DeepLinkService(sl()),
+  );
 
   // --- Auth data ---
   sl.registerLazySingleton<AuthLocalDataSource>(

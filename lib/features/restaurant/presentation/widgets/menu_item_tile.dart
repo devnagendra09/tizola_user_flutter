@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/share/menu_item_share.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/network_image_box.dart';
 import '../../domain/entities/menu_entity.dart';
@@ -12,6 +13,8 @@ class MenuItemTile extends StatelessWidget {
     required this.onIncrement,
     required this.onDecrement,
     this.isBusy = false,
+    this.shareSeoUrl,
+    this.restaurantName,
   });
 
   final MenuItemEntity item;
@@ -19,6 +22,15 @@ class MenuItemTile extends StatelessWidget {
   final VoidCallback onIncrement;
   final VoidCallback onDecrement;
   final bool isBusy;
+
+  /// When set, shows share control (Android `img_share`).
+  final String? shareSeoUrl;
+  final String? restaurantName;
+
+  bool get _canShare =>
+      shareSeoUrl != null &&
+      shareSeoUrl!.trim().isNotEmpty &&
+      restaurantName != null;
 
   @override
   Widget build(BuildContext context) {
@@ -235,10 +247,13 @@ class MenuItemTile extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 12),
-                // Quantity control
-                _QuantityControl(
+                _MenuItemActions(
                   item: item,
                   disabled: disabled,
+                  canShare: _canShare,
+                  isBusy: isBusy,
+                  shareSeoUrl: shareSeoUrl,
+                  restaurantName: restaurantName,
                   onAdd: onAdd,
                   onIncrement: onIncrement,
                   onDecrement: onDecrement,
@@ -248,6 +263,65 @@ class MenuItemTile extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _MenuItemActions extends StatelessWidget {
+  const _MenuItemActions({
+    required this.item,
+    required this.disabled,
+    required this.canShare,
+    required this.isBusy,
+    required this.shareSeoUrl,
+    required this.restaurantName,
+    required this.onAdd,
+    required this.onIncrement,
+    required this.onDecrement,
+  });
+
+  final MenuItemEntity item;
+  final bool disabled;
+  final bool canShare;
+  final bool isBusy;
+  final String? shareSeoUrl;
+  final String? restaurantName;
+  final VoidCallback onAdd;
+  final VoidCallback onIncrement;
+  final VoidCallback onDecrement;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        if (canShare) ...[
+          IconButton(
+            onPressed: isBusy
+                ? null
+                : () => MenuItemShare.share(
+                      item: item,
+                      restaurantName: restaurantName!,
+                      seoUrl: shareSeoUrl!,
+                    ),
+            icon: const Icon(Icons.share_outlined),
+            color: AppColors.brand,
+            iconSize: 22,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+            tooltip: 'Share',
+          ),
+          const SizedBox(height: 4),
+        ],
+        _QuantityControl(
+          item: item,
+          disabled: disabled,
+          onAdd: onAdd,
+          onIncrement: onIncrement,
+          onDecrement: onDecrement,
+        ),
+      ],
     );
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/navigation/cart_navigation.dart';
 import '../../../../core/navigation/categories_navigation.dart';
+import '../../../../core/navigation/deep_link_navigation.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../injection_container.dart';
 import '../../../auth/presentation/pages/login_page.dart';
@@ -26,8 +27,21 @@ class MainPage extends StatelessWidget {
   }
 }
 
-class _MainView extends StatelessWidget {
+class _MainView extends StatefulWidget {
   const _MainView();
+
+  @override
+  State<_MainView> createState() => _MainViewState();
+}
+
+class _MainViewState extends State<_MainView> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) openPendingShareDeepLink(context);
+    });
+  }
 
   static const _tabs = [
     HomeTab(),

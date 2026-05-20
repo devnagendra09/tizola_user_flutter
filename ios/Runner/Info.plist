@@ -68,5 +68,7 @@
 	</array>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Tizola needs your location to show nearby restaurants and delivery options.</string>
+	<key>FlutterDeepLinkingEnabled</key>
+	<true/>
 </dict>
 </plist>
