@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/app_loading_shimmers.dart';
+import '../../../../core/widgets/mobile_api_empty_view.dart';
 import '../../../../core/widgets/network_image_box.dart';
 import '../../../../injection_container.dart';
 import '../cubit/orders_cubit.dart';
@@ -109,9 +111,7 @@ class _OrdersListState extends State<_OrdersList> {
       builder: (context, state) {
         if (state.status == OrdersStatus.loading &&
             state.currentOrders.isEmpty) {
-          return const Center(
-            child: CircularProgressIndicator(color: AppColors.brand),
-          );
+          return const OrdersListShimmer(itemCount: 6);
         }
 
         if (state.status == OrdersStatus.failure &&
@@ -132,12 +132,10 @@ class _OrdersListState extends State<_OrdersList> {
         }
 
         if (state.currentOrders.isEmpty) {
-          return Center(
-            child: Text(
-              state.selectedTab == OrderTab.upcoming
-                  ? 'No upcoming orders'
-                  : 'No past orders',
-            ),
+          return MobileApiEmptyView(
+            message: state.selectedTab == OrderTab.upcoming
+                ? 'No upcoming orders'
+                : 'No past orders',
           );
         }
 
@@ -152,12 +150,7 @@ class _OrdersListState extends State<_OrdersList> {
                 state.currentOrders.length + (state.isLoadingMore ? 1 : 0),
             itemBuilder: (context, index) {
               if (index >= state.currentOrders.length) {
-                return const Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Center(
-                    child: CircularProgressIndicator(color: AppColors.brand),
-                  ),
-                );
+                return const ListFooterShimmer();
               }
 
               final order = state.currentOrders[index];

@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/navigation/categories_navigation.dart';
 import '../../../../core/navigation/cuisine_navigation.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/app_loading_shimmers.dart';
+import '../../../../core/widgets/mobile_api_empty_view.dart';
 import '../../../../core/widgets/network_image_box.dart';
 import '../../../../core/widgets/veg_filter_chip.dart';
 import '../../../../injection_container.dart';
@@ -74,8 +77,13 @@ class _HomeViewState extends State<_HomeView> {
       builder: (context, state) {
         /// LOADING
         if (state.status == HomeStatus.loading && state.restaurants.isEmpty) {
-          return const Center(
-            child: CircularProgressIndicator(color: AppColors.brand),
+          return Scaffold(
+            backgroundColor: const Color(0xFFFFFAF7),
+            body: SafeArea(
+              child: SingleChildScrollView(
+                child: RestaurantListShimmer(itemCount: 8),
+              ),
+            ),
           );
         }
 
@@ -263,7 +271,7 @@ class _HomeViewState extends State<_HomeView> {
 
                           GestureDetector(
                             onTap: () {
-                              context.read<MainCubit>().selectTab(1);
+                              openCategoriesScreen(context);
                             },
 
                             child: Container(
@@ -449,24 +457,27 @@ class _HomeViewState extends State<_HomeView> {
                   ),
 
                   /// RESTAURANTS
-                  SliverList(
-                    delegate: SliverChildBuilderDelegate((context, index) {
-                      return RestaurantCard(restaurant: state.restaurants[index]);
-                    }, childCount: state.restaurants.length),
-                  ),
+                  if (state.restaurants.isEmpty)
+                    SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: MobileApiEmptyView(
+                        message: state.emptyMessage?.trim().isNotEmpty == true
+                            ? state.emptyMessage!.trim()
+                            : 'No restaurants found in your area',
+                      ),
+                    )
+                  else
+                    SliverList(
+                      delegate: SliverChildBuilderDelegate((context, index) {
+                        return RestaurantCard(
+                            restaurant: state.restaurants[index]);
+                      }, childCount: state.restaurants.length),
+                    ),
 
                   /// LOAD MORE
                   if (state.isLoadingMore)
                     const SliverToBoxAdapter(
-                      child: Padding(
-                        padding: EdgeInsets.all(16),
-
-                        child: Center(
-                          child: CircularProgressIndicator(
-                            color: AppColors.brand,
-                          ),
-                        ),
-                      ),
+                      child: ListFooterShimmer(),
                     ),
 
                   const SliverToBoxAdapter(child: SizedBox(height: 30)),

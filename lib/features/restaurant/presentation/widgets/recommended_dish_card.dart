@@ -4,7 +4,8 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/network_image_box.dart';
 import '../../domain/entities/menu_entity.dart';
 
-/// Horizontal card for the Recommended strip (Android-style)
+/// Horizontal card for the Recommended strip — aligned with Android
+/// `item_food_list_recommened.xml` (100dp image, compact footer, wrap height).
 class RecommendedDishCard extends StatelessWidget {
   const RecommendedDishCard({
     super.key,
@@ -24,19 +25,26 @@ class RecommendedDishCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final disabled = item.isSoldOut || !item.isRestaurantOpen || isBusy;
+    final showStrike =
+        item.actualPrice > 0 && item.actualPrice > item.applicablePrice;
 
     return SizedBox(
-      width: 148,
+      width: 130,
       child: Card(
         elevation: 2,
+        clipBehavior: Clip.antiAlias,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         child: Padding(
           padding: const EdgeInsets.all(0),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               ClipRRect(
-                borderRadius: BorderRadius.only(topLeft:Radius.circular(8),topRight:Radius.circular(8)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(10),
+                ),
                 child: NetworkImageBox(
                   url: item.image,
                   width: double.infinity,
@@ -44,9 +52,9 @@ class RecommendedDishCard extends StatelessWidget {
                   fit: BoxFit.cover,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: Row(
                   children: [
                     Icon(
@@ -69,31 +77,50 @@ class RecommendedDishCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 2),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                child: Text(
-                  '₹${item.applicablePrice.toStringAsFixed(0)}',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.brand,
-                    fontSize: 13,
-                  ),
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Row(
+                  children: [
+                    if (showStrike) ...[
+                      Text(
+                        '₹${item.actualPrice.toStringAsFixed(0)}',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey.shade600,
+                          decoration: TextDecoration.lineThrough,
+                          decorationColor: Colors.grey.shade600,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                    ],
+                    Text(
+                      '₹${item.applicablePrice.toStringAsFixed(0)}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.brand,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            //  const Spacer(),
               if (item.hasCustomizations)
                 Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
+                  padding: const EdgeInsets.fromLTRB(8, 2, 8, 0),
                   child: Text(
                     'Customizable',
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontSize: 9,
-                      color: Colors.grey.shade600,
-                      fontStyle: FontStyle.italic,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.red.shade700,
                     ),
                   ),
                 ),
+              const SizedBox(height: 4),
               _BottomActions(
                 item: item,
                 disabled: disabled,
@@ -128,9 +155,8 @@ class _BottomActions extends StatelessWidget {
   Widget build(BuildContext context) {
     if (item.inCart) {
       return Padding(
-        padding: const EdgeInsets.all(8.0),
+        padding: const EdgeInsets.fromLTRB(6, 0, 6, 6),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             _MiniIconBtn(
@@ -138,10 +164,10 @@ class _BottomActions extends StatelessWidget {
               onTap: disabled ? null : onDecrement,
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 6),
               child: Text(
                 '${item.quantity}',
-                style: const TextStyle(fontWeight: FontWeight.bold),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
               ),
             ),
             _MiniIconBtn(
@@ -154,17 +180,19 @@ class _BottomActions extends StatelessWidget {
     }
 
     return Padding(
-      padding: const EdgeInsets.all(8.0),
+      padding: const EdgeInsets.fromLTRB(8, 0, 8, 6),
       child: Center(
         child: SizedBox(
-          height: 30,
+          height: 28,
           child: ElevatedButton(
             onPressed: disabled ? null : onAdd,
             style: ElevatedButton.styleFrom(
               backgroundColor: item.isSoldOut ? Colors.grey : AppColors.brand,
               foregroundColor: Colors.white,
-              padding: EdgeInsets.zero,
-              textStyle: const TextStyle(fontSize: 11),
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
             ),
             child: Text(item.isSoldOut ? 'SOLD' : 'Add +'),
           ),
@@ -183,13 +211,13 @@ class _MiniIconBtn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: AppColors.brand,
+      color: AppColors.secondaryBrand,
       borderRadius: BorderRadius.circular(6),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(6),
         child: Padding(
-          padding: const EdgeInsets.all(6),
+          padding: const EdgeInsets.all(5),
           child: Icon(icon, color: Colors.white, size: 16),
         ),
       ),

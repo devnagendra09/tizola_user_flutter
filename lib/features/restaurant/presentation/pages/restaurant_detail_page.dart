@@ -1,8 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/navigation/cart_navigation.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/app_loading_shimmers.dart';
+import '../../../../core/widgets/mobile_api_empty_view.dart';
 import '../../../../core/widgets/network_image_box.dart';
 import '../../../../core/widgets/veg_filter_chip.dart';
 import '../../../../injection_container.dart';
@@ -14,6 +18,9 @@ import '../widgets/addons_selection_sheet.dart';
 import '../widgets/cart_summary_bar.dart';
 import '../widgets/menu_item_tile.dart';
 import '../widgets/recommended_dish_card.dart';
+
+///  Bounded height for horizontal recommended [ListView] (see Android `item_food_list_recommened`).
+const double _kRecommendedStripHeight = 212;
 
 class RestaurantDetailPage extends StatelessWidget {
   const RestaurantDetailPage({
@@ -45,15 +52,12 @@ class _RestaurantDetailView extends StatefulWidget {
 }
 
 class _RestaurantDetailViewState extends State<_RestaurantDetailView> {
-  final _searchController = TextEditingController();
   final _categoryScrollController = ScrollController();
   final _menuScrollController = ScrollController();
   final _sectionKeys = <GlobalKey>[];
-  bool _isSearchFocused = false;
 
   @override
   void dispose() {
-    _searchController.dispose();
     _categoryScrollController.dispose();
     _menuScrollController.dispose();
     super.dispose();
@@ -441,22 +445,7 @@ class _RestaurantDetailViewState extends State<_RestaurantDetailView> {
   Widget _buildBody(BuildContext context, RestaurantDetailState state) {
     if (state.status == RestaurantDetailStatus.loading &&
         state.displayCategories.isEmpty) {
-      return const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircularProgressIndicator(
-              color: AppColors.brand,
-              strokeWidth: 3,
-            ),
-            SizedBox(height: 16),
-            Text(
-              'Loading delicious menu...',
-              style: TextStyle(color: Colors.grey),
-            ),
-          ],
-        ),
-      );
+      return const RestaurantDetailShimmer();
     }
 
     if (state.status == RestaurantDetailStatus.failure &&
@@ -498,7 +487,7 @@ class _RestaurantDetailViewState extends State<_RestaurantDetailView> {
       children: [
         if (state.banners.isNotEmpty)
           Container(
-            height: 140,
+            height: 120,
             margin: const EdgeInsets.only(top: 12),
             child: PageView.builder(
               itemCount: state.banners.length,
@@ -508,7 +497,7 @@ class _RestaurantDetailViewState extends State<_RestaurantDetailView> {
                   borderRadius: BorderRadius.circular(16),
                   child: NetworkImageBox(
                     url: state.banners[i].image,
-                    height: 140,
+                    height: 120,
                     width: double.infinity,
                     fit: BoxFit.cover,
                   ),
@@ -516,205 +505,8 @@ class _RestaurantDetailViewState extends State<_RestaurantDetailView> {
               ),
             ),
           ),
-        Container(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-
-          child: ClipRRect(
-            borderRadius:
-            BorderRadius.circular(
-              _isSearchFocused ? 20: 28,
-            ),
-
-            child: AnimatedContainer(
-              duration:
-              const Duration(
-                milliseconds: 250,
-              ),
-
-              curve:
-              Curves.easeInOutCubic,
-
-              clipBehavior: Clip.antiAlias,
-
-              decoration: BoxDecoration(
-                color: Colors.white,
-
-                borderRadius:
-                BorderRadius.circular(
-                  _isSearchFocused
-                      ? 20
-                      : 28,
-                ),
-
-                boxShadow: [
-                  BoxShadow(
-                    color: _isSearchFocused
-                        ? AppColors.brand
-                        .withOpacity(0.15)
-                        : Colors.black
-                        .withOpacity(0.06),
-
-                    blurRadius:
-                    _isSearchFocused
-                        ? 16
-                        : 8,
-
-                    offset: Offset(
-                      0,
-                      _isSearchFocused
-                          ? 4
-                          : 2,
-                    ),
-                  ),
-                ],
-
-                border: Border.all(
-                  color: _isSearchFocused
-                      ? AppColors.brand
-                      .withOpacity(0.25)
-                      : Colors.grey
-                      .shade200,
-
-                  width:
-                  _isSearchFocused
-                      ? 1.4
-                      : 1,
-                ),
-              ),
-
-              child: Material(
-                color: Colors.transparent,
-
-                child: TextField(
-                  controller:
-                  _searchController,
-
-                  onTap: () {
-                    setState(() {
-                      _isSearchFocused =
-                      true;
-                    });
-                  },
-
-                  onTapOutside: (_) {
-                    setState(() {
-                      _isSearchFocused =
-                      false;
-                    });
-                  },
-
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight:
-                    FontWeight.w500,
-                  ),
-
-                  decoration:
-                  InputDecoration(
-                    hintText:
-                    'Search menu...',
-
-                    hintStyle: TextStyle(
-                      color: Colors
-                          .grey.shade400,
-
-                      fontSize: 14,
-
-                      fontWeight:
-                      FontWeight.w400,
-                    ),
-
-                    prefixIcon: Icon(
-                      Icons.search_rounded,
-
-                      color:
-                      _isSearchFocused
-                          ? AppColors
-                          .brand
-                          : Colors.grey
-                          .shade500,
-
-                      size: 20,
-                    ),
-
-                    suffixIcon:
-                    state.searchQuery
-                        .isNotEmpty
-                        ? GestureDetector(
-                      onTap: () {
-                        _searchController
-                            .clear();
-
-                        context
-                            .read<
-                            RestaurantDetailCubit>()
-                            .setSearchQuery(
-                            '');
-
-                        setState(
-                                () {});
-                      },
-
-                      child:
-                      Container(
-                        margin:
-                        const EdgeInsets.all(
-                            8),
-
-                        decoration:
-                        BoxDecoration(
-                          color: Colors
-                              .grey
-                              .shade200,
-
-                          shape:
-                          BoxShape
-                              .circle,
-                        ),
-
-                        child:
-                        const Icon(
-                          Icons.close,
-
-                          size: 16,
-
-                          color: Colors
-                              .grey,
-                        ),
-                      ),
-                    )
-                        : null,
-
-                    border:
-                    InputBorder.none,
-
-                    enabledBorder:
-                    InputBorder.none,
-
-                    focusedBorder:
-                    InputBorder.none,
-
-                    contentPadding:
-                    const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
-                    ),
-
-                    isDense: true,
-                  ),
-
-                  onChanged: (value) {
-                    context
-                        .read<
-                        RestaurantDetailCubit>()
-                        .setSearchQuery(
-                        value);
-                  },
-                ),
-              ),
-            ),
-          ),
-        ),        Padding(
+        const _RestaurantMenuSearchBar(),
+        Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           child: Row(
             children: [
@@ -779,26 +571,9 @@ class _RestaurantDetailViewState extends State<_RestaurantDetailView> {
           ),
         Expanded(
           child: state.displayCategories.isEmpty
-              ? Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.search_off,
-                  size: 64,
-                  color: Colors.grey.shade400,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'No menu items found',
-                  style: TextStyle(
-                    color: Colors.grey.shade600,
-                    fontSize: 16,
-                  ),
-                ),
-              ],
-            ),
-          )
+              ? const MobileApiEmptyView(
+                  message: 'No menu items found',
+                )
               : RefreshIndicator(
             color: AppColors.brand,
             onRefresh: () =>
@@ -811,6 +586,155 @@ class _RestaurantDetailViewState extends State<_RestaurantDetailView> {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Isolated search bar so typing does not rebuild the whole menu body (jank).
+/// Clears focus when the query is emptied so the focus ring / border resets.
+class _RestaurantMenuSearchBar extends StatefulWidget {
+  const _RestaurantMenuSearchBar();
+
+  @override
+  State<_RestaurantMenuSearchBar> createState() =>
+      _RestaurantMenuSearchBarState();
+}
+
+class _RestaurantMenuSearchBarState extends State<_RestaurantMenuSearchBar> {
+  final _controller = TextEditingController();
+  final _focusNode = FocusNode();
+  Timer? _debounce;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode.addListener(_onFocusChanged);
+    _controller.addListener(_onTextChanged);
+  }
+
+  void _onFocusChanged() {
+    setState(() {});
+  }
+
+  void _onTextChanged() {
+    setState(() {});
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    _controller.removeListener(_onTextChanged);
+    _focusNode.removeListener(_onFocusChanged);
+    _controller.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  bool get _focused => _focusNode.hasFocus;
+
+  void _applySearch(String value) {
+    if (!mounted) return;
+    context.read<RestaurantDetailCubit>().setSearchQuery(value);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(_focused ? 20 : 28),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeInOutCubic,
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(_focused ? 20 : 28),
+            boxShadow: [
+              BoxShadow(
+                color: _focused
+                    ? AppColors.brand.withValues(alpha: 0.15)
+                    : Colors.black.withValues(alpha: 0.06),
+                blurRadius: _focused ? 16 : 8,
+                offset: Offset(0, _focused ? 4 : 2),
+              ),
+            ],
+            border: Border.all(
+              color: _focused
+                  ? AppColors.brand.withValues(alpha: 0.25)
+                  : Colors.grey.shade200,
+              width: _focused ? 1.4 : 1,
+            ),
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: TextField(
+              controller: _controller,
+              focusNode: _focusNode,
+              onTapOutside: (_) => _focusNode.unfocus(),
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+              ),
+              decoration: InputDecoration(
+                hintText: 'Search menu...',
+                hintStyle: TextStyle(
+                  color: Colors.grey.shade400,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w400,
+                ),
+                prefixIcon: Icon(
+                  Icons.search_rounded,
+                  color: _focused ? AppColors.brand : Colors.grey.shade500,
+                  size: 20,
+                ),
+                suffixIcon: _controller.text.isNotEmpty
+                    ? GestureDetector(
+                        onTap: () {
+                          _debounce?.cancel();
+                          _controller.clear();
+                          _applySearch('');
+                          _focusNode.unfocus();
+                        },
+                        child: Container(
+                          margin: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade200,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.close,
+                            size: 16,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      )
+                    : null,
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
+                isDense: true,
+              ),
+              onChanged: (value) {
+                _debounce?.cancel();
+                if (value.isEmpty) {
+                  _applySearch('');
+                  _focusNode.unfocus();
+                  return;
+                }
+                _debounce = Timer(
+                  const Duration(milliseconds: 400),
+                  () => _applySearch(value),
+                );
+              },
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -874,7 +798,7 @@ class _RecommendedSection extends StatelessWidget {
           ),
         ),
         SizedBox(
-          height: MediaQuery.sizeOf(context).height * 0.24,
+          height: _kRecommendedStripHeight,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -882,12 +806,15 @@ class _RecommendedSection extends StatelessWidget {
             separatorBuilder: (_, index) => const SizedBox(width: 12),
             itemBuilder: (_, index) {
               final item = items[index];
-              return RecommendedDishCard(
-                item: item,
-                isBusy: isBusy,
-                onAdd: () => onAdd(item),
-                onIncrement: () => onIncrement(item),
-                onDecrement: () => onDecrement(item),
+              return Align(
+                alignment: Alignment.topCenter,
+                child: RecommendedDishCard(
+                  item: item,
+                  isBusy: isBusy,
+                  onAdd: () => onAdd(item),
+                  onIncrement: () => onIncrement(item),
+                  onDecrement: () => onDecrement(item),
+                ),
               );
             },
           ),

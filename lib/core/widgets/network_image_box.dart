@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
 import '../utils/image_url_utils.dart';
+import 'app_shimmer.dart';
 
 class NetworkImageBox extends StatelessWidget {
   const NetworkImageBox({
@@ -37,14 +38,11 @@ class NetworkImageBox extends StatelessWidget {
             width: width,
             height: height,
             fit: fit,
-            placeholder: (context, url) => const ColoredBox(
-              color: AppColors.brandLite,
-              child: Center(
-                child: SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
+            placeholder: (context, url) => AppShimmer(
+              child: Container(
+                width: width,
+                height: height,
+                color: Colors.white,
               ),
             ),
             errorWidget: (context, url, error) => ColoredBox(

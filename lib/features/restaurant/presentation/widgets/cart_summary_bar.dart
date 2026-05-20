@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shimmer/shimmer.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/restaurant_detail_entities.dart';
@@ -34,12 +35,17 @@ class CartSummaryBar extends StatelessWidget {
               child: Row(
                 children: [
                   if (isLoading)
-                    const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
+                    Shimmer.fromColors(
+                      baseColor: Colors.white.withValues(alpha: 0.35),
+                      highlightColor: Colors.white.withValues(alpha: 0.85),
+                      period: const Duration(milliseconds: 900),
+                      child: Container(
+                        width: 88,
+                        height: 14,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.45),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
                       ),
                     )
                   else

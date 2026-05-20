@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/navigation/cart_navigation.dart';
+import '../../../../core/navigation/categories_navigation.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../injection_container.dart';
 import '../../../auth/presentation/pages/login_page.dart';
-import '../../../category/presentation/widgets/category_tab.dart';
 import '../../../home/presentation/widgets/home_tab.dart';
 import '../../../location/presentation/pages/location_info_page.dart';
 import '../../../orders/presentation/widgets/orders_tab.dart';
@@ -31,7 +31,7 @@ class _MainView extends StatelessWidget {
 
   static const _tabs = [
     HomeTab(),
-    CategoryTab(),
+    SizedBox.shrink(),
     OrdersTab(),
     AccountTab(),
   ];
@@ -99,8 +99,13 @@ class _MainView extends StatelessWidget {
               currentIndex: state.currentIndex,
               selectedItemColor: AppColors.brand,
               unselectedItemColor: Colors.grey,
-              onTap: (index) =>
-                  context.read<MainCubit>().onTabSelected(index),
+              onTap: (index) {
+                if (index == 1) {
+                  openCategoriesScreen(context);
+                  return;
+                }
+                context.read<MainCubit>().onTabSelected(index);
+              },
               items: const [
                 BottomNavigationBarItem(
                   icon: Icon(Icons.home_outlined),

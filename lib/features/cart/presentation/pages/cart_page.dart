@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/app_loading_shimmers.dart';
+import '../../../../core/widgets/mobile_api_empty_view.dart';
 import '../../../../core/widgets/network_image_box.dart';
 import '../../../../injection_container.dart';
 import '../../../auth/domain/repositories/auth_repository.dart';
@@ -162,9 +164,7 @@ class _CartView extends StatelessWidget {
 
   Widget _buildBody(BuildContext context, CartState state, bool isBusy) {
     if (state.status == CartStatus.loading && state.isEmpty) {
-      return const Center(
-        child: CircularProgressIndicator(color: AppColors.brand),
-      );
+      return const CartPageShimmer();
     }
 
     if (state.status == CartStatus.failure && state.isEmpty) {
@@ -184,21 +184,19 @@ class _CartView extends StatelessWidget {
     }
 
     if (state.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.shopping_cart_outlined,
-                size: 64, color: Colors.grey.shade400),
-            const SizedBox(height: 12),
-            const Text('Your cart is empty'),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Browse restaurants'),
-            ),
-          ],
-        ),
+      return Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const MobileApiEmptyView(
+            message: 'Your cart is empty',
+            padding: EdgeInsets.symmetric(horizontal: 32),
+          ),
+          const SizedBox(height: 8),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Browse restaurants'),
+          ),
+        ],
       );
     }
 

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/app_loading_shimmers.dart';
+import '../../../../core/widgets/mobile_api_empty_view.dart';
 import '../../../../injection_container.dart';
 import '../../../home/presentation/widgets/restaurant_card.dart';
 import '../cubit/restaurant_list_cubit.dart';
@@ -65,9 +67,7 @@ class _RestaurantListViewState extends State<_RestaurantListView> {
         builder: (context, state) {
           if (state.status == RestaurantListStatus.loading &&
               state.restaurants.isEmpty) {
-            return const Center(
-              child: CircularProgressIndicator(color: AppColors.brand),
-            );
+            return const RestaurantListShimmer(itemCount: 8);
           }
 
           if (state.status == RestaurantListStatus.failure &&
@@ -89,11 +89,10 @@ class _RestaurantListViewState extends State<_RestaurantListView> {
           }
 
           if (state.restaurants.isEmpty) {
-            return Center(
-              child: Text(
-                state.emptyMessage ?? 'No restaurants found',
-                textAlign: TextAlign.center,
-              ),
+            return MobileApiEmptyView(
+              message: state.emptyMessage?.trim().isNotEmpty == true
+                  ? state.emptyMessage!.trim()
+                  : 'No restaurants found',
             );
           }
 
@@ -108,12 +107,7 @@ class _RestaurantListViewState extends State<_RestaurantListView> {
                   state.restaurants.length + (state.isLoadingMore ? 1 : 0),
               itemBuilder: (context, index) {
                 if (index >= state.restaurants.length) {
-                  return const Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Center(
-                      child: CircularProgressIndicator(color: AppColors.brand),
-                    ),
-                  );
+                  return const ListFooterShimmer();
                 }
                 return RestaurantCard(restaurant: state.restaurants[index]);
               },

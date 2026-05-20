@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/app_loading_shimmers.dart';
 import '../../../../injection_container.dart';
 import '../../domain/entities/cart_entity.dart';
 import '../../domain/repositories/cart_repository.dart';
@@ -110,9 +111,7 @@ class _PaymentOptionsPageState extends State<PaymentOptionsPage> {
         foregroundColor: Colors.white,
       ),
       body: _loading
-          ? const Center(
-              child: CircularProgressIndicator(color: AppColors.brand),
-            )
+          ? const PaymentOptionsShimmer()
           : _error != null
               ? Center(
                   child: Column(

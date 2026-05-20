@@ -68,8 +68,6 @@ class RestaurantDetailCubit extends Cubit<RestaurantDetailState> {
   }
 
   Future<void> reloadMenu() async {
-    emit(state.copyWith(status: RestaurantDetailStatus.loading, clearError: true));
-
     final menuResult = await _repository.getMenu(
       seoUrl: state.seoUrl,
       foodFilter: state.foodFilter,
@@ -78,7 +76,6 @@ class RestaurantDetailCubit extends Cubit<RestaurantDetailState> {
     if (menuResult.isFailure) {
       emit(
         state.copyWith(
-          status: RestaurantDetailStatus.loaded,
           errorMessage: menuResult.failure?.message,
         ),
       );
