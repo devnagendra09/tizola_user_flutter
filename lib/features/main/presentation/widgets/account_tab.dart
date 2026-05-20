@@ -2,10 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/app_shimmer.dart';
 import '../../../../injection_container.dart';
+import '../../../auth/domain/entities/user_entity.dart';
 import '../../../auth/presentation/pages/login_page.dart';
+import '../../../location/presentation/pages/location_info_page.dart';
+import '../../../restaurant/presentation/pages/restaurant_list_page.dart';
+import '../../../splash/presentation/pages/splash_page.dart';
 import '../cubit/account/account_cubit.dart';
 import '../cubit/account/account_state.dart';
+import '../cubit/main_cubit.dart';
+import '../pages/account_faq_page.dart';
+import '../pages/account_language_page.dart';
+import '../pages/account_profile_page.dart';
+import '../pages/account_refer_page.dart';
 
 class AccountTab extends StatefulWidget {
   const AccountTab({super.key});
@@ -30,17 +40,26 @@ class _AccountView extends StatelessWidget {
   Future<void> _confirmLogout(BuildContext context) async {
     final confirm = await showDialog<bool>(
       context: context,
+      barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        title: const Text('Logout'),
-        content: const Text('Are you sure you want to logout?'),
+        title: const Text('Are you sure you want to logout?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: AppColors.secondaryBrand),
+            ),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Logout'),
+            child: const Text(
+              'Logout',
+              style: TextStyle(
+                color: AppColors.error,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
@@ -51,94 +70,497 @@ class _AccountView extends StatelessWidget {
     }
   }
 
+  String _detailsLine(UserEntity? user) {
+    if (user == null) return '';
+    final phone = user.phoneNumber ?? '';
+    final email = user.email?.trim();
+    if (email != null && email.isNotEmpty) {
+      return '$phone , $email';
+    }
+    return phone;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return BlocListener<AccountCubit, AccountState>(
+    return BlocConsumer<AccountCubit, AccountState>(
+      listenWhen: (prev, curr) =>
+          prev.status != curr.status || prev.errorMessage != curr.errorMessage,
       listener: (context, state) {
         if (state.status == AccountStatus.loggedOut) {
           Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute<void>(builder: (_) => const LoginPage()),
+            MaterialPageRoute<void>(builder: (_) => const SplashPage()),
             (_) => false,
+          );
+        } else if (state.errorMessage != null &&
+            state.errorMessage!.isNotEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(state.errorMessage!)),
           );
         }
       },
-      child: BlocBuilder<AccountCubit, AccountState>(
-        builder: (context, state) {
-          final user = state.user;
-          final phone = user?.phoneNumber ?? '';
-          final name = user?.name;
+      builder: (context, state) {
+        if (state.status == AccountStatus.loading) {
+          return const _AccountLoadingView();
+        }
 
-          return ListView(
-            padding: const EdgeInsets.all(16),
+        final user = state.user;
+        final displayName =
+            (user?.name?.trim().isNotEmpty == true ? user!.name! : 'Guest')
+                .toUpperCase();
+
+        return ColoredBox(
+          color: Colors.white,
+          child: RefreshIndicator(
+          color: AppColors.brand,
+          onRefresh: () => context.read<AccountCubit>().loadProfile(),
+          child: Stack(
             children: [
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 32,
-                        backgroundColor: AppColors.brandLite,
-                        child: Icon(
-                          Icons.person,
-                          size: 36,
-                          color: AppColors.brand.withValues(alpha: 0.8),
+              ListView(
+                padding: const EdgeInsets.only(bottom: 24),
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                displayName,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                              if (_detailsLine(user).isNotEmpty) ...[
+                                const SizedBox(height: 6),
+                                Text(
+                                  _detailsLine(user),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.grey.shade700,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              name ?? 'Guest User',
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
+                        Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () {
+                              if (user == null) {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => const LoginPage(),
+                                  ),
+                                );
+                                return;
+                              }
+                              Navigator.of(context)
+                                  .push<bool>(
+                                MaterialPageRoute<bool>(
+                                  builder: (_) =>
+                                      AccountProfilePage(user: user),
+                                ),
+                              )
+                                  .then((updated) {
+                                if (updated == true && context.mounted) {
+                                  context.read<AccountCubit>().loadProfile();
+                                }
+                              });
+                            },
+                            borderRadius: BorderRadius.circular(8),
+                            child: Padding(
+                              padding: const EdgeInsets.all(8),
+                              child: Icon(
+                                Icons.edit_outlined,
+                                color: AppColors.brand,
+                                size: 22,
                               ),
                             ),
-                            if (phone.isNotEmpty)
-                              Text(
-                                '+91 $phone',
-                                style: TextStyle(color: Colors.grey.shade600),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  ..._buildMenuItems(context, user, state),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(10, 12, 10, 0),
+                    child: _WalletCard(balance: state.walletBalance),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+                    child: Material(
+                      color: AppColors.secondaryBrand,
+                      borderRadius: BorderRadius.circular(8),
+                      child: InkWell(
+                        onTap: state.isBusy
+                            ? null
+                            : () => _confirmLogout(context),
+                        borderRadius: BorderRadius.circular(8),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  user != null ? 'LOGOUT' : 'LOGIN',
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
                               ),
-                          ],
+                              const Icon(
+                                Icons.logout,
+                                color: Colors.white,
+                                size: 22,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (state.appVersion.isNotEmpty)
+                    Container(
+                      width: double.infinity,
+                      margin: const EdgeInsets.only(top: 8),
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+                      color: AppColors.splash,
+                      child: Text(
+                        state.appVersion,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              if (state.status == AccountStatus.loggingOut)
+                ColoredBox(
+                  color: Colors.black.withValues(alpha: 0.25),
+                  child: const Center(
+                    child: CircularProgressIndicator(color: AppColors.brand),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        );
+      },
+    );
+  }
+
+  List<Widget> _buildMenuItems(
+    BuildContext context,
+    UserEntity? user,
+    AccountState state,
+  ) {
+    final items = <_AccountMenuEntry>[
+      _AccountMenuEntry(
+        title: 'Address Book',
+        icon: Icons.location_on_outlined,
+        onTap: () => _openLoggedIn(
+          context,
+          user,
+          () => Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => const LocationInfoPage(),
+            ),
+          ),
+        ),
+      ),
+      _AccountMenuEntry(
+        title: 'All Orders',
+        icon: Icons.receipt_long_outlined,
+        onTap: () => _openLoggedIn(
+          context,
+          user,
+          () => context.read<MainCubit>().selectTab(2),
+        ),
+      ),
+      _AccountMenuEntry(
+        title: 'Favourites',
+        icon: Icons.favorite_border,
+        onTap: () => _openLoggedIn(
+          context,
+          user,
+          () => Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => const RestaurantListPage(
+                title: 'Favourites',
+                favouritesOnly: true,
+              ),
+            ),
+          ),
+        ),
+      ),
+      _AccountMenuEntry(
+        title: 'Language',
+        icon: Icons.language,
+        onTap: () => _openLoggedIn(
+          context,
+          user,
+          () => Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => const AccountLanguagePage(),
+            ),
+          ),
+        ),
+      ),
+      _AccountMenuEntry(
+        title: 'Refer & Earn',
+        icon: Icons.card_giftcard_outlined,
+        onTap: () => _openLoggedIn(
+          context,
+          user,
+          () => Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => const AccountReferPage(),
+            ),
+          ),
+        ),
+      ),
+      _AccountMenuEntry(
+        title: 'Help',
+        icon: Icons.support_agent_outlined,
+        onTap: () => _openLoggedIn(
+          context,
+          user,
+          () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Contact customer care from the home screen'),
+              ),
+            );
+          },
+        ),
+      ),
+      _AccountMenuEntry(
+        title: 'Help & FAQ',
+        icon: Icons.help_outline,
+        onTap: () => _openLoggedIn(
+          context,
+          user,
+          () => Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => const AccountFaqPage(),
+            ),
+          ),
+        ),
+      ),
+    ];
+
+    return items
+        .map(
+          (e) => Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            child: _AccountMenuCard(
+              title: e.title,
+              icon: e.icon,
+              onTap: e.onTap,
+            ),
+          ),
+        )
+        .toList();
+  }
+
+  void _openLoggedIn(
+    BuildContext context,
+    UserEntity? user,
+    VoidCallback action,
+  ) {
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Please login first!'),
+          action: SnackBarAction(
+            label: 'Login',
+            textColor: Colors.white,
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(builder: (_) => const LoginPage()),
+              );
+            },
+          ),
+        ),
+      );
+      return;
+    }
+    action();
+  }
+}
+
+class _AccountMenuEntry {
+  const _AccountMenuEntry({
+    required this.title,
+    required this.icon,
+    required this.onTap,
+  });
+
+  final String title;
+  final IconData icon;
+  final VoidCallback onTap;
+}
+
+class _AccountMenuCard extends StatelessWidget {
+  const _AccountMenuCard({
+    required this.title,
+    required this.icon,
+    required this.onTap,
+  });
+
+  final String title;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 3,
+      margin: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey.shade800,
+                  ),
+                ),
+              ),
+              Icon(icon, color: AppColors.brand, size: 22),
+              const SizedBox(width: 8),
+              Icon(
+                Icons.arrow_forward_ios,
+                size: 14,
+                color: Colors.grey.shade500,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _WalletCard extends StatelessWidget {
+  const _WalletCard({required this.balance});
+
+  final String balance;
+
+  @override
+  Widget build(BuildContext context) {
+    final amount = balance.replaceAll('/-', '').trim();
+
+    return Card(
+      elevation: 8,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Wallet balance',
+                    style: TextStyle(
+                      color: AppColors.secondaryBrand,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Text(
+                        '₹',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        amount,
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ],
                   ),
-                ),
+                ],
               ),
-              const SizedBox(height: 8),
-              _menuTile(Icons.person_outline, 'Profile', () {}),
-              _menuTile(Icons.location_on_outlined, 'Addresses', () {}),
-              _menuTile(Icons.help_outline, 'Help', () {}),
-              _menuTile(Icons.language, 'Language', () {}),
-              const Divider(height: 24),
-              _menuTile(
-                Icons.logout,
-                'Logout',
-                () => _confirmLogout(context),
-                color: AppColors.error,
-              ),
-            ],
-          );
-        },
+            ),
+            Icon(
+              Icons.account_balance_wallet_outlined,
+              size: 48,
+              color: AppColors.brand.withValues(alpha: 0.35),
+            ),
+          ],
+        ),
       ),
     );
   }
+}
 
-  Widget _menuTile(
-    IconData icon,
-    String title,
-    VoidCallback onTap, {
-    Color? color,
-  }) {
-    return ListTile(
-      leading: Icon(icon, color: color ?? AppColors.brand),
-      title: Text(title, style: TextStyle(color: color)),
-      trailing: const Icon(Icons.chevron_right),
-      onTap: onTap,
+class _AccountLoadingView extends StatelessWidget {
+  const _AccountLoadingView();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        AppShimmer(
+          child: Column(
+            children: [
+              const ShimmerBox(width: double.infinity, height: 28, borderRadius: 6),
+              const SizedBox(height: 8),
+              const ShimmerBox(width: 200, height: 14, borderRadius: 4),
+              const SizedBox(height: 20),
+              for (var i = 0; i < 5; i++) ...[
+                const ShimmerBox(
+                  width: double.infinity,
+                  height: 52,
+                  borderRadius: 10,
+                ),
+                const SizedBox(height: 8),
+              ],
+              const ShimmerBox(width: double.infinity, height: 88, borderRadius: 10),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

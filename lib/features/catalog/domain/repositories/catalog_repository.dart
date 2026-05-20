@@ -10,6 +10,7 @@ abstract class CatalogRepository {
     required int page,
     RestaurantFoodFilter foodFilter = RestaurantFoodFilter.all,
     List<String> cuisineIds = const [],
+    bool favouritesOnly = false,
   });
   Future<Result<({List<OrderEntity> orders, int totalPages})>> getOrders({
     required String type,

@@ -29,12 +29,14 @@ class CatalogRepositoryImpl implements CatalogRepository {
     required int page,
     RestaurantFoodFilter foodFilter = RestaurantFoodFilter.all,
     List<String> cuisineIds = const [],
+    bool favouritesOnly = false,
   }) async {
     try {
       final data = await _remote.getRestaurants(
         page: page,
         foodFilter: foodFilter,
         cuisineIds: cuisineIds,
+        favouritesOnly: favouritesOnly,
       );
       return Result.success(data);
     } on Failure catch (e) {

@@ -10,14 +10,23 @@ import '../cubit/restaurant_list_cubit.dart';
 import '../cubit/restaurant_list_state.dart';
 
 class RestaurantListPage extends StatelessWidget {
-  const RestaurantListPage({super.key, required this.title});
+  const RestaurantListPage({
+    super.key,
+    required this.title,
+    this.favouritesOnly = false,
+  });
 
   final String title;
+  final bool favouritesOnly;
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => sl<RestaurantListCubit>()..loadRestaurants(),
+      create: (_) => RestaurantListCubit(
+        sl(),
+        sl(),
+        favouritesOnly: favouritesOnly,
+      )..loadRestaurants(),
       child: _RestaurantListView(title: title),
     );
   }

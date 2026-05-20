@@ -10,8 +10,10 @@ abstract class AuthLocalDataSource {
   String? get customerName;
   String? get email;
   String get countryId;
+  String get appLanguageCode;
 
   Future<void> setCountryId(String id);
+  Future<void> setAppLanguage(String code);
   Future<void> saveSession({
     required String phone,
     required String accessToken,
@@ -43,6 +45,16 @@ class AuthLocalDataSourceImpl implements AuthLocalDataSource {
   String get countryId =>
       _prefs.getString(AppConstants.keyCountryId) ??
       AppConstants.defaultCountryId;
+
+  @override
+  String get appLanguageCode =>
+      _prefs.getString(AppConstants.keyAppLanguage) ??
+      AppConstants.defaultLanguageCode;
+
+  @override
+  Future<void> setAppLanguage(String code) async {
+    await _prefs.setString(AppConstants.keyAppLanguage, code);
+  }
 
   @override
   Future<bool> isLoggedIn() async {

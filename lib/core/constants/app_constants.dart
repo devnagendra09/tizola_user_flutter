@@ -18,6 +18,9 @@ class AppConstants {
   static const String keyLandmark = 'delivery_landmark';
   static const String keyAddressDescription = 'delivery_address_description';
   static const String keyLocationId = 'delivery_location_id';
+  static const String keyAppLanguage = 'app_language';
+
+  static const String defaultLanguageCode = 'en';
 
   static const String defaultCountryId = '1';
   static const String defaultDialCode = '+91';

@@ -5,18 +5,23 @@ import '../../../catalog/domain/repositories/catalog_repository.dart';
 import 'restaurant_list_state.dart';
 
 class RestaurantListCubit extends Cubit<RestaurantListState> {
-  RestaurantListCubit(this._catalogRepository, this._cuisineFilterStore)
-      : super(const RestaurantListState());
+  RestaurantListCubit(
+    this._catalogRepository,
+    this._cuisineFilterStore, {
+    this.favouritesOnly = false,
+  }) : super(const RestaurantListState());
 
   final CatalogRepository _catalogRepository;
   final CuisineFilterStore _cuisineFilterStore;
+  final bool favouritesOnly;
 
   Future<void> loadRestaurants() async {
     emit(state.copyWith(status: RestaurantListStatus.loading, clearError: true));
 
     final result = await _catalogRepository.getRestaurants(
       page: 1,
-      cuisineIds: _cuisineFilterStore.cuisineIds,
+      cuisineIds: favouritesOnly ? const [] : _cuisineFilterStore.cuisineIds,
+      favouritesOnly: favouritesOnly,
     );
 
     if (result.isFailure) {
@@ -52,7 +57,8 @@ class RestaurantListCubit extends Cubit<RestaurantListState> {
     final nextPage = state.currentPage + 1;
     final result = await _catalogRepository.getRestaurants(
       page: nextPage,
-      cuisineIds: _cuisineFilterStore.cuisineIds,
+      cuisineIds: favouritesOnly ? const [] : _cuisineFilterStore.cuisineIds,
+      favouritesOnly: favouritesOnly,
     );
 
     if (result.isFailure) {

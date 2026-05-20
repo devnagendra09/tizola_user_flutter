@@ -18,6 +18,7 @@ abstract class CatalogRemoteDataSource {
     required int page,
     RestaurantFoodFilter foodFilter = RestaurantFoodFilter.all,
     List<String> cuisineIds = const [],
+    bool favouritesOnly = false,
     bool refresh = false,
   });
   Future<({List<OrderEntity> orders, int totalPages})> getOrders({
@@ -54,11 +55,15 @@ class CatalogRemoteDataSourceImpl implements CatalogRemoteDataSource {
     required int page,
     RestaurantFoodFilter foodFilter = RestaurantFoodFilter.all,
     List<String> cuisineIds = const [],
+    bool favouritesOnly = false,
     bool refresh = false,
   }) async {
     final params = _paramsBuilder.baseParams(includeSource: false);
     params['page'] = page.toString();
     params['m_sess_cart_id'] = _appLocal.deviceId;
+    if (favouritesOnly) {
+      params['favourites'] = 'true';
+    }
     params['food_type'] = switch (foodFilter) {
       RestaurantFoodFilter.veg => 'Veg',
       RestaurantFoodFilter.nonVeg => 'Non Veg',
