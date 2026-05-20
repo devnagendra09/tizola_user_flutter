@@ -167,6 +167,15 @@ class _RestaurantDetailViewState extends State<_RestaurantDetailView> {
   String _restaurantShareName(RestaurantDetailState state) =>
       state.detail?.name ?? state.fallbackName ?? state.title;
 
+  MenuItemEntity? _menuItemById(RestaurantDetailState state, String itemId) {
+    for (final category in state.displayCategories) {
+      for (final item in category.items) {
+        if (item.id == itemId) return item;
+      }
+    }
+    return null;
+  }
+
   void _openRecommendedViewAll(
       BuildContext context,
       RestaurantDetailState state,
@@ -215,22 +224,30 @@ class _RestaurantDetailViewState extends State<_RestaurantDetailView> {
               ),
               const Divider(height: 1, thickness: 1),
               Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.only(bottom: 24),
-                  itemCount: items.length,
-                  itemBuilder: (_, i) {
-                    final item = items[i];
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      child: MenuItemTile(
-                        item: item,
-                        isBusy: state.isCartUpdating,
-                        onAdd: () => _onAddItem(context, item),
-                        onIncrement: () => _onIncrementItem(context, item),
-                        onDecrement: () => context
-                            .read<RestaurantDetailCubit>()
-                            .decrementItem(item),
-                      ),
+                child: BlocBuilder<RestaurantDetailCubit, RestaurantDetailState>(
+                  builder: (context, liveState) {
+                    return ListView.builder(
+                      padding: const EdgeInsets.only(bottom: 24),
+                      itemCount: items.length,
+                      itemBuilder: (_, i) {
+                        final item =
+                            _menuItemById(liveState, items[i].id) ?? items[i];
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          child: MenuItemTile(
+                            item: item,
+                            isPending: liveState.isItemCartPending(item.id),
+                            onAdd: () => _onAddItem(context, item),
+                            onIncrement: () => _onIncrementItem(context, item),
+                            onDecrement: () => context
+                                .read<RestaurantDetailCubit>()
+                                .decrementItem(item),
+                          ),
+                        );
+                      },
                     );
                   },
                 ),
@@ -263,7 +280,7 @@ class _RestaurantDetailViewState extends State<_RestaurantDetailView> {
               margin: const EdgeInsets.only(bottom: 8),
               child: _RecommendedSection(
                 items: cat.items,
-                isBusy: state.isCartUpdating,
+                isItemPending: state.isItemCartPending,
                 onViewAll: () =>
                     _openRecommendedViewAll(context, state, cat.items),
                 onAdd: (item) => _onAddItem(context, item),
@@ -322,7 +339,7 @@ class _RestaurantDetailViewState extends State<_RestaurantDetailView> {
                     ),
                     child: MenuItemTile(
                       item: item,
-                      isBusy: state.isCartUpdating,
+                      isPending: state.isItemCartPending(item.id),
                       shareSeoUrl: state.seoUrl,
                       restaurantName: _restaurantShareName(state),
                       onAdd: () => _onAddItem(context, item),
@@ -494,7 +511,7 @@ class _RestaurantDetailViewState extends State<_RestaurantDetailView> {
           body: _buildBody(context, state),
           bottomNavigationBar: CartSummaryBar(
             summary: state.cartSummary,
-            isLoading: state.isCartUpdating,
+            isLoading: state.isClearingCart,
             onTap: () => openCart(context),
           ),
         );
@@ -802,7 +819,7 @@ class _RestaurantMenuSearchBarState extends State<_RestaurantMenuSearchBar> {
 class _RecommendedSection extends StatelessWidget {
   const _RecommendedSection({
     required this.items,
-    required this.isBusy,
+    required this.isItemPending,
     required this.onViewAll,
     required this.onAdd,
     required this.onIncrement,
@@ -810,7 +827,7 @@ class _RecommendedSection extends StatelessWidget {
   });
 
   final List<MenuItemEntity> items;
-  final bool isBusy;
+  final bool Function(String itemId) isItemPending;
   final VoidCallback onViewAll;
   final void Function(MenuItemEntity item) onAdd;
   final void Function(MenuItemEntity item) onIncrement;
@@ -850,7 +867,7 @@ class _RecommendedSection extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                 ),
                 child: const Text(
-                  'View all ',
+                  'View all',
                   style: TextStyle(fontWeight: FontWeight.w600),
                 ),
               ),
@@ -870,7 +887,7 @@ class _RecommendedSection extends StatelessWidget {
                 alignment: Alignment.topCenter,
                 child: RecommendedDishCard(
                   item: item,
-                  isBusy: isBusy,
+                  isPending: isItemPending(item.id),
                   onAdd: () => onAdd(item),
                   onIncrement: () => onIncrement(item),
                   onDecrement: () => onDecrement(item),

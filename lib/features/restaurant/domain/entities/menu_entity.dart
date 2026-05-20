@@ -72,7 +72,13 @@ class MenuItemEntity extends Equatable {
   bool get hasCustomizations => addOns.isNotEmpty || options.isNotEmpty;
   bool get isSoldOut => !available;
   bool get isVeg => (foodType ?? '').toLowerCase() == 'veg';
-  bool get inCart => quantity > 0 && tempCartItemId != null;
+  bool get inCart => quantity > 0;
+
+  /// Server cart line id is available (not optimistic placeholder).
+  bool get isCartLineReady =>
+      tempCartItemId != null && !tempCartItemId!.startsWith('_pending:');
+
+  static String pendingCartLineId(String itemId) => '_pending:$itemId';
 
   MenuItemEntity copyWith({
     String? tempCartItemId,

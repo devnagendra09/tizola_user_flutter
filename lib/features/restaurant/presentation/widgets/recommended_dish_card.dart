@@ -13,18 +13,20 @@ class RecommendedDishCard extends StatelessWidget {
     required this.onAdd,
     required this.onIncrement,
     required this.onDecrement,
-    this.isBusy = false,
+    this.isPending = false,
   });
 
   final MenuItemEntity item;
   final VoidCallback onAdd;
   final VoidCallback onIncrement;
   final VoidCallback onDecrement;
-  final bool isBusy;
+  final bool isPending;
 
   @override
   Widget build(BuildContext context) {
-    final disabled = item.isSoldOut || !item.isRestaurantOpen || isBusy;
+    final disabled = item.isSoldOut || !item.isRestaurantOpen;
+    final actionsLocked =
+        disabled || isPending || (item.inCart && !item.isCartLineReady);
     final showStrike =
         item.actualPrice > 0 && item.actualPrice > item.applicablePrice;
 
@@ -123,7 +125,8 @@ class RecommendedDishCard extends StatelessWidget {
               const SizedBox(height: 4),
               _BottomActions(
                 item: item,
-                disabled: disabled,
+                actionsLocked: actionsLocked,
+                isPending: isPending,
                 onAdd: onAdd,
                 onIncrement: onIncrement,
                 onDecrement: onDecrement,
@@ -139,14 +142,16 @@ class RecommendedDishCard extends StatelessWidget {
 class _BottomActions extends StatelessWidget {
   const _BottomActions({
     required this.item,
-    required this.disabled,
+    required this.actionsLocked,
+    required this.isPending,
     required this.onAdd,
     required this.onIncrement,
     required this.onDecrement,
   });
 
   final MenuItemEntity item;
-  final bool disabled;
+  final bool actionsLocked;
+  final bool isPending;
   final VoidCallback onAdd;
   final VoidCallback onIncrement;
   final VoidCallback onDecrement;
@@ -161,18 +166,30 @@ class _BottomActions extends StatelessWidget {
           children: [
             _MiniIconBtn(
               icon: Icons.remove,
-              onTap: disabled ? null : onDecrement,
+              onTap: actionsLocked ? null : onDecrement,
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 6),
-              child: Text(
-                '${item.quantity}',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: isPending
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.brand,
+                      ),
+                    )
+                  : Text(
+                      '${item.quantity}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
+                    ),
             ),
             _MiniIconBtn(
               icon: Icons.add,
-              onTap: disabled ? null : onIncrement,
+              onTap: actionsLocked ? null : onIncrement,
             ),
           ],
         ),
@@ -184,8 +201,9 @@ class _BottomActions extends StatelessWidget {
       child: Center(
         child: SizedBox(
           height: 28,
+          width: 72,
           child: ElevatedButton(
-            onPressed: disabled ? null : onAdd,
+            onPressed: actionsLocked ? null : onAdd,
             style: ElevatedButton.styleFrom(
               backgroundColor: item.isSoldOut ? Colors.grey : AppColors.brand,
               foregroundColor: Colors.white,
@@ -194,7 +212,16 @@ class _BottomActions extends StatelessWidget {
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
             ),
-            child: Text(item.isSoldOut ? 'SOLD' : 'Add +'),
+            child: isPending
+                ? const SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : Text(item.isSoldOut ? 'SOLD' : 'Add +'),
           ),
         ),
       ),

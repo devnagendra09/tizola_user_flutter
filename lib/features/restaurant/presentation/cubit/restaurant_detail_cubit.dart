@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../catalog/domain/enums/restaurant_food_filter.dart';
@@ -19,6 +21,13 @@ class RestaurantDetailCubit extends Cubit<RestaurantDetailState> {
         );
 
   final RestaurantRepository _repository;
+  Timer? _cartRefreshDebounce;
+
+  @override
+  Future<void> close() {
+    _cartRefreshDebounce?.cancel();
+    return super.close();
+  }
 
   Future<void> loadInitial() async {
     emit(
@@ -144,8 +153,21 @@ class RestaurantDetailCubit extends Cubit<RestaurantDetailState> {
     List<String> addonIds = const [],
   }) async {
     if (item.isSoldOut || !item.isRestaurantOpen) return;
+    if (state.isItemCartPending(item.id)) return;
 
-    emit(state.copyWith(isCartUpdating: true, clearError: true));
+    final snapshot = _itemSnapshot(item);
+    _setItemPending(item.id, true);
+    emit(state.copyWith(clearError: true));
+
+    if (!item.hasCustomizations) {
+      _patchItem(
+        item.id,
+        tempCartItemId: MenuItemEntity.pendingCartLineId(item.id),
+        quantity: 1,
+      );
+      _applyOptimisticCartDelta(item, 1);
+    }
+
     final result = await _repository.addToCart(
       restaurantId: item.restaurantId,
       foodItemId: item.id,
@@ -154,33 +176,33 @@ class RestaurantDetailCubit extends Cubit<RestaurantDetailState> {
     );
 
     if (result.isFailure) {
-      emit(
-        state.copyWith(
-          isCartUpdating: false,
-          errorMessage: result.failure?.message,
-        ),
-      );
+      _restoreItem(item.id, snapshot);
+      if (!item.hasCustomizations) {
+        _applyOptimisticCartDelta(item, -1);
+      }
+      _setItemPending(item.id, false);
+      emit(state.copyWith(errorMessage: result.failure?.message));
       return;
     }
 
     final mutation = result.data!;
     if (!mutation.success) {
+      _restoreItem(item.id, snapshot);
+      if (!item.hasCustomizations) {
+        _applyOptimisticCartDelta(item, -1);
+      }
+      _setItemPending(item.id, false);
       if (mutation.errType == 'ORDER_DIFF_RESTAURANT') {
         emit(
           state.copyWith(
-            isCartUpdating: false,
             cartConflict: CartConflictEvent(
-              message: mutation.message ?? 'Cart has items from another restaurant',
+              message:
+                  mutation.message ?? 'Cart has items from another restaurant',
             ),
           ),
         );
       } else {
-        emit(
-          state.copyWith(
-            isCartUpdating: false,
-            errorMessage: mutation.message,
-          ),
-        );
+        emit(state.copyWith(errorMessage: mutation.message));
       }
       return;
     }
@@ -194,88 +216,104 @@ class RestaurantDetailCubit extends Cubit<RestaurantDetailState> {
         quantity: 1,
       );
     }
-    await refreshCart();
-    emit(state.copyWith(isCartUpdating: false));
+    _setItemPending(item.id, false);
+    _scheduleCartRefresh();
   }
 
   Future<void> incrementItem(MenuItemEntity item) async {
-    if (item.tempCartItemId == null) return;
+    if (!item.isCartLineReady || state.isItemCartPending(item.id)) return;
 
-    emit(state.copyWith(isCartUpdating: true));
+    final snapshot = _itemSnapshot(item);
     final nextQty = item.quantity + 1;
+    _setItemPending(item.id, true);
+    _patchItem(item.id, quantity: nextQty);
+    _applyOptimisticCartDelta(item, 1);
+
     final result = await _repository.updateCartQuantity(
       tempCartItemId: item.tempCartItemId!,
       quantity: nextQty,
     );
 
     if (result.isFailure || result.data?.success != true) {
+      _restoreItem(item.id, snapshot);
+      _applyOptimisticCartDelta(item, -1);
+      _setItemPending(item.id, false);
       emit(
         state.copyWith(
-          isCartUpdating: false,
           errorMessage: result.failure?.message ?? result.data?.message,
         ),
       );
       return;
     }
 
-    _patchItem(item.id, quantity: nextQty);
-    await refreshCart();
-    emit(state.copyWith(isCartUpdating: false));
+    _setItemPending(item.id, false);
+    _scheduleCartRefresh();
   }
 
   Future<void> decrementItem(MenuItemEntity item) async {
-    if (item.tempCartItemId == null) return;
+    if (!item.isCartLineReady || state.isItemCartPending(item.id)) return;
 
-    emit(state.copyWith(isCartUpdating: true));
+    final snapshot = _itemSnapshot(item);
+    _setItemPending(item.id, true);
+
     if (item.quantity <= 1) {
+      _patchItem(item.id, quantity: 0, clearTempCartItemId: true);
+      _applyOptimisticCartDelta(item, -1);
+
       final result =
           await _repository.removeFromCart(tempCartItemId: item.tempCartItemId!);
       if (result.isFailure) {
-        emit(
-          state.copyWith(
-            isCartUpdating: false,
-            errorMessage: result.failure?.message,
-          ),
-        );
+        _restoreItem(item.id, snapshot);
+        _applyOptimisticCartDelta(item, 1);
+        _setItemPending(item.id, false);
+        emit(state.copyWith(errorMessage: result.failure?.message));
         return;
       }
-      _patchItem(item.id, quantity: 0, clearTempCartItemId: true);
     } else {
       final nextQty = item.quantity - 1;
+      _patchItem(item.id, quantity: nextQty);
+      _applyOptimisticCartDelta(item, -1);
+
       final result = await _repository.updateCartQuantity(
         tempCartItemId: item.tempCartItemId!,
         quantity: nextQty,
       );
       if (result.isFailure || result.data?.success != true) {
+        _restoreItem(item.id, snapshot);
+        _applyOptimisticCartDelta(item, 1);
+        _setItemPending(item.id, false);
         emit(
           state.copyWith(
-            isCartUpdating: false,
             errorMessage: result.failure?.message ?? result.data?.message,
           ),
         );
         return;
       }
-      _patchItem(item.id, quantity: nextQty);
     }
 
-    await refreshCart();
-    emit(state.copyWith(isCartUpdating: false));
+    _setItemPending(item.id, false);
+    _scheduleCartRefresh();
   }
 
   Future<void> clearCartAndReload() async {
-    emit(state.copyWith(clearCartConflict: true, isCartUpdating: true));
+    emit(state.copyWith(clearCartConflict: true, isClearingCart: true));
     final result = await _repository.clearCart();
     if (result.isFailure) {
       emit(
         state.copyWith(
-          isCartUpdating: false,
+          isClearingCart: false,
           errorMessage: result.failure?.message,
         ),
       );
       return;
     }
     await reloadMenu();
-    emit(state.copyWith(isCartUpdating: false));
+    emit(
+      state.copyWith(
+        isClearingCart: false,
+        cartSummary: const CartSummaryEntity(),
+      ),
+    );
   }
 
   void dismissCartConflict() {
@@ -288,8 +326,62 @@ class RestaurantDetailCubit extends Cubit<RestaurantDetailState> {
 
   Future<void> refreshCart() async {
     final result = await _repository.getCartSummary();
-    if (result.isSuccess) {
+    if (result.isSuccess && !isClosed) {
       emit(state.copyWith(cartSummary: result.data ?? const CartSummaryEntity()));
+    }
+  }
+
+  void _scheduleCartRefresh() {
+    _cartRefreshDebounce?.cancel();
+    _cartRefreshDebounce = Timer(const Duration(milliseconds: 350), () {
+      if (!isClosed) {
+        unawaited(refreshCart());
+      }
+    });
+  }
+
+  void _setItemPending(String itemId, bool pending) {
+    final next = Set<String>.from(state.pendingCartItemIds);
+    if (pending) {
+      next.add(itemId);
+    } else {
+      next.remove(itemId);
+    }
+    emit(state.copyWith(pendingCartItemIds: next));
+  }
+
+  void _applyOptimisticCartDelta(MenuItemEntity item, int lineDelta) {
+    if (lineDelta == 0) return;
+    final count = (state.cartSummary.itemCount + lineDelta).clamp(0, 9999);
+    final currentSub =
+        double.tryParse(state.cartSummary.subTotal?.replaceAll(',', '') ?? '') ??
+            0;
+    final nextSub =
+        (currentSub + item.applicablePrice * lineDelta).clamp(0, double.infinity);
+    emit(
+      state.copyWith(
+        cartSummary: CartSummaryEntity(
+          itemCount: count,
+          subTotal: nextSub.round().toString(),
+        ),
+      ),
+    );
+  }
+
+  _ItemSnapshot _itemSnapshot(MenuItemEntity item) => _ItemSnapshot(
+        quantity: item.quantity,
+        tempCartItemId: item.tempCartItemId,
+      );
+
+  void _restoreItem(String itemId, _ItemSnapshot snapshot) {
+    if (snapshot.quantity <= 0) {
+      _patchItem(itemId, quantity: 0, clearTempCartItemId: true);
+    } else {
+      _patchItem(
+        itemId,
+        quantity: snapshot.quantity,
+        tempCartItemId: snapshot.tempCartItemId,
+      );
     }
   }
 
@@ -350,4 +442,14 @@ class RestaurantDetailCubit extends Cubit<RestaurantDetailState> {
     }
     return filtered;
   }
+}
+
+class _ItemSnapshot {
+  const _ItemSnapshot({
+    required this.quantity,
+    required this.tempCartItemId,
+  });
+
+  final int quantity;
+  final String? tempCartItemId;
 }

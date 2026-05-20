@@ -28,7 +28,8 @@ class RestaurantDetailState extends Equatable {
     this.foodFilter = RestaurantFoodFilter.all,
     this.searchQuery = '',
     this.cartSummary = const CartSummaryEntity(),
-    this.isCartUpdating = false,
+    this.pendingCartItemIds = const {},
+    this.isClearingCart = false,
     this.cartConflict,
     this.errorMessage,
   });
@@ -44,11 +45,14 @@ class RestaurantDetailState extends Equatable {
   final RestaurantFoodFilter foodFilter;
   final String searchQuery;
   final CartSummaryEntity cartSummary;
-  final bool isCartUpdating;
+  final Set<String> pendingCartItemIds;
+  final bool isClearingCart;
   final CartConflictEvent? cartConflict;
   final String? errorMessage;
 
   String get title => detail?.name ?? fallbackName ?? 'Restaurant';
+
+  bool isItemCartPending(String itemId) => pendingCartItemIds.contains(itemId);
 
   RestaurantDetailState copyWith({
     RestaurantDetailStatus? status,
@@ -60,7 +64,8 @@ class RestaurantDetailState extends Equatable {
     RestaurantFoodFilter? foodFilter,
     String? searchQuery,
     CartSummaryEntity? cartSummary,
-    bool? isCartUpdating,
+    Set<String>? pendingCartItemIds,
+    bool? isClearingCart,
     CartConflictEvent? cartConflict,
     String? errorMessage,
     bool clearCartConflict = false,
@@ -78,7 +83,8 @@ class RestaurantDetailState extends Equatable {
       foodFilter: foodFilter ?? this.foodFilter,
       searchQuery: searchQuery ?? this.searchQuery,
       cartSummary: cartSummary ?? this.cartSummary,
-      isCartUpdating: isCartUpdating ?? this.isCartUpdating,
+      pendingCartItemIds: pendingCartItemIds ?? this.pendingCartItemIds,
+      isClearingCart: isClearingCart ?? this.isClearingCart,
       cartConflict: clearCartConflict ? null : (cartConflict ?? this.cartConflict),
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
     );
@@ -97,7 +103,8 @@ class RestaurantDetailState extends Equatable {
         foodFilter,
         searchQuery,
         cartSummary,
-        isCartUpdating,
+        pendingCartItemIds,
+        isClearingCart,
         cartConflict,
         errorMessage,
       ];

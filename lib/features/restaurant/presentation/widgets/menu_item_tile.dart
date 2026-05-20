@@ -12,7 +12,7 @@ class MenuItemTile extends StatelessWidget {
     required this.onAdd,
     required this.onIncrement,
     required this.onDecrement,
-    this.isBusy = false,
+    this.isPending = false,
     this.shareSeoUrl,
     this.restaurantName,
   });
@@ -21,7 +21,9 @@ class MenuItemTile extends StatelessWidget {
   final VoidCallback onAdd;
   final VoidCallback onIncrement;
   final VoidCallback onDecrement;
-  final bool isBusy;
+
+  /// True while this item's cart API call is in flight (other items stay interactive).
+  final bool isPending;
 
   /// When set, shows share control (Android `img_share`).
   final String? shareSeoUrl;
@@ -34,7 +36,7 @@ class MenuItemTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final disabled = item.isSoldOut || !item.isRestaurantOpen || isBusy;
+    final disabled = item.isSoldOut || !item.isRestaurantOpen;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
@@ -251,7 +253,7 @@ class MenuItemTile extends StatelessWidget {
                   item: item,
                   disabled: disabled,
                   canShare: _canShare,
-                  isBusy: isBusy,
+                  isPending: isPending,
                   shareSeoUrl: shareSeoUrl,
                   restaurantName: restaurantName,
                   onAdd: onAdd,
@@ -272,7 +274,7 @@ class _MenuItemActions extends StatelessWidget {
     required this.item,
     required this.disabled,
     required this.canShare,
-    required this.isBusy,
+    required this.isPending,
     required this.shareSeoUrl,
     required this.restaurantName,
     required this.onAdd,
@@ -283,7 +285,7 @@ class _MenuItemActions extends StatelessWidget {
   final MenuItemEntity item;
   final bool disabled;
   final bool canShare;
-  final bool isBusy;
+  final bool isPending;
   final String? shareSeoUrl;
   final String? restaurantName;
   final VoidCallback onAdd;
@@ -298,7 +300,7 @@ class _MenuItemActions extends StatelessWidget {
       children: [
         if (canShare) ...[
           IconButton(
-            onPressed: isBusy
+            onPressed: isPending
                 ? null
                 : () => MenuItemShare.share(
                       item: item,
@@ -317,6 +319,7 @@ class _MenuItemActions extends StatelessWidget {
         _QuantityControl(
           item: item,
           disabled: disabled,
+          isPending: isPending,
           onAdd: onAdd,
           onIncrement: onIncrement,
           onDecrement: onDecrement,
@@ -330,6 +333,7 @@ class _QuantityControl extends StatelessWidget {
   const _QuantityControl({
     required this.item,
     required this.disabled,
+    required this.isPending,
     required this.onAdd,
     required this.onIncrement,
     required this.onDecrement,
@@ -337,92 +341,134 @@ class _QuantityControl extends StatelessWidget {
 
   final MenuItemEntity item;
   final bool disabled;
+  final bool isPending;
   final VoidCallback onAdd;
   final VoidCallback onIncrement;
   final VoidCallback onDecrement;
 
+  bool get _actionsLocked =>
+      disabled || isPending || (item.inCart && !item.isCartLineReady);
+
   @override
   Widget build(BuildContext context) {
     if (item.inCart) {
-      return Container(
-        decoration: BoxDecoration(
-          color: AppColors.brand,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.brand.withValues(alpha: 0.3),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _IconBtn(
-              icon: Icons.remove,
-              onTap: disabled ? null : onDecrement,
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6),
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 150),
-                child: Text(
-                  '${item.quantity}',
-                  key: ValueKey(item.quantity),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
+      return _CartActionShell(
+        isPending: isPending,
+        child: Container(
+          decoration: BoxDecoration(
+            color: AppColors.brand,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.brand.withValues(alpha: 0.3),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _IconBtn(
+                icon: Icons.remove,
+                onTap: _actionsLocked ? null : onDecrement,
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 150),
+                  child: isPending
+                      ? const SizedBox(
+                          key: ValueKey('qty-loader'),
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Text(
+                          '${item.quantity}',
+                          key: ValueKey(item.quantity),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
                 ),
               ),
-            ),
-            _IconBtn(
-              icon: Icons.add,
-              onTap: disabled ? null : onIncrement,
-            ),
-          ],
+              _IconBtn(
+                icon: Icons.add,
+                onTap: _actionsLocked ? null : onIncrement,
+              ),
+            ],
+          ),
         ),
       );
     }
 
     final isSoldOut = item.isSoldOut;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          height: 38,
-          child: ElevatedButton(
-            onPressed: disabled ? null : onAdd,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: isSoldOut ? Colors.grey.shade400 : AppColors.brand,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              textStyle: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.5,
-              ),
+    return _CartActionShell(
+      isPending: isPending,
+      child: SizedBox(
+        height: 38,
+        child: ElevatedButton(
+          onPressed: _actionsLocked ? null : onAdd,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: isSoldOut ? Colors.grey.shade400 : AppColors.brand,
+            foregroundColor: Colors.white,
+            elevation: 0,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (!isSoldOut) ...[
-                  const Icon(Icons.add, size: 14),
-                  const SizedBox(width: 4),
-                ],
-                Text(isSoldOut ? 'SOLD' : 'ADD'),
-              ],
+            textStyle: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.5,
             ),
           ),
+          child: isPending
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (!isSoldOut) ...[
+                      const Icon(Icons.add, size: 14),
+                      const SizedBox(width: 4),
+                    ],
+                    Text(isSoldOut ? 'SOLD' : 'ADD'),
+                  ],
+                ),
         ),
-      ],
+      ),
+    );
+  }
+}
+
+class _CartActionShell extends StatelessWidget {
+  const _CartActionShell({
+    required this.isPending,
+    required this.child,
+  });
+
+  final bool isPending;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedOpacity(
+      duration: const Duration(milliseconds: 150),
+      opacity: isPending ? 0.85 : 1,
+      child: child,
     );
   }
 }
