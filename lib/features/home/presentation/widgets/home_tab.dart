@@ -263,7 +263,7 @@ class _HomeViewState extends State<_HomeView> {
                       child: MobileApiEmptyView(
                         message: state.emptyMessage?.trim().isNotEmpty == true
                             ? state.emptyMessage!.trim()
-                            : 'No restaurants found in your area ',
+                            : 'No restaurants found in your area',
                       ),
                     )
                   else
@@ -289,62 +289,89 @@ class _HomeViewState extends State<_HomeView> {
 }
 
 class _CuisineChip extends StatelessWidget {
-  const _CuisineChip({required this.cuisine, required this.index});
+  const _CuisineChip({
+    required this.cuisine,
+    required this.index,
+  });
 
   final CuisineEntity cuisine;
   final int index;
 
   static const _bgColors = [
-    Color(0xFFFFE4E6),
-    Color(0xFFFFF3E0),
-    Color(0xFFE8F5E9),
-    Color(0xFFE3F2FD),
-    Color(0xFFF3E5F5),
-    Color(0xFFFFF9C4),
+    Color(0xFF66BB6A),
+    Color(0xFFFF9800),
+    Color(0xFF4CAF50),
+    Color(0xFF2196F3),
+    Color(0xFF9C27B0),
+    Color(0xFFFFC107),
   ];
 
   @override
   Widget build(BuildContext context) {
     final bg = _bgColors[index % _bgColors.length];
 
+    final gradientColors = [
+      Color.lerp(bg, Colors.white, 0.70)!,
+      Color.lerp(bg, Colors.white, 0.88)!,
+      Colors.white,
+    ];
+
     return GestureDetector(
       onTap: () => openCuisineRestaurants(context, cuisine),
-      child: Container(
-        width: 76,
-        margin: const EdgeInsets.only(right: 12),
+      child: SizedBox(
+        width: 84,
         child: Column(
           children: [
+
+            /// CATEGORY CARD
             Container(
-              height: 64,
-              width: 64,
+              height: 74,
+              width: 74,
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: bg,
-                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: gradientColors,
+                ),
+
+                borderRadius: BorderRadius.circular(20),
+
+                border: Border.all(
+                  color: bg.withOpacity(0.15),
+                ),
+
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
+                    color: bg.withOpacity(0.18),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
+
               child: ClipOval(
-                child: Padding(
-                  padding: const EdgeInsets.all(10),
-                  child: NetworkImageBox(url: cuisine.image, fit: BoxFit.cover),
+             //   borderRadius: BorderRadius.circular(14),
+                child: NetworkImageBox(
+                  url: cuisine.image,
+                  fit: BoxFit.cover,
                 ),
               ),
             ),
+
             const SizedBox(height: 8),
+
+            /// TITLE
             Text(
               cuisine.name,
               textAlign: TextAlign.center,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
+                fontSize: 10,
+                fontWeight: FontWeight.w500,
                 color: Colors.black87,
+                height: 1.2,
               ),
             ),
           ],
