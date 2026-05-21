@@ -10,21 +10,29 @@ import '../../domain/entities/cuisine_entity.dart';
 import '../../domain/entities/order_entity.dart';
 import '../../domain/entities/restaurant_entity.dart';
 import '../../../home/domain/entities/restaurant_page_entity.dart';
+import '../../../main/domain/entities/in_progress_order_entity.dart';
+import '../../../search/domain/entities/search_suggestion_entity.dart';
 import '../../domain/enums/restaurant_food_filter.dart';
 
 abstract class CatalogRemoteDataSource {
   Future<List<CuisineEntity>> getCuisines();
+  Future<List<SearchSuggestionEntity>> searchRestaurantNames({
+    required String keyword,
+  });
   Future<RestaurantPageEntity> getRestaurants({
     required int page,
     RestaurantFoodFilter foodFilter = RestaurantFoodFilter.all,
     List<String> cuisineIds = const [],
     bool favouritesOnly = false,
+    String? searchKey,
     bool refresh = false,
   });
   Future<({List<OrderEntity> orders, int totalPages})> getOrders({
     required String type,
     required int page,
   });
+
+  Future<InProgressOrderEntity?> checkInProgressOrder();
 }
 
 class CatalogRemoteDataSourceImpl implements CatalogRemoteDataSource {
@@ -51,16 +59,47 @@ class CatalogRemoteDataSourceImpl implements CatalogRemoteDataSource {
   }
 
   @override
+  Future<List<SearchSuggestionEntity>> searchRestaurantNames({
+    required String keyword,
+  }) async {
+    final params = _paramsBuilder.locationOnly();
+    params['keyword'] = keyword.trim();
+
+    final response = await _client.post('restaurant_names', params);
+    final json = ApiResponseParser.decodeMap(response.body);
+    if (!ApiResponseParser.isValid(json)) {
+      return [];
+    }
+
+    final list = json['data'] as List<dynamic>? ?? [];
+    return list.map((e) {
+      final item = e as Map<String, dynamic>;
+      return SearchSuggestionEntity(
+        seoUrl: item['seo_url_for_mobile']?.toString(),
+        restaurantName: item['restaurant_name']?.toString() ?? '',
+        distance: item['distance']?.toString(),
+        address: item['address']?.toString(),
+        displayImage: item['display_image']?.toString(),
+        type: item['type']?.toString(),
+      );
+    }).where((s) => s.restaurantName.isNotEmpty).toList();
+  }
+
+  @override
   Future<RestaurantPageEntity> getRestaurants({
     required int page,
     RestaurantFoodFilter foodFilter = RestaurantFoodFilter.all,
     List<String> cuisineIds = const [],
     bool favouritesOnly = false,
+    String? searchKey,
     bool refresh = false,
   }) async {
     final params = _paramsBuilder.baseParams(includeSource: false);
     params['page'] = page.toString();
-    params['m_sess_cart_id'] = _appLocal.deviceId;
+    params['m_sess_cart_id'] = _appLocal.sessionCartId;
+    if (searchKey != null && searchKey.trim().isNotEmpty) {
+      params['search_key'] = searchKey.trim();
+    }
     if (favouritesOnly) {
       params['favourites'] = 'true';
     }
@@ -131,6 +170,45 @@ class CatalogRemoteDataSourceImpl implements CatalogRemoteDataSource {
       orders: orders,
       totalPages: (data['total_pages'] as num?)?.toInt() ?? 1,
     );
+  }
+
+  @override
+  Future<InProgressOrderEntity?> checkInProgressOrder() async {
+    final params = _paramsBuilder.baseParams(includeSource: false);
+    _paramsBuilder.addSessionCartId(params);
+    final token = params['access_token'];
+    if (token == null || token.isEmpty) return null;
+
+    final response = await _client.post(
+      'customer/check_for_any_in_progress_order',
+      params,
+    );
+    final json = ApiResponseParser.decodeMap(response.body);
+    if (!ApiResponseParser.isValid(json)) return null;
+
+    final data = json['data'] as Map<String, dynamic>? ?? {};
+    final orderData = data['order_data'] as Map<String, dynamic>? ?? data;
+    final refId = orderData['ref_id']?.toString() ?? '';
+    if (refId.isEmpty) return null;
+
+    final otp = orderData['delivery_otp']?.toString();
+    return InProgressOrderEntity(
+      refId: refId,
+      message: data['message']?.toString() ?? '',
+      deliveryOtp: otp != null && otp.isNotEmpty ? otp : null,
+      hasLiveTracking: _isTruthy(data['has_live_tracking_permission']),
+      selfPickAccepted:
+          orderData['self_pick_accepted']?.toString().toLowerCase() == 'yes',
+    );
+  }
+
+  bool _isTruthy(dynamic value) {
+    if (value is num) return value.toInt() == 1;
+    if (value is String) {
+      final v = value.trim().toLowerCase();
+      return v == '1' || v == 'true' || v == 'yes';
+    }
+    return false;
   }
 
   CuisineEntity _parseCuisine(Map<String, dynamic> json) {

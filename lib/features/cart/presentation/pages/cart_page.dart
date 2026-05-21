@@ -3,15 +3,19 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_loading_shimmers.dart';
-import '../../../../core/widgets/mobile_api_empty_view.dart';
 import '../../../../core/widgets/network_image_box.dart';
 import '../../../../injection_container.dart';
 import '../../../auth/domain/repositories/auth_repository.dart';
+import '../../../auth/presentation/pages/login_page.dart';
 import '../../../location/presentation/pages/location_info_page.dart';
+import '../../../main/presentation/cubit/main_cubit.dart';
 import '../../domain/entities/cart_entity.dart';
 import '../cubit/cart_cubit.dart';
 import '../cubit/cart_state.dart';
+import '../widgets/cart_billing_section.dart';
+import '../widgets/cart_footer.dart';
 import '../widgets/cart_widgets.dart';
+import 'coupon_offers_page.dart';
 import 'order_success_page.dart';
 import 'payment_options_page.dart';
 
@@ -30,16 +34,106 @@ class CartPage extends StatelessWidget {
 class _CartView extends StatelessWidget {
   const _CartView();
 
-  Future<void> _proceedToCheckout(BuildContext context, CartState state) async {
-    final session = await sl<AuthRepository>().getSession();
-    if (!context.mounted) return;
+  Future<void> _openCouponOffers(BuildContext context) async {
+    final code = await Navigator.of(context).push<String>(
+      MaterialPageRoute<String>(builder: (_) => const CouponOffersPage()),
+    );
+    if (!context.mounted || code == null) return;
+    final cubit = context.read<CartCubit>();
+    cubit.selectCouponFromOffers(code);
+    await cubit.loadCart();
+  }
 
-    if (!session.isSuccess || !session.data!.isLoggedIn) {
+  Future<void> _onSelfPickupToggle(BuildContext context, bool? value) async {
+    final cubit = context.read<CartCubit>();
+    if (value != true) {
+      cubit.cancelSelfPickup();
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Self Pick Alert!'),
+        content: const Text(
+          'You have been selected for self-pickup, so you can collect '
+          'your order at the store.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: Colors.red.shade700),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(
+              'Confirm',
+              style: TextStyle(color: Colors.green.shade700),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (!context.mounted) return;
+    if (confirmed == true) {
+      await cubit.confirmSelfPickup();
+    }
+  }
+
+  Future<bool> _ensureLoggedIn(BuildContext context) async {
+    final session = await sl<AuthRepository>().getSession();
+    if (!context.mounted) return false;
+    if (session.isSuccess && session.data!.isLoggedIn) return true;
+
+    final goLogin = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Login now..!'),
+        content: const Text(
+          'For taking the benefit of this functionality login is mandatory. '
+          'So please click on Login to proceed.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: Colors.red.shade700),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Login'),
+          ),
+        ],
+      ),
+    );
+
+    if (!context.mounted || goLogin != true) return false;
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const LoginPage()),
+    );
+    if (!context.mounted) return false;
+    final again = await sl<AuthRepository>().getSession();
+    return again.isSuccess && again.data!.isLoggedIn;
+  }
+
+  Future<void> _proceedToCheckout(BuildContext context, CartState state) async {
+    final blockReason = state.checkoutBlockReason;
+    if (blockReason != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please login to checkout')),
+        SnackBar(content: Text(blockReason)),
       );
       return;
     }
+
+    if (!await _ensureLoggedIn(context)) return;
 
     final restaurantId = state.cart.restaurantId;
     if (restaurantId == null || restaurantId.isEmpty) return;
@@ -50,12 +144,16 @@ class _CartView extends StatelessWidget {
         builder: (_) => PaymentOptionsPage(
           restaurantId: restaurantId,
           payableAmount: state.payableAmount,
+          orderType: state.paymentOrderType,
+          tipAmount: state.effectiveTipAmount,
+          deliveryType: state.deliveryType,
         ),
       ),
     );
 
-    if (!context.mounted || result == null) return;
-    Navigator.of(context).pushReplacement(
+    if (!context.mounted || result == null || result.isEmpty) return;
+    context.read<CartCubit>().disableSelfPickupOnExit();
+    await Navigator.of(context).pushReplacement(
       MaterialPageRoute<void>(
         builder: (_) => OrderSuccessPage(refId: result),
       ),
@@ -71,94 +169,63 @@ class _CartView extends StatelessWidget {
     }
   }
 
+  void _goHome(BuildContext context) {
+    Navigator.of(context).popUntil((route) => route.isFirst);
+    sl<MainCubit>().selectTab(0);
+    sl<MainCubit>().refreshInProgressOrderAfterCheckout();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<CartCubit, CartState>(
-      listenWhen: (prev, curr) => prev.errorMessage != curr.errorMessage,
-      listener: (context, state) {
-        if (state.errorMessage != null && state.errorMessage!.isNotEmpty) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.errorMessage!)),
-          );
-          context.read<CartCubit>().clearError();
+    return PopScope(
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) {
+          context.read<CartCubit>().disableSelfPickupOnExit();
         }
       },
-      builder: (context, state) {
-        final isBusy = state.status == CartStatus.updating;
+      child: BlocConsumer<CartCubit, CartState>(
+        listenWhen: (prev, curr) => prev.errorMessage != curr.errorMessage,
+        listener: (context, state) {
+          if (state.errorMessage != null && state.errorMessage!.isNotEmpty) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.errorMessage!)),
+            );
+            context.read<CartCubit>().clearError();
+          }
+        },
+        builder: (context, state) {
+          final isBusy =
+              state.status == CartStatus.updating ||
+              state.status == CartStatus.loading;
 
-        return Scaffold(
-          appBar: AppBar(
-            title: const Text('Cart details'),
-            backgroundColor: AppColors.brand,
-            foregroundColor: Colors.white,
-          ),
-          body: _buildBody(context, state, isBusy),
-          bottomNavigationBar: state.isEmpty
-              ? null
-              : SafeArea(
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.08),
-                          blurRadius: 8,
-                          offset: const Offset(0, -2),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Total',
-                                style: TextStyle(fontSize: 12),
-                              ),
-                              Text(
-                                state.payableAmount,
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.brand,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        ElevatedButton(
-                          onPressed: isBusy
-                              ? null
-                              : () => _proceedToCheckout(context, state),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.brand,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 24,
-                              vertical: 14,
-                            ),
-                          ),
-                          child: isBusy
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : const Text('Proceed to checkout'),
-                        ),
-                      ],
+          return Scaffold(
+            appBar: AppBar(
+              title: const Text('Cart details'),
+              backgroundColor: AppColors.brand,
+              foregroundColor: Colors.white,
+            ),
+            body: _buildBody(context, state, isBusy),
+            bottomNavigationBar: state.isEmpty
+                ? null
+                : SafeArea(
+                    top: false,
+                    child: CartFooter(
+                      payableAmount: state.payableAmount,
+                      isBusy: isBusy,
+                      onCheckout: () => _proceedToCheckout(context, state),
+                      hideAddress: state.isSelfPickup,
+                      showAddAddressButton: !state.isSelfPickup &&
+                          (state.deliveryLocation?.id == null ||
+                              state.deliveryLocation!.id!.isEmpty),
+                      onAddAddress: () => _changeAddress(context),
+                      onChangeAddress: () => _changeAddress(context),
+                      deliveryAddress: state.cart.deliveryAddress ??
+                          state.deliveryLocation?.locationTitle,
                     ),
                   ),
-                ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 
@@ -184,176 +251,140 @@ class _CartView extends StatelessWidget {
     }
 
     if (state.isEmpty) {
-      return Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const MobileApiEmptyView(
-            message: 'Your cart is empty',
-            padding: EdgeInsets.symmetric(horizontal: 32),
-          ),
-          const SizedBox(height: 8),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Browse restaurants'),
-          ),
-        ],
-      );
+      return _EmptyCartView(onHome: () => _goHome(context));
     }
 
     final cart = state.cart;
     final restaurant = cart.restaurant;
+    final cubit = context.read<CartCubit>();
 
     return RefreshIndicator(
       color: AppColors.brand,
-      onRefresh: () => context.read<CartCubit>().loadCart(),
+      onRefresh: () => cubit.loadCart(),
       child: ListView(
+        padding: const EdgeInsets.only(bottom: 16),
         children: [
           if (restaurant != null) _RestaurantHeader(restaurant: restaurant),
           ...cart.items.map(
             (item) => CartItemTile(
               item: item,
               isBusy: isBusy,
-              onIncrement: () => context.read<CartCubit>().incrementItem(item),
-              onDecrement: () => context.read<CartCubit>().decrementItem(item),
+              onIncrement: () => cubit.incrementItem(item),
+              onDecrement: () => cubit.decrementItem(item),
             ),
           ),
           const Divider(height: 24),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: _CouponInput(
-              initialValue: state.couponCodeInput,
-              hasAppliedCoupon:
-                  cart.couponCode != null && cart.couponCode!.isNotEmpty,
-              isBusy: isBusy,
-              onChanged: context.read<CartCubit>().setCouponCodeInput,
-              onApply: () => context.read<CartCubit>().applyCoupon(),
-              onRemove: () => context.read<CartCubit>().removeCoupon(),
+            child: CartCouponSection(
+              hasAppliedCoupon: state.hasAppliedCoupon,
+              couponCode: cart.couponCode,
+              couponMessage: cart.couponDiscountMessage,
+              hasCouponDiscount: cart.hasCouponDiscount,
+              onApplyTap: () => _openCouponOffers(context),
+              onTryAnotherTap: () async {
+                await cubit.removeCoupon(openOffersAfter: true);
+                if (context.mounted) await _openCouponOffers(context);
+              },
             ),
           ),
-          if (cart.couponDiscountMessage != null &&
-              cart.couponDiscountMessage!.isNotEmpty)
+          if (!state.isSelfPickup)
+            CartDeliveryTipsSection(
+              tipAmounts: state.tipAmounts,
+              selectedTip: state.selectedTipAmount,
+              showCustomTipField: state.showCustomTipField,
+              customTipInput: state.customTipInput,
+              isBusy: isBusy,
+              onTipSelected: cubit.selectTipAmount,
+              onToggleCustomTip: cubit.toggleCustomTipField,
+              onCustomTipChanged: cubit.setCustomTipInput,
+              onCustomTipSubmitted: () => cubit.applyCustomTipIfValid(),
+              onClearTip: () => cubit.clearTip(),
+            ),
+          if (state.supportsSelfPickup)
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-              child: Text(
-                cart.couponDiscountMessage!,
-                style: TextStyle(color: Colors.green.shade700, fontSize: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Card(
+                color: AppColors.brandLite,
+                elevation: 2,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                child: CheckboxListTile(
+                  value: state.isSelfPickup,
+                  onChanged: isBusy ? null : (v) => _onSelfPickupToggle(context, v),
+                  title: const Text(
+                    'Do you want self pick your order?',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.red,
+                      fontSize: 16,
+                    ),
+                  ),
+                  controlAffinity: ListTileControlAffinity.leading,
+                  activeColor: AppColors.brand,
+                ),
               ),
             ),
-          CartBillingSection(cart: cart),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Delivery address',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () => _changeAddress(context),
-                      child: const Text('Change'),
-                    ),
-                  ],
-                ),
-                Text(
-                  cart.deliveryAddress ??
-                      state.deliveryLocation?.locationTitle ??
-                      'Add delivery address',
-                  style: TextStyle(color: Colors.grey.shade700),
-                ),
-              ],
-            ),
+          CartBillingSection(
+            cart: cart,
+            displayTipAmount: state.effectiveTipAmount,
           ),
-          const SizedBox(height: 80),
         ],
       ),
     );
   }
 }
 
-class _CouponInput extends StatefulWidget {
-  const _CouponInput({
-    required this.initialValue,
-    required this.hasAppliedCoupon,
-    required this.isBusy,
-    required this.onChanged,
-    required this.onApply,
-    required this.onRemove,
-  });
+class _EmptyCartView extends StatelessWidget {
+  const _EmptyCartView({required this.onHome});
 
-  final String initialValue;
-  final bool hasAppliedCoupon;
-  final bool isBusy;
-  final ValueChanged<String> onChanged;
-  final VoidCallback onApply;
-  final VoidCallback onRemove;
-
-  @override
-  State<_CouponInput> createState() => _CouponInputState();
-}
-
-class _CouponInputState extends State<_CouponInput> {
-  late final TextEditingController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = TextEditingController(text: widget.initialValue);
-  }
-
-  @override
-  void didUpdateWidget(covariant _CouponInput oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.initialValue != oldWidget.initialValue &&
-        widget.initialValue != _controller.text) {
-      _controller.text = widget.initialValue;
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
+  final VoidCallback onHome;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: TextField(
-            controller: _controller,
-            decoration: InputDecoration(
-              hintText: 'Coupon code',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 10,
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.shopping_cart_outlined,
+              size: 100,
+              color: Colors.grey.shade400,
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Cart is empty!',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey.shade600,
               ),
             ),
-            onChanged: widget.onChanged,
-          ),
+            const SizedBox(height: 8),
+            Text(
+              'There is nothing in your cart. Start finding your favorite item!',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey.shade600),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: onHome,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.brand,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                child: const Text('Back to Home'),
+              ),
+            ),
+          ],
         ),
-        const SizedBox(width: 8),
-        if (widget.hasAppliedCoupon)
-          TextButton(
-            onPressed: widget.isBusy ? null : widget.onRemove,
-            child: const Text('Remove'),
-          )
-        else
-          TextButton(
-            onPressed: widget.isBusy ? null : widget.onApply,
-            child: const Text('Apply'),
-          ),
-      ],
+      ),
     );
   }
 }
@@ -371,8 +402,8 @@ class _RestaurantHeader extends StatelessWidget {
         children: [
           NetworkImageBox(
             url: restaurant.image,
-            width: 56,
-            height: 56,
+            width: 80,
+            height: 80,
             borderRadius: BorderRadius.circular(8),
           ),
           const SizedBox(width: 12),
@@ -385,11 +416,14 @@ class _RestaurantHeader extends StatelessWidget {
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
+                    color: AppColors.error,
                   ),
                 ),
                 if (restaurant.cuisineTypes != null)
                   Text(
                     restaurant.cuisineTypes!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.grey.shade600,
@@ -398,7 +432,7 @@ class _RestaurantHeader extends StatelessWidget {
                 if (restaurant.address != null)
                   Text(
                     restaurant.address!,
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: 11,

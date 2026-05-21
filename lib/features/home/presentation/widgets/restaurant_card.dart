@@ -2,11 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/navigation/restaurant_navigation.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/widgets/food_type_indicator.dart';
 import '../../../../core/widgets/network_image_box.dart';
 import '../../../catalog/domain/entities/restaurant_entity.dart';
 
-/// Restaurant list row matching Android `item_product.xml` / `ProductAdapter`.
+/// Restaurant row styled like Zomato/Swiggy home list (reference design).
 class RestaurantCard extends StatelessWidget {
   const RestaurantCard({
     super.key,
@@ -17,41 +16,58 @@ class RestaurantCard extends StatelessWidget {
   final RestaurantEntity restaurant;
   final VoidCallback? onTap;
 
-  static const double _imageSize = 90;
+  static const double _imageSize = 88;
 
   @override
   Widget build(BuildContext context) {
     final rating = restaurant.rating;
     final showRating = rating != null && rating > 0;
-    final openTime = restaurant.formattedOpenTime;
-    final closeTime = restaurant.formattedCloseTime;
     final estimate = restaurant.estimateTime;
     final hasEstimate =
         estimate != null && estimate.isNotEmpty && !estimate.contains('null');
+    final distance = restaurant.distance;
+    final hasDistance =
+        distance != null && distance.isNotEmpty && !distance.contains('null');
     final offer = restaurant.offer;
     final hasOffer =
         offer != null && offer.isNotEmpty && offer.toLowerCase() != 'null';
 
-    return Card(
-      margin: const EdgeInsets.fromLTRB(10, 5, 10, 5),
-      elevation: 3,
-      color: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap ?? () => openRestaurantDetail(context, restaurant),
-        child: Stack(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(5),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _RestaurantImage(restaurant: restaurant),
-                  const SizedBox(width: 5),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(5, 5, 5, 5),
+    final metaLine = <String>[
+      if (restaurant.cuisineTypes != null &&
+          restaurant.cuisineTypes!.isNotEmpty &&
+          restaurant.cuisineTypes!.toLowerCase() != 'null')
+        restaurant.cuisineTypes!,
+    ].join(' • ');
+
+    final deliveryLine = <String>[
+      if (hasEstimate) estimate,
+      if (hasDistance) distance,
+    ].join(' • ');
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      child: Material(
+        color: Colors.white,
+        elevation: 1,
+        shadowColor: Colors.black.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          onTap: onTap ?? () => openRestaurantDetail(context, restaurant),
+          borderRadius: BorderRadius.circular(14),
+          child: Stack(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _RestaurantImage(
+                      restaurant: restaurant,
+                      showRating: showRating,
+                      rating: rating,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -61,142 +77,123 @@ class RestaurantCard extends StatelessWidget {
                               Expanded(
                                 child: Text(
                                   restaurant.name,
-                                  maxLines: 1,
+                                  maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
-                                    color: AppColors.brand,
+                                    color: Colors.black87,
+                                    letterSpacing: -0.2,
+                                    height: 1.2,
                                   ),
                                 ),
                               ),
-                              if (showRating) ...[
-                                const SizedBox(width: 10),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 2,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.brand,
-                                    borderRadius: BorderRadius.circular(2),
-                                  ),
-                                  child: Text(
-                                    rating.toString(),
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
+                              const SizedBox(width: 8),
+                              _OpenStatusPill(isOpen: restaurant.isOpen),
                             ],
                           ),
-                          if (restaurant.cuisineTypes != null &&
-                              restaurant.cuisineTypes!.isNotEmpty &&
-                              restaurant.cuisineTypes!.toLowerCase() !=
-                                  'null') ...[
-                            const SizedBox(height: 2),
+                          if (metaLine.isNotEmpty) ...[
+                            const SizedBox(height: 4),
                             Text(
-                              restaurant.cuisineTypes!,
+                              metaLine,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 12,
-                                color: AppColors.descriptionText,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                          ],
+                          if (deliveryLine.isNotEmpty) ...[
+                            const SizedBox(height: 6),
+                            Text(
+                              deliveryLine,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.grey.shade700,
                               ),
                             ),
                           ],
                           if (hasOffer) ...[
-                            const SizedBox(height: 2),
-                            Row(
-                              children: [
-                                CircleAvatar(
-                                  backgroundColor: AppColors.brand,
-                                  radius: 8,
-                                  child: Icon(
-                                    Icons.percent_rounded,
-                                    color: Colors.white,
-                                    size: 10,
+                            const SizedBox(height: 8),
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 5,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFEBEE),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.local_offer_outlined,
+                                    size: 14,
+                                    color: Colors.red.shade700,
                                   ),
-                                ),
-                                const SizedBox(width: 5),
-                                Expanded(
-                                  child: Text(
-                                    offer,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      color: AppColors.offerText,
+                                  const SizedBox(width: 4),
+                                  Expanded(
+                                    child: Text(
+                                      offer,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFFC62828),
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ],
-                            ),
-                          ],
-                          if (hasEstimate) ...[
-                            const SizedBox(height: 5),
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.access_time,
-                                  size: 14,
-                                  color: Colors.grey.shade800,
-                                ),
-                                const SizedBox(width: 5),
-                                Text(
-                                  estimate,
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.grey.shade900,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                          if (openTime != null || closeTime != null) ...[
-                            const SizedBox(height: 5),
-                            Wrap(
-                              spacing: 5,
-                              runSpacing: 2,
-                              crossAxisAlignment: WrapCrossAlignment.center,
-                              children: [
-                                if (openTime != null)
-                                  Text(
-                                    'Open : $openTime',
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      color: AppColors.vegGreen,
-                                    ),
-                                  ),
-                                if (closeTime != null)
-                                  Text(
-                                    'Close : $closeTime',
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      color: AppColors.error,
-                                    ),
-                                  ),
-                              ],
+                                ],
+                              ),
                             ),
                           ],
                         ],
                       ),
                     ),
+                  ],
+                ),
+              ),
+              if (!restaurant.isOpen)
+                Positioned.fill(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(14),
+                    child: ColoredBox(color: AppColors.closedOverlay),
                   ),
-                ],
-              ),
-            ),
-            if (!restaurant.isOpen)
-              Positioned.fill(
-                child: ColoredBox(color: AppColors.closedOverlay),
-              ),
-          ],
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _OpenStatusPill extends StatelessWidget {
+  const _OpenStatusPill({required this.isOpen});
+
+  final bool isOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: isOpen ? const Color(0xFFE8F5E9) : Colors.grey.shade200,
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        isOpen ? 'OPEN' : 'CLOSED',
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+          color: isOpen ? AppColors.vegGreen : Colors.grey.shade600,
+          letterSpacing: 0.5,
         ),
       ),
     );
@@ -204,17 +201,26 @@ class RestaurantCard extends StatelessWidget {
 }
 
 class _RestaurantImage extends StatelessWidget {
-  const _RestaurantImage({required this.restaurant});
+  const _RestaurantImage({
+    required this.restaurant,
+    required this.showRating,
+    required this.rating,
+  });
 
   final RestaurantEntity restaurant;
+  final bool showRating;
+  final double? rating;
 
   @override
   Widget build(BuildContext context) {
-    Widget image = NetworkImageBox(
-      url: restaurant.imageUrl,
-      width: RestaurantCard._imageSize,
-      height: RestaurantCard._imageSize,
-      borderRadius: BorderRadius.circular(5),
+    Widget image = ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: NetworkImageBox(
+        url: restaurant.imageUrl,
+        width: RestaurantCard._imageSize,
+        height: RestaurantCard._imageSize,
+        fit: BoxFit.cover,
+      ),
     );
 
     if (!restaurant.isOpen) {
@@ -230,59 +236,46 @@ class _RestaurantImage extends StatelessWidget {
     }
 
     return SizedBox(
-      width: RestaurantCard._imageSize + 10,
-      height: RestaurantCard._imageSize + 10,
+      width: RestaurantCard._imageSize,
+      height: RestaurantCard._imageSize,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          Padding(
-            padding: const EdgeInsets.all(5),
-            child: image,
-          ),
-          // if (restaurant.isExclusive)
-          //   Positioned(
-          //     top: 8,
-          //     left: 0,
-          //     child: Container(
-          //       padding: const EdgeInsets.only(
-          //         left: 10,
-          //         right: 10,
-          //         top: 2,
-          //         bottom: 2,
-          //       ),
-          //       decoration: BoxDecoration(
-          //         color: AppColors.brand,
-          //         borderRadius: const BorderRadius.only(
-          //           topRight: Radius.circular(4),
-          //           bottomRight: Radius.circular(4),
-          //         ),
-          //       ),
-          //       child: const Text(
-          //         'Exclusive',
-          //         style: TextStyle(
-          //           color: Colors.white,
-          //           fontSize: 10,
-          //           fontWeight: FontWeight.bold,
-          //         ),
-          //       ),
-          //     ),
-          //   ),
-          Positioned(
-            right: 7,
-            bottom: 7,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (restaurant.showNonVegBadge)
-                  const Padding(
-                    padding: EdgeInsets.only(right: 2),
-                    child: FoodTypeIndicator(isVeg: false, size: 15),
-                  ),
-                if (restaurant.showVegBadge)
-                  const FoodTypeIndicator(isVeg: true, size: 15),
-              ],
+          image,
+          if (showRating)
+            Positioned(
+              top: 6,
+              left: 6,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppColors.vegGreen,
+                  borderRadius: BorderRadius.circular(6),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.15),
+                      blurRadius: 4,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.star, color: Colors.white, size: 12),
+                    const SizedBox(width: 2),
+                    Text(
+                      rating!.toStringAsFixed(1),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ),
         ],
       ),
     );

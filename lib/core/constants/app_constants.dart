@@ -1,7 +1,8 @@
 class AppConstants {
   static const String appName = 'Tizola';
   static const String apiBaseUrl = 'https://tizola.in/api/';
-  static const String source = 'flutter_app';
+  /// Android `AppController.SOURCE` — cart/payment APIs use this for session behavior.
+  static const String source = 'android_app';
 
   static const String prefsName = 'tizola_prefs';
   static const String keyUsername = 'user_name';

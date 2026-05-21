@@ -1,6 +1,7 @@
 import '../../../../core/errors/failures.dart';
 import '../../../../core/utils/result.dart';
 import '../../domain/entities/cart_entity.dart';
+import '../../domain/entities/coupon_offer_entity.dart';
 import '../../domain/repositories/cart_repository.dart';
 import '../datasources/cart_remote_data_source.dart';
 
@@ -88,11 +89,39 @@ class CartRepositoryImpl implements CartRepository {
   }
 
   @override
+  Future<Result<List<CouponOfferEntity>>> fetchAvailableCoupons() async {
+    try {
+      final data = await _remote.fetchAvailableCoupons();
+      return Result.success(data);
+    } on Failure catch (e) {
+      return Result.failure(e);
+    } catch (_) {
+      return Result.failure(const NetworkFailure());
+    }
+  }
+
+  @override
+  Future<Result<List<String>>> fetchTipAmounts() async {
+    try {
+      final data = await _remote.fetchTipAmounts();
+      return Result.success(data);
+    } on Failure catch (e) {
+      return Result.failure(e);
+    } catch (_) {
+      return Result.failure(const NetworkFailure());
+    }
+  }
+
+  @override
   Future<Result<List<PaymentOptionEntity>>> fetchPaymentOptions({
     required String restaurantId,
+    String? orderType,
   }) async {
     try {
-      final data = await _remote.fetchPaymentOptions(restaurantId: restaurantId);
+      final data = await _remote.fetchPaymentOptions(
+        restaurantId: restaurantId,
+        orderType: orderType,
+      );
       return Result.success(data);
     } on Failure catch (e) {
       return Result.failure(e);
@@ -114,6 +143,38 @@ class CartRepositoryImpl implements CartRepository {
         deliveryType: deliveryType,
       );
       return Result.success(data);
+    } on Failure catch (e) {
+      return Result.failure(e);
+    } catch (_) {
+      return Result.failure(const NetworkFailure());
+    }
+  }
+
+  @override
+  Future<Result<void>> markRazorpayPaymentSuccessful({
+    required String refId,
+    required String paymentId,
+  }) async {
+    try {
+      await _remote.markRazorpayPaymentSuccessful(
+        refId: refId,
+        paymentId: paymentId,
+      );
+      return Result.success(null);
+    } on Failure catch (e) {
+      return Result.failure(e);
+    } catch (_) {
+      return Result.failure(const NetworkFailure());
+    }
+  }
+
+  @override
+  Future<Result<void>> cancelOrderOnPaymentCancelled({
+    required String refId,
+  }) async {
+    try {
+      await _remote.cancelOrderOnPaymentCancelled(refId: refId);
+      return Result.success(null);
     } on Failure catch (e) {
       return Result.failure(e);
     } catch (_) {

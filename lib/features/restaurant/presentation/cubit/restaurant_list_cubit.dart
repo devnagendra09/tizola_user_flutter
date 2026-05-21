@@ -9,19 +9,24 @@ class RestaurantListCubit extends Cubit<RestaurantListState> {
     this._catalogRepository,
     this._cuisineFilterStore, {
     this.favouritesOnly = false,
+    this.searchKey,
   }) : super(const RestaurantListState());
 
   final CatalogRepository _catalogRepository;
   final CuisineFilterStore _cuisineFilterStore;
   final bool favouritesOnly;
+  final String? searchKey;
 
   Future<void> loadRestaurants() async {
     emit(state.copyWith(status: RestaurantListStatus.loading, clearError: true));
 
     final result = await _catalogRepository.getRestaurants(
       page: 1,
-      cuisineIds: favouritesOnly ? const [] : _cuisineFilterStore.cuisineIds,
+      cuisineIds: searchKey != null
+          ? const []
+          : (favouritesOnly ? const [] : _cuisineFilterStore.cuisineIds),
       favouritesOnly: favouritesOnly,
+      searchKey: searchKey,
     );
 
     if (result.isFailure) {
@@ -57,8 +62,11 @@ class RestaurantListCubit extends Cubit<RestaurantListState> {
     final nextPage = state.currentPage + 1;
     final result = await _catalogRepository.getRestaurants(
       page: nextPage,
-      cuisineIds: favouritesOnly ? const [] : _cuisineFilterStore.cuisineIds,
+      cuisineIds: searchKey != null
+          ? const []
+          : (favouritesOnly ? const [] : _cuisineFilterStore.cuisineIds),
       favouritesOnly: favouritesOnly,
+      searchKey: searchKey,
     );
 
     if (result.isFailure) {

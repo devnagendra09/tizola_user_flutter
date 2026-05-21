@@ -33,7 +33,7 @@ class RestaurantDetailPage extends StatelessWidget {
   final String seoUrl;
   final String? fallbackName;
 
-  /// Item id from `https://tizola.in/share/{seoUrl}/{itemId}` (Android `SHARED_ITEM_ID`).
+  /// Item id from`https://tizola.in/share/{seoUrl}/{itemId}` (Android `SHARED_ITEM_ID`).
   final String? sharedItemId;
 
   @override
@@ -69,6 +69,12 @@ class _RestaurantDetailViewState extends State<_RestaurantDetailView> {
     _categoryScrollController.dispose();
     _menuScrollController.dispose();
     super.dispose();
+  }
+
+  Future<void> _openCartAndSync(BuildContext context) async {
+    await openCart(context);
+    if (!context.mounted) return;
+    await context.read<RestaurantDetailCubit>().syncAfterCartScreen();
   }
 
   void _syncSectionKeys(int count) {
@@ -178,7 +184,7 @@ class _RestaurantDetailViewState extends State<_RestaurantDetailView> {
 
   void _openRecommendedViewAll(
       BuildContext context,
-      RestaurantDetailState state,
+      RestaurantDetailState state ,
       List<MenuItemEntity> items,
       ) {
     showModalBottomSheet<void>(
@@ -512,7 +518,7 @@ class _RestaurantDetailViewState extends State<_RestaurantDetailView> {
           bottomNavigationBar: CartSummaryBar(
             summary: state.cartSummary,
             isLoading: state.isClearingCart,
-            onTap: () => openCart(context),
+            onTap: () => _openCartAndSync(context),
           ),
         );
       },

@@ -331,6 +331,19 @@ class RestaurantDetailCubit extends Cubit<RestaurantDetailState> {
     }
   }
 
+  /// After cart screen (or checkout) — refresh bar and menu qty badges from server.
+  Future<void> syncAfterCartScreen() async {
+    final result = await _repository.getCartSummary();
+    if (isClosed) return;
+
+    final summary = result.data ?? const CartSummaryEntity();
+    emit(state.copyWith(cartSummary: summary));
+
+    if (!summary.hasItems) {
+      await reloadMenu();
+    }
+  }
+
   void _scheduleCartRefresh() {
     _cartRefreshDebounce?.cancel();
     _cartRefreshDebounce = Timer(const Duration(milliseconds: 350), () {

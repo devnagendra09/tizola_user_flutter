@@ -35,12 +35,17 @@ import 'features/location/presentation/cubit/location_onboarding_cubit.dart';
 import 'features/location/presentation/cubit/nearby_location_cubit.dart';
 import 'features/main/presentation/cubit/account/account_cubit.dart';
 import 'features/main/presentation/cubit/main_cubit.dart';
+import 'features/orders/data/datasources/orders_remote_data_source.dart';
+import 'features/orders/data/repositories/orders_repository_impl.dart';
+import 'features/orders/domain/repositories/orders_repository.dart';
 import 'features/orders/presentation/cubit/orders_cubit.dart';
+import 'features/orders/presentation/cubit/service_order_cubit.dart';
 import 'features/restaurant/data/datasources/restaurant_remote_data_source.dart';
 import 'features/restaurant/data/repositories/restaurant_repository_impl.dart';
 import 'features/restaurant/domain/repositories/restaurant_repository.dart';
 import 'features/restaurant/presentation/cubit/restaurant_detail_cubit.dart';
 import 'features/restaurant/presentation/cubit/restaurant_list_cubit.dart';
+import 'features/search/presentation/cubit/search_cubit.dart';
 import 'features/splash/presentation/cubit/splash_cubit.dart';
 
 final sl = GetIt.instance;
@@ -114,16 +119,25 @@ Future<void> initDependencies() async {
     () => CartRepositoryImpl(sl()),
   );
 
+  // --- Orders detail / tracking ---
+  sl.registerLazySingleton<OrdersRemoteDataSource>(
+    () => OrdersRemoteDataSourceImpl(sl(), sl()),
+  );
+  sl.registerLazySingleton<OrdersRepository>(
+    () => OrdersRepositoryImpl(sl()),
+  );
+
   // --- Cubits ---
   sl.registerFactory(() => SplashCubit(sl()));
   sl.registerFactory(() => LoginCubit(sl()));
   sl.registerFactoryParam<OtpCubit, String, void>(
     (mobile, _) => OtpCubit(sl(), mobile: mobile),
   );
-  sl.registerFactory(() => MainCubit(sl(), sl()));
+  sl.registerLazySingleton(() => MainCubit(sl(), sl(), sl()));
   sl.registerFactory(() => NearbyLocationCubit(sl()));
   sl.registerFactory(() => AccountCubit(sl()));
   sl.registerFactory(() => HomeCubit(sl(), sl()));
+  sl.registerFactory(() => SearchCubit(sl()));
   sl.registerFactory(() => CategoryCubit(sl()));
   sl.registerFactory(() => CartCubit(sl(), sl()));
   sl.registerFactory(() => RestaurantListCubit(sl(), sl()));
@@ -135,6 +149,7 @@ Future<void> initDependencies() async {
     ),
   );
   sl.registerFactory(() => OrdersCubit(sl()));
+  sl.registerFactory(() => ServiceOrderCubit(sl()));
   sl.registerFactory(() => LocationOnboardingCubit(sl()));
   sl.registerFactory(() => LocationInfoCubit(sl()));
 }

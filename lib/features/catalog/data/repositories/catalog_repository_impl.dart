@@ -1,8 +1,10 @@
 import '../../../../core/errors/failures.dart';
 import '../../../../core/utils/result.dart';
+import '../../../main/domain/entities/in_progress_order_entity.dart';
 import '../../domain/entities/cuisine_entity.dart';
 import '../../domain/entities/order_entity.dart';
 import '../../domain/repositories/catalog_repository.dart';
+import '../../../search/domain/entities/search_suggestion_entity.dart';
 import '../../domain/enums/restaurant_food_filter.dart';
 import '../datasources/catalog_remote_data_source.dart';
 import '../../../home/domain/entities/restaurant_page_entity.dart';
@@ -25,11 +27,26 @@ class CatalogRepositoryImpl implements CatalogRepository {
   }
 
   @override
+  Future<Result<List<SearchSuggestionEntity>>> searchRestaurantNames({
+    required String keyword,
+  }) async {
+    try {
+      final data = await _remote.searchRestaurantNames(keyword: keyword);
+      return Result.success(data);
+    } on Failure catch (e) {
+      return Result.failure(e);
+    } catch (_) {
+      return Result.failure(const NetworkFailure());
+    }
+  }
+
+  @override
   Future<Result<RestaurantPageEntity>> getRestaurants({
     required int page,
     RestaurantFoodFilter foodFilter = RestaurantFoodFilter.all,
     List<String> cuisineIds = const [],
     bool favouritesOnly = false,
+    String? searchKey,
   }) async {
     try {
       final data = await _remote.getRestaurants(
@@ -37,6 +54,7 @@ class CatalogRepositoryImpl implements CatalogRepository {
         foodFilter: foodFilter,
         cuisineIds: cuisineIds,
         favouritesOnly: favouritesOnly,
+        searchKey: searchKey,
       );
       return Result.success(data);
     } on Failure catch (e) {
@@ -53,6 +71,18 @@ class CatalogRepositoryImpl implements CatalogRepository {
   }) async {
     try {
       final data = await _remote.getOrders(type: type, page: page);
+      return Result.success(data);
+    } on Failure catch (e) {
+      return Result.failure(e);
+    } catch (_) {
+      return Result.failure(const NetworkFailure());
+    }
+  }
+
+  @override
+  Future<Result<InProgressOrderEntity?>> checkInProgressOrder() async {
+    try {
+      final data = await _remote.checkInProgressOrder();
       return Result.success(data);
     } on Failure catch (e) {
       return Result.failure(e);

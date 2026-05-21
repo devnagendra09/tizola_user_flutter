@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/navigation/cart_navigation.dart';
+import '../../../../core/navigation/order_navigation.dart';
+import '../../../../core/navigation/search_navigation.dart';
 import '../../../../core/navigation/categories_navigation.dart';
 import '../../../../core/navigation/deep_link_navigation.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/system_ui_styles.dart';
 import '../../../../injection_container.dart';
 import '../../../auth/presentation/pages/login_page.dart';
 import '../../../home/presentation/widgets/home_tab.dart';
@@ -14,14 +18,15 @@ import '../cubit/main_cubit.dart';
 import '../cubit/main_state.dart';
 import '../widgets/account_tab.dart';
 import '../widgets/main_location_app_bar.dart';
+import '../widgets/order_status_track_bar.dart';
 
 class MainPage extends StatelessWidget {
   const MainPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => sl<MainCubit>(),
+    return BlocProvider.value(
+      value: sl<MainCubit>(),
       child: const _MainView(),
     );
   }
@@ -34,13 +39,30 @@ class _MainView extends StatefulWidget {
   State<_MainView> createState() => _MainViewState();
 }
 
-class _MainViewState extends State<_MainView> {
+class _MainViewState extends State<_MainView> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) openPendingShareDeepLink(context);
+      if (mounted) {
+        openPendingShareDeepLink(context);
+        context.read<MainCubit>().refreshInProgressOrder();
+      }
     });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && mounted) {
+      context.read<MainCubit>().refreshInProgressOrder();
+    }
   }
 
   static const _tabs = [
@@ -97,51 +119,72 @@ class _MainViewState extends State<_MainView> {
       },
       child: BlocBuilder<MainCubit, MainState>(
         builder: (context, state) {
-          return Scaffold(
-            appBar: MainLocationAppBar(
-              location: state.deliveryLocation,
-              onLocationTap: () => _openChangeLocation(context),
-              onSearch: () {},
-              onCart: () => openCart(context),
-            ),
-            body: IndexedStack(
-              index: state.currentIndex,
-              children: _tabs,
-            ),
-            bottomNavigationBar: BottomNavigationBar(
-              type: BottomNavigationBarType.fixed,
-              currentIndex: state.currentIndex,
-              selectedItemColor: AppColors.brand,
-              unselectedItemColor: Colors.grey,
-              onTap: (index) {
-                if (index == 1) {
-                  openCategoriesScreen(context);
-                  return;
-                }
-                context.read<MainCubit>().onTabSelected(index);
-              },
-              items: const [
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.home_outlined),
-                  activeIcon: Icon(Icons.home),
-                  label: 'Home',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.grid_view_outlined),
-                  activeIcon: Icon(Icons.grid_view),
-                  label: 'Category',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.receipt_long_outlined),
-                  activeIcon: Icon(Icons.receipt_long),
-                  label: 'Orders',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.person_outline),
-                  activeIcon: Icon(Icons.person),
-                  label: 'Account',
-                ),
-              ],
+          final onHomeTab = state.currentIndex == 0;
+          return AnnotatedRegion<SystemUiOverlayStyle>(
+            value: onHomeTab ? AppSystemUi.lightScreen : AppSystemUi.brandAppBar,
+            child: Scaffold(
+              appBar: onHomeTab
+                  ? null
+                  : MainLocationAppBar(
+                      location: state.deliveryLocation,
+                      onLocationTap: () => _openChangeLocation(context),
+                      onSearch: () => openSearchScreen(context),
+                      onCart: () => openCart(context),
+                    ),
+              body: IndexedStack(
+                index: state.currentIndex,
+                children: _tabs,
+              ),
+              bottomNavigationBar: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (state.inProgressOrder != null)
+                    OrderStatusTrackBar(
+                      order: state.inProgressOrder!,
+                      onTrackTap: () {
+                        openOrderFromTrackBar(
+                          context,
+                          state.inProgressOrder!,
+                        );
+                      },
+                    ),
+                  BottomNavigationBar(
+                    type: BottomNavigationBarType.fixed,
+                    currentIndex: state.currentIndex,
+                    selectedItemColor: AppColors.brand,
+                    unselectedItemColor: Colors.grey,
+                    onTap: (index) {
+                      if (index == 1) {
+                        openCategoriesScreen(context);
+                        return;
+                      }
+                      context.read<MainCubit>().onTabSelected(index);
+                    },
+                    items: const [
+                      BottomNavigationBarItem(
+                        icon: Icon(Icons.home_outlined),
+                        activeIcon: Icon(Icons.home),
+                        label: 'Home',
+                      ),
+                      BottomNavigationBarItem(
+                        icon: Icon(Icons.grid_view_outlined),
+                        activeIcon: Icon(Icons.grid_view),
+                        label: 'Category',
+                      ),
+                      BottomNavigationBarItem(
+                        icon: Icon(Icons.receipt_long_outlined),
+                        activeIcon: Icon(Icons.receipt_long),
+                        label: 'Orders',
+                      ),
+                      BottomNavigationBarItem(
+                        icon: Icon(Icons.person_outline),
+                        activeIcon: Icon(Icons.person),
+                        label: 'Account',
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           );
         },

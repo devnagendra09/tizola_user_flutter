@@ -97,7 +97,7 @@ class RestaurantRemoteDataSourceImpl implements RestaurantRemoteDataSource {
   }) async {
     final params = _paramsBuilder.baseParams(includeSource: false);
     params['seo_url'] = seoUrl;
-    params['m_sess_cart_id'] = _appLocal.deviceId;
+    params['m_sess_cart_id'] = _appLocal.sessionCartId;
     params['food_type'] = switch (foodFilter) {
       RestaurantFoodFilter.veg => 'Veg',
       RestaurantFoodFilter.nonVeg => 'Non Veg',
@@ -148,7 +148,7 @@ class RestaurantRemoteDataSourceImpl implements RestaurantRemoteDataSource {
   @override
   Future<CartSummaryEntity> getCartSummary() async {
     final params = _paramsBuilder.baseParams(includeSource: false);
-    params['m_sess_cart_id'] = _appLocal.deviceId;
+    params['m_sess_cart_id'] = _appLocal.sessionCartId;
 
     final response = await _client.post('cart', params);
     final json = ApiResponseParser.decodeMap(response.body);
@@ -158,6 +158,10 @@ class RestaurantRemoteDataSourceImpl implements RestaurantRemoteDataSource {
 
     final data = json['data'] as Map<String, dynamic>? ?? {};
     final cartItems = data['cart_items'] as List<dynamic>? ?? [];
+    if (cartItems.isEmpty) {
+      return const CartSummaryEntity();
+    }
+
     var qty = 0;
     for (final item in cartItems) {
       qty += int.tryParse((item as Map<String, dynamic>)['qty']?.toString() ?? '') ??
@@ -180,7 +184,7 @@ class RestaurantRemoteDataSourceImpl implements RestaurantRemoteDataSource {
     final params = _paramsBuilder.baseParams(includeSource: false);
     params['restaurants_id'] = restaurantId;
     params['restaurant_food_items_id'] = foodItemId;
-    params['m_sess_cart_id'] = _appLocal.deviceId;
+    params['m_sess_cart_id'] = _appLocal.sessionCartId;
     if (optionId != null && optionId.isNotEmpty) {
       params['restaurant_food_item_options_id'] = optionId;
     }
@@ -212,7 +216,7 @@ class RestaurantRemoteDataSourceImpl implements RestaurantRemoteDataSource {
     final params = _paramsBuilder.baseParams(includeSource: false);
     params['id'] = tempCartItemId;
     params['qty'] = quantity.toString();
-    params['m_sess_cart_id'] = _appLocal.deviceId;
+    params['m_sess_cart_id'] = _appLocal.sessionCartId;
 
     final response = await _client.post('cart/update_qty', params);
     final json = ApiResponseParser.decodeMap(response.body);
@@ -230,7 +234,7 @@ class RestaurantRemoteDataSourceImpl implements RestaurantRemoteDataSource {
   Future<void> removeFromCart({required String tempCartItemId}) async {
     final params = _paramsBuilder.baseParams(includeSource: false);
     params['id'] = tempCartItemId;
-    params['m_sess_cart_id'] = _appLocal.deviceId;
+    params['m_sess_cart_id'] = _appLocal.sessionCartId;
 
     final response = await _client.post('cart/update_qty', params);
     final json = ApiResponseParser.decodeMap(response.body);
@@ -242,7 +246,7 @@ class RestaurantRemoteDataSourceImpl implements RestaurantRemoteDataSource {
   @override
   Future<void> clearCart() async {
     final params = _paramsBuilder.baseParams(includeSource: false);
-    params['m_sess_cart_id'] = _appLocal.deviceId;
+    params['m_sess_cart_id'] = _appLocal.sessionCartId;
 
     final response = await _client.post('cart/delete_cart', params);
     final json = ApiResponseParser.decodeMap(response.body);
@@ -255,7 +259,7 @@ class RestaurantRemoteDataSourceImpl implements RestaurantRemoteDataSource {
   Future<void> toggleFavourite({required String seoUrl}) async {
     final params = _paramsBuilder.baseParams(includeSource: false);
     params['seo_url'] = seoUrl;
-    params['m_sess_cart_id'] = _appLocal.deviceId;
+    params['m_sess_cart_id'] = _appLocal.sessionCartId;
 
     final response =
         await _client.post('customer/update_to_favourite', params);

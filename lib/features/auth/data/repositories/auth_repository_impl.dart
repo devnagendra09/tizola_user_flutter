@@ -235,7 +235,7 @@ class AuthRepositoryImpl implements AuthRepository {
         try {
           await _remote.logoutRemote(
             accessToken: token,
-            sessionCartId: _appLocal.deviceId,
+            sessionCartId: _appLocal.sessionCartId,
           );
         } on Failure catch (e) {
           return Result.failure(e);

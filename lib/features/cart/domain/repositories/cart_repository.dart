@@ -1,5 +1,6 @@
 import '../../../../core/utils/result.dart';
 import '../entities/cart_entity.dart';
+import '../entities/coupon_offer_entity.dart';
 
 abstract class CartRepository {
   Future<Result<CartEntity>> fetchCart({
@@ -20,8 +21,13 @@ abstract class CartRepository {
 
   Future<Result<void>> removeCouponCode();
 
+  Future<Result<List<CouponOfferEntity>>> fetchAvailableCoupons();
+
+  Future<Result<List<String>>> fetchTipAmounts();
+
   Future<Result<List<PaymentOptionEntity>>> fetchPaymentOptions({
     required String restaurantId,
+    String? orderType,
   });
 
   Future<Result<CreateOrderResult>> createOrder({
@@ -29,6 +35,13 @@ abstract class CartRepository {
     String? tipAmount,
     String? deliveryType,
   });
+
+  Future<Result<void>> markRazorpayPaymentSuccessful({
+    required String refId,
+    required String paymentId,
+  });
+
+  Future<Result<void>> cancelOrderOnPaymentCancelled({required String refId});
 
   Future<Result<void>> clearSessionCart();
 }

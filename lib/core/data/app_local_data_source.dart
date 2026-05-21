@@ -1,3 +1,7 @@
+import 'dart:io';
+
+import 'package:android_id/android_id.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
@@ -5,7 +9,9 @@ import '../constants/app_constants.dart';
 import '../../features/location/domain/entities/delivery_location_entity.dart';
 
 abstract class AppLocalDataSource {
-  String get deviceId;
+  /// Session cart id sent as `m_sess_cart_id` on cart/order APIs.
+  String get sessionCartId;
+
   String? get latitude;
   String? get longitude;
 
@@ -22,9 +28,11 @@ class AppLocalDataSourceImpl implements AppLocalDataSource {
   AppLocalDataSourceImpl(this._prefs);
 
   final SharedPreferences _prefs;
+  static const _androidIdPlugin = AndroidId();
 
   @override
-  String get deviceId => _prefs.getString(AppConstants.keyDeviceId) ?? '';
+  String get sessionCartId =>
+      _prefs.getString(AppConstants.keyDeviceId) ?? '';
 
   @override
   String? get latitude => _prefs.getString(AppConstants.keyLatitude);
@@ -66,11 +74,29 @@ class AppLocalDataSourceImpl implements AppLocalDataSource {
     );
   }
 
+  /// Android: `Settings.Secure.ANDROID_ID` (`SplashActivity` → `AppController.uniqueID`).
+  /// Do not use `device_info_plus` `AndroidDeviceInfo.id` — that is `Build.ID`.
   @override
   Future<void> ensureDeviceId() async {
-    if (!_prefs.containsKey(AppConstants.keyDeviceId)) {
-      await _prefs.setString(AppConstants.keyDeviceId, const Uuid().v4());
+    final id = await _resolveSessionCartId();
+    await _prefs.setString(AppConstants.keyDeviceId, id);
+  }
+
+  Future<String> _resolveSessionCartId() async {
+    if (Platform.isAndroid) {
+      final androidId = await _androidIdPlugin.getId();
+      if (androidId != null && androidId.trim().isNotEmpty) {
+        return androidId.trim();
+      }
     }
+    if (Platform.isIOS) {
+      final ios = await DeviceInfoPlugin().iosInfo;
+      final vendorId = ios.identifierForVendor?.trim();
+      if (vendorId != null && vendorId.isNotEmpty) return vendorId;
+    }
+    final stored = _prefs.getString(AppConstants.keyDeviceId);
+    if (stored != null && stored.isNotEmpty) return stored;
+    return const Uuid().v4();
   }
 
   @override

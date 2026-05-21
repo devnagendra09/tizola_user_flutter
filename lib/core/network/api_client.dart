@@ -9,6 +9,25 @@ class ApiClient {
 
   final Dio _dio;
 
+  Future<ApiResponse> get(String endpoint) async {
+    try {
+      final response = await _dio.get<Object?>(endpoint);
+      return ApiResponse(
+        statusCode: response.statusCode ?? 0,
+        body: _bodyAsString(response.data),
+      );
+    } on DioException catch (e) {
+      final response = e.response;
+      if (response != null) {
+        return ApiResponse(
+          statusCode: response.statusCode ?? 0,
+          body: _bodyAsString(response.data),
+        );
+      }
+      rethrow;
+    }
+  }
+
   Future<ApiResponse> post(
     String endpoint,
     Map<String, String> body,

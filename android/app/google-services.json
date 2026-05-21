@@ -1,0 +1,127 @@
+{
+  "project_info": {
+    "project_number": "89742411943",
+    "firebase_url": "https://tizola-cmoon-default-rtdb.firebaseio.com",
+    "project_id": "tizola-cmoon",
+    "storage_bucket": "tizola-cmoon.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:89742411943:android:3661b6482ad1cd598ab382",
+        "android_client_info": {
+          "package_name": "com.tizola"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "89742411943-j0kbrhhrsctinnhr6be3i5mrfoumeit5.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.tizola",
+            "certificate_hash": "24961898492f5e24b9f9965a8b7982261542a6df"
+          }
+        },
+        {
+          "client_id": "89742411943-7tp8mv8tljvmqvhut27hduao656jd31f.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDTWIXdReUwizouqj76EbLAeZAARAeBjQI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "89742411943-7tp8mv8tljvmqvhut27hduao656jd31f.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "89742411943-mfh9tkapj25rdcvs8hfstk74s96k5eqp.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.tizola-user"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:89742411943:android:186753efae6321cf8ab382",
+        "android_client_info": {
+          "package_name": "com.tizola.rider"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "89742411943-7tp8mv8tljvmqvhut27hduao656jd31f.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDTWIXdReUwizouqj76EbLAeZAARAeBjQI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "89742411943-7tp8mv8tljvmqvhut27hduao656jd31f.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "89742411943-mfh9tkapj25rdcvs8hfstk74s96k5eqp.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.tizola-user"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:89742411943:android:918e07777a5f07fb8ab382",
+        "android_client_info": {
+          "package_name": "com.tizolavendor"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "89742411943-7tp8mv8tljvmqvhut27hduao656jd31f.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDTWIXdReUwizouqj76EbLAeZAARAeBjQI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "89742411943-7tp8mv8tljvmqvhut27hduao656jd31f.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "89742411943-mfh9tkapj25rdcvs8hfstk74s96k5eqp.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.tizola-user"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

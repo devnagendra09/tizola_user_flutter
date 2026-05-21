@@ -26,6 +26,14 @@ class ApiParamsBuilder {
     return params;
   }
 
+  /// Android `AppController.instance.uniqueID` → `m_sess_cart_id`.
+  void addSessionCartId(Map<String, String> params) {
+    final id = _appLocal.sessionCartId;
+    if (id.isNotEmpty) {
+      params['m_sess_cart_id'] = id;
+    }
+  }
+
   Map<String, String> locationOnly() {
     final params = <String, String>{};
     final lat = _appLocal.latitude;

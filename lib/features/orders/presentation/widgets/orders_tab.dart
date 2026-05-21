@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/navigation/order_navigation.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_loading_shimmers.dart';
 import '../../../../core/widgets/mobile_api_empty_view.dart';
@@ -157,6 +158,10 @@ class _OrdersListState extends State<_OrdersList> {
               return Card(
                 margin: const EdgeInsets.only(bottom: 12),
                 child: ListTile(
+                  onTap: () => openOrderDetail(
+                    context,
+                    refId: order.refId,
+                  ),
                   contentPadding: const EdgeInsets.all(12),
                   leading: NetworkImageBox(
                     url: order.displayImage,

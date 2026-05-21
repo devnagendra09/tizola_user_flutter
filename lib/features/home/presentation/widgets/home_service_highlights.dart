@@ -1,0 +1,118 @@
+import 'package:flutter/material.dart';
+
+import '../../../../core/theme/app_colors.dart';
+
+class HomeServiceHighlights extends StatelessWidget {
+  const HomeServiceHighlights({super.key});
+
+  static const _items = [
+    _Highlight(
+      icon: Icons.local_offer_outlined,
+      title: '50% OFF',
+      subtitle: 'On first order',
+      color: Color(0xFFFFF3E0),
+      iconColor: Color(0xFFE65100),
+    ),
+    _Highlight(
+      icon: Icons.delivery_dining_outlined,
+      title: 'Free Delivery',
+      subtitle: 'On select stores',
+      color: Color(0xFFE8F5E9),
+      iconColor: AppColors.vegGreen,
+    ),
+    // _Highlight(
+    //   icon: Icons.replay_outlined,
+    //   title: 'Easy Returns',
+    //   subtitle: 'Hassle-free',
+    //   color: Color(0xFFE3F2FD),
+    //   iconColor: AppColors.brand,
+    // ),
+    _Highlight(
+      icon: Icons.card_giftcard_outlined,
+      title: 'Best Offers',
+      subtitle: 'Daily deals',
+      color: Color(0xFFFCE4EC),
+      iconColor: Color(0xFFC2185B),
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 88,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: _items.length,
+        separatorBuilder: (_, index) => const SizedBox(width: 10),
+        itemBuilder: (_, i) {
+          final item = _items[i];
+          return Container(
+            width: 132,
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: item.color,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.white, width: 1),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Icon(item.icon, color: item.iconColor, size: 26),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        item.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        item.subtitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: Colors.grey.shade700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _Highlight {
+  const _Highlight({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.color,
+    required this.iconColor,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Color color;
+  final Color iconColor;
+}

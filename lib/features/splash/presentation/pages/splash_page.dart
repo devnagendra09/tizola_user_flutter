@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/system_ui_styles.dart';
 import '../../../../injection_container.dart';
 import '../../../auth/presentation/pages/login_page.dart';
 import '../../../location/presentation/pages/nearby_location_page.dart';
@@ -44,7 +46,9 @@ class _SplashView extends StatelessWidget {
           );
         }
       },
-      child: Scaffold(
+      child: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: AppSystemUi.lightScreen,
+        child: Scaffold(
         backgroundColor: Colors.white,
         body: Center(
           child: SafeArea(
@@ -71,6 +75,7 @@ class _SplashView extends StatelessWidget {
               ],
             ),
           ),
+        ),
         ),
       ),
     );

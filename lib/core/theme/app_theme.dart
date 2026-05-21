@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'app_colors.dart';
+import 'system_ui_styles.dart';
 
 class AppTheme {
   static ThemeData get light {
@@ -17,6 +18,7 @@ class AppTheme {
         foregroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
+        systemOverlayStyle: AppSystemUi.brandAppBar,
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(

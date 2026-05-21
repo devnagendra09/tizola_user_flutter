@@ -28,7 +28,7 @@ class VegFilterChip extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
         decoration: BoxDecoration(
           color: fillColor,
           borderRadius: BorderRadius.circular(5),
@@ -37,7 +37,7 @@ class VegFilterChip extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            FoodTypeIndicator(isVeg: isVeg, size: 15),
+            FoodTypeIndicator(isVeg: isVeg, size: 13),
             const SizedBox(width: 4),
             Text(
               isVeg ? 'Veg' : 'Non-veg',
