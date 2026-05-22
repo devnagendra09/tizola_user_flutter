@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 
+import 'package:flutter_bloc/flutter_bloc.dart';
+
 import '../../features/auth/domain/repositories/auth_repository.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/cart/presentation/pages/cart_page.dart';
+import '../../features/main/presentation/cubit/main_cubit.dart';
 import '../../injection_container.dart';
 
 Future<void> openCart(BuildContext context) async {
@@ -40,4 +43,10 @@ Future<void> openCart(BuildContext context) async {
   await Navigator.of(context).push(
     MaterialPageRoute<void>(builder: (_) => const CartPage()),
   );
+  if (!context.mounted) return;
+  try {
+    await context.read<MainCubit>().refreshCartBadge();
+  } catch (_) {
+    await sl<MainCubit>().refreshCartBadge();
+  }
 }

@@ -153,6 +153,7 @@ class _CartView extends StatelessWidget {
 
     if (!context.mounted || result == null || result.isEmpty) return;
     context.read<CartCubit>().disableSelfPickupOnExit();
+    sl<MainCubit>().refreshCartBadge();
     await Navigator.of(context).pushReplacement(
       MaterialPageRoute<void>(
         builder: (_) => OrderSuccessPage(refId: result),

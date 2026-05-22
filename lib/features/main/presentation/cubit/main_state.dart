@@ -9,18 +9,21 @@ class MainState extends Equatable {
     this.showLoginDialog = false,
     this.deliveryLocation,
     this.inProgressOrder,
+    this.cartItemCount = 0,
   });
 
   final int currentIndex;
   final bool showLoginDialog;
   final DeliveryLocationEntity? deliveryLocation;
   final InProgressOrderEntity? inProgressOrder;
+  final int cartItemCount;
 
   MainState copyWith({
     int? currentIndex,
     bool? showLoginDialog,
     DeliveryLocationEntity? deliveryLocation,
     InProgressOrderEntity? inProgressOrder,
+    int? cartItemCount,
     bool clearInProgressOrder = false,
   }) {
     return MainState(
@@ -30,10 +33,16 @@ class MainState extends Equatable {
       inProgressOrder: clearInProgressOrder
           ? null
           : (inProgressOrder ?? this.inProgressOrder),
+      cartItemCount: cartItemCount ?? this.cartItemCount,
     );
   }
 
   @override
-  List<Object?> get props =>
-      [currentIndex, showLoginDialog, deliveryLocation, inProgressOrder];
+  List<Object?> get props => [
+        currentIndex,
+        showLoginDialog,
+        deliveryLocation,
+        inProgressOrder,
+        cartItemCount,
+      ];
 }

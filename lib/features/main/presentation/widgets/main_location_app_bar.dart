@@ -7,12 +7,14 @@ class MainLocationAppBar extends StatelessWidget implements PreferredSizeWidget 
   const MainLocationAppBar({
     super.key,
     required this.location,
+    this.cartItemCount = 0,
     this.onLocationTap,
     this.onSearch,
     this.onCart,
   });
 
   final DeliveryLocationEntity? location;
+  final int cartItemCount;
   final VoidCallback? onLocationTap;
   final VoidCallback? onSearch;
   final VoidCallback? onCart;
@@ -100,35 +102,37 @@ class MainLocationAppBar extends StatelessWidget implements PreferredSizeWidget 
                 onPressed: onSearch,
               ),
               Stack(
-                alignment: Alignment.topRight,
+                clipBehavior: Clip.none,
                 children: [
                   IconButton(
                     icon: const Icon(Icons.shopping_cart_outlined),
                     onPressed: onCart,
                   ),
-                  Positioned(
-                    right: 8,
-                    top: 8,
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: const BoxDecoration(
-                        color: Colors.red,
-                        shape: BoxShape.circle,
-                      ),
-                      constraints: const BoxConstraints(
-                        minWidth: 16,
-                        minHeight: 16,
-                      ),
-                      child: const Text(
-                        '0',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
+                  if (cartItemCount > 0)
+                    Positioned(
+                      right: 8,
+                      top: 8,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
                         ),
-                        textAlign: TextAlign.center,
+                        constraints: const BoxConstraints(
+                          minWidth: 16,
+                          minHeight: 16,
+                        ),
+                        child: Text(
+                          cartItemCount > 9 ? '9+' : '$cartItemCount',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
                       ),
                     ),
-                  ),
                 ],
               ),
             ],

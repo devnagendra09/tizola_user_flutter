@@ -14,6 +14,7 @@ class OrdersCubit extends Cubit<OrdersState> {
       state.copyWith(
         status: OrdersStatus.loading,
         selectedTab: target,
+        clearError: true,
       ),
     );
 
@@ -29,6 +30,7 @@ class OrdersCubit extends Cubit<OrdersState> {
             upcomingOrders: data.orders,
             upcomingPage: 1,
             upcomingTotalPages: data.totalPages,
+            upcomingEmptyMessage: data.emptyMessage,
           ),
         );
       } else {
@@ -38,6 +40,7 @@ class OrdersCubit extends Cubit<OrdersState> {
             pastOrders: data.orders,
             pastPage: 1,
             pastTotalPages: data.totalPages,
+            pastEmptyMessage: data.emptyMessage,
           ),
         );
       }

@@ -11,16 +11,24 @@ class HomeScreenHeader extends StatelessWidget {
     required this.location,
     required this.onLocationTap,
     this.cartItemCount = 0,
+    this.lightForeground = false,
   });
 
   final DeliveryLocationEntity? location;
   final VoidCallback onLocationTap;
   final int cartItemCount;
 
+  /// White icons/text on gradient or dark image overlay.
+  final bool lightForeground;
+
   @override
   Widget build(BuildContext context) {
     final title = location?.locationTitle ?? 'Set location';
     final subtitle = location?.locationSubtitle ?? '';
+    final primary = lightForeground ? Colors.white : Colors.black87;
+    final secondary = lightForeground ? Colors.white70 : Colors.grey.shade600;
+    final iconColor = lightForeground ? Colors.white : Colors.grey.shade800;
+    final pinColor = lightForeground ? Colors.white : AppColors.brand;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 8, 4),
@@ -37,7 +45,7 @@ class HomeScreenHeader extends StatelessWidget {
                   children: [
                     Icon(
                       Icons.location_on_outlined,
-                      color: AppColors.brand,
+                      color: pinColor,
                       size: 22,
                     ),
                     const SizedBox(width: 8),
@@ -49,7 +57,7 @@ class HomeScreenHeader extends StatelessWidget {
                             'Deliver to',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.grey.shade600,
+                              color: secondary,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -60,16 +68,16 @@ class HomeScreenHeader extends StatelessWidget {
                                   title,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.black87,
+                                    color: primary,
                                   ),
                                 ),
                               ),
                               Icon(
                                 Icons.keyboard_arrow_down,
-                                color: Colors.grey.shade700,
+                                color: secondary,
                                 size: 22,
                               ),
                             ],
@@ -81,7 +89,7 @@ class HomeScreenHeader extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 fontSize: 11,
-                                color: Colors.grey.shade600,
+                                color: secondary,
                               ),
                             ),
                         ],
@@ -96,7 +104,7 @@ class HomeScreenHeader extends StatelessWidget {
             onPressed: () {},
             icon: Icon(
               Icons.notifications_outlined,
-              color: Colors.grey.shade800,
+              color: iconColor,
             ),
           ),
           Stack(
@@ -106,7 +114,7 @@ class HomeScreenHeader extends StatelessWidget {
                 onPressed: () => openCart(context),
                 icon: Icon(
                   Icons.shopping_cart_outlined,
-                  color: Colors.grey.shade800,
+                  color: iconColor,
                 ),
               ),
               if (cartItemCount > 0)

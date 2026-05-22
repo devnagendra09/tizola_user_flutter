@@ -49,6 +49,9 @@ abstract class CartRemoteDataSource {
   Future<void> cancelOrderOnPaymentCancelled({required String refId});
 
   Future<void> clearSessionCart();
+
+  /// Total qty across `cart_items` — Android `MainActivity.fetchCart` badge.
+  Future<int> fetchCartItemCount();
 }
 
 class CartRemoteDataSourceImpl implements CartRemoteDataSource {
@@ -382,5 +385,24 @@ class CartRemoteDataSourceImpl implements CartRemoteDataSource {
     if (!ApiResponseParser.isValid(json)) {
       throw ServerFailure(ApiResponseParser.message(json));
     }
+  }
+
+  @override
+  Future<int> fetchCartItemCount() async {
+    final response = await _client.post('cart', _cartBaseParams());
+    final json = ApiResponseParser.decodeMap(response.body);
+    if (!ApiResponseParser.isValid(json)) return 0;
+
+    final cartItems =
+        (json['data'] as Map<String, dynamic>?)?['cart_items'] as List<dynamic>? ??
+            [];
+    var qty = 0;
+    for (final item in cartItems) {
+      qty += int.tryParse(
+            (item as Map<String, dynamic>)['qty']?.toString() ?? '',
+          ) ??
+          0;
+    }
+    return qty;
   }
 }

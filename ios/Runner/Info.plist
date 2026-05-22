@@ -66,9 +66,16 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>GMSApiKey</key>
+	<string>AIzaSyDhpAvEnaO3S5K7C0YpRYA71TirGXigIZE</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Tizola needs your location to show nearby restaurants and delivery options.</string>
 	<key>FlutterDeepLinkingEnabled</key>
 	<true/>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+		<string>remote-notification</string>
+	</array>
 </dict>
 </plist>

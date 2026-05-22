@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Same keys as tizola-user-android app/src/release/res/values/google_keys.xml -->
+    <string name="google_maps_key" translatable="false">AIzaSyDhpAvEnaO3S5K7C0YpRYA71TirGXigIZE</string>
+    <string name="google_places_key" translatable="false">AIzaSyAjInrIF-JlbP7Kon86uTyQc7yt4X_ZXe4</string>
+    <string name="google_direction_key" translatable="false">AIzaSyC_qfcn_137_LsHG0DLmSHF4MBnUy4FI7Y</string>
+    <string name="google_geocoder_key" translatable="false">AIzaSyDIzinuDupg7IenxrDd_TO-vGq1ZSyM8q0</string>
+</resources>

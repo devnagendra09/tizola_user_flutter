@@ -7,6 +7,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../../../../core/constants/firebase_constants.dart';
+import '../../../../core/push/push_order_refresh_listener.dart';
 import '../../../../core/data/app_local_data_source.dart';
 import '../../../../core/maps/google_maps_bootstrap.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -14,7 +15,10 @@ import '../../domain/entities/service_order_entity.dart';
 import '../../../../injection_container.dart';
 import '../cubit/service_order_cubit.dart';
 import '../cubit/service_order_state.dart';
+import '../widgets/order_cancel_bar.dart';
+import '../widgets/order_support_sheet.dart';
 import '../widgets/service_order_content.dart';
+import '../../../main/presentation/cubit/main_cubit.dart';
 
 /// Android `OrderTrackerActivity` — map + Firebase `driver_point` / `user_point`.
 class OrderTrackerPage extends StatelessWidget {
@@ -26,7 +30,15 @@ class OrderTrackerPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => sl<ServiceOrderCubit>()..load(refId),
-      child: _OrderTrackerView(refId: refId),
+      child: Builder(
+        builder: (context) => PushOrderRefreshListener(
+          refId: refId,
+          onRefresh: () => context
+              .read<ServiceOrderCubit>()
+              .load(refId, showLoading: false),
+          child: _OrderTrackerView(refId: refId),
+        ),
+      ),
     );
   }
 }
@@ -83,6 +95,23 @@ class _OrderTrackerViewState extends State<_OrderTrackerView> {
     } catch (_) {
       _setUserLatLng(const LatLng(17.6868, 83.2185));
     }
+  }
+
+  void _addRestaurantMarker(ServiceOrderEntity order) {
+    final lat = double.tryParse(order.restaurant.latitude ?? '');
+    final lng = double.tryParse(order.restaurant.longitude ?? '');
+    if (lat == null || lng == null) return;
+    if (!mounted) return;
+    setState(() {
+      _markers.add(
+        Marker(
+          markerId: const MarkerId('restaurant'),
+          position: LatLng(lat, lng),
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+        ),
+      );
+    });
+    _fitCamera();
   }
 
   void _setUserLatLng(LatLng latLng) {
@@ -167,6 +196,32 @@ class _OrderTrackerViewState extends State<_OrderTrackerView> {
     } catch (_) {}
   }
 
+  Future<void> _cancelOrder(BuildContext context) async {
+    final reason = await showOrderCancelReasonDialog(context);
+    if (reason == null || !context.mounted) return;
+
+    final cubit = context.read<ServiceOrderCubit>();
+    final error = await cubit.cancelOrder(
+      refId: widget.refId,
+      reason: reason,
+    );
+    if (!context.mounted) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      sl<MainCubit>().refreshInProgressOrder();
+      if (!context.mounted) return;
+      final messenger = ScaffoldMessenger.maybeOf(context);
+      if (messenger == null) return;
+      if (error != null) {
+        messenger.showSnackBar(SnackBar(content: Text(error)));
+      } else {
+        messenger.showSnackBar(
+          const SnackBar(content: Text('Order cancelled')),
+        );
+      }
+    });
+  }
+
   void _listenDriverLocation() {
     _driverSub?.cancel();
     try {
@@ -192,14 +247,20 @@ class _OrderTrackerViewState extends State<_OrderTrackerView> {
       backgroundColor: AppColors.splash,
       body: BlocConsumer<ServiceOrderCubit, ServiceOrderState>(
         listener: (context, state) {
-          if (_trackingStarted || state.status != ServiceOrderStatus.loaded) {
-            return;
-          }
+          if (state.status != ServiceOrderStatus.loaded) return;
           final order = state.order;
           if (order == null) return;
+
+          if (!order.shouldListenDriverLocation) {
+            _driverSub?.cancel();
+            _driverSub = null;
+          }
+
+          if (_trackingStarted) return;
           _trackingStarted = true;
 
           _initUserLocation(order);
+          _addRestaurantMarker(order);
           if (order.shouldListenDriverLocation) {
             _listenDriverLocation();
           }
@@ -231,8 +292,8 @@ class _OrderTrackerViewState extends State<_OrderTrackerView> {
             return const Center(child: Text('Order not found'));
           }
 
-          final showLiveMap = order.shouldListenDriverLocation &&
-              GoogleMapsBootstrap.isReady;
+          final showLiveMap =
+              order.canShowTrackMap && GoogleMapsBootstrap.isReady;
 
           return Column(
             children: [
@@ -316,19 +377,40 @@ class _OrderTrackerViewState extends State<_OrderTrackerView> {
                   child: ListView(
                     padding: const EdgeInsets.all(16),
                     children: [
-                      if (!showLiveMap)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: Text(
-                            'Live map is available when your order is out for delivery.',
-                            style: TextStyle(color: Colors.grey.shade700),
-                          ),
-                        ),
                       ServiceOrderContent(order: order),
                     ],
                   ),
                 ),
               ),
+              if (order.canCancelOrder || order.customerCareNumber != null)
+                Container(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                  color: Colors.white,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (order.canCancelOrder)
+                        OrderCancelBar(
+                          key: ValueKey('cancel-${order.refId}'),
+                          initialSeconds: order.remainingSeconds!,
+                          onCancelPressed: () => _cancelOrder(context),
+                        ),
+                      if (order.customerCareNumber != null &&
+                          order.customerCareNumber!.isNotEmpty) ...[
+                        if (order.canCancelOrder) const SizedBox(height: 8),
+                        OutlinedButton(
+                          onPressed: () => showOrderSupportSheet(
+                            context,
+                            phone: order.customerCareNumber,
+                            whatsApp: order.customerCareWhatsApp,
+                            orderId: order.refId,
+                          ),
+                          child: const Text('Support'),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
             ],
           );
         },

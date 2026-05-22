@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../core/navigation/order_navigation.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_loading_shimmers.dart';
 import '../../../../core/widgets/mobile_api_empty_view.dart';
-import '../../../../core/widgets/network_image_box.dart';
 import '../../../../injection_container.dart';
+import '../../../main/presentation/cubit/main_cubit.dart';
+import '../../../main/presentation/cubit/main_state.dart';
 import '../cubit/orders_cubit.dart';
 import '../cubit/orders_state.dart';
+import 'order_list_item.dart';
 
 class OrdersTab extends StatelessWidget {
   const OrdersTab({super.key});
@@ -16,7 +17,7 @@ class OrdersTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => sl<OrdersCubit>()..loadOrders(tab: OrderTab.upcoming),
+      create: (_) => sl<OrdersCubit>(),
       child: const _OrdersTabContent(),
     );
   }
@@ -56,23 +57,30 @@ class _OrdersTabContentState extends State<_OrdersTabContent>
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Material(
-          color: AppColors.brand,
-          child: TabBar(
-            controller: _tabController,
-            indicatorColor: Colors.white,
-            labelColor: Colors.white,
-            unselectedLabelColor: Colors.white70,
-            tabs: const [
-              Tab(text: 'Upcoming'),
-              Tab(text: 'Past'),
-            ],
+    return BlocListener<MainCubit, MainState>(
+      listenWhen: (prev, curr) =>
+          prev.currentIndex != curr.currentIndex && curr.currentIndex == 2,
+      listener: (context, _) {
+        context.read<OrdersCubit>().loadOrders();
+      },
+      child: Column(
+        children: [
+          Material(
+            color: Colors.white,
+            child: TabBar(
+              controller: _tabController,
+              indicatorColor: AppColors.brand,
+              labelColor: AppColors.brand,
+              unselectedLabelColor: Colors.grey,
+              tabs: const [
+                Tab(text: 'Upcoming'),
+                Tab(text: 'Past'),
+              ],
+            ),
           ),
-        ),
-        const Expanded(child: _OrdersList()),
-      ],
+          const Expanded(child: _OrdersList()),
+        ],
+      ),
     );
   }
 }
@@ -134,9 +142,11 @@ class _OrdersListState extends State<_OrdersList> {
 
         if (state.currentOrders.isEmpty) {
           return MobileApiEmptyView(
-            message: state.selectedTab == OrderTab.upcoming
-                ? 'No upcoming orders'
-                : 'No past orders',
+            message: state.currentEmptyMessage?.trim().isNotEmpty == true
+                ? state.currentEmptyMessage!
+                : (state.selectedTab == OrderTab.upcoming
+                    ? 'No upcoming orders'
+                    : 'No past orders'),
           );
         }
 
@@ -154,71 +164,7 @@ class _OrdersListState extends State<_OrdersList> {
                 return const ListFooterShimmer();
               }
 
-              final order = state.currentOrders[index];
-              return Card(
-                margin: const EdgeInsets.only(bottom: 12),
-                child: ListTile(
-                  onTap: () => openOrderDetail(
-                    context,
-                    refId: order.refId,
-                  ),
-                  contentPadding: const EdgeInsets.all(12),
-                  leading: NetworkImageBox(
-                    url: order.displayImage,
-                    width: 56,
-                    height: 56,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  title: Text(
-                    order.restaurantName,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 4),
-                      Text('Order #${order.refId}'),
-                      if (order.serviceStatus != null)
-                        Text(
-                          order.serviceStatus!,
-                          style: const TextStyle(
-                            color: AppColors.brand,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      if (order.cartItemsText != null)
-                        Text(
-                          order.cartItemsText!,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                    ],
-                  ),
-                  trailing: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      if (order.grandTotal != null)
-                        Text(
-                          '₹${order.grandTotal}',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                      if (order.paymentStatus != null)
-                        Text(
-                          order.paymentStatus!,
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                    ],
-                  ),
-                  isThreeLine: true,
-                ),
-              );
+              return OrderListItem(order: state.currentOrders[index]);
             },
           ),
         );

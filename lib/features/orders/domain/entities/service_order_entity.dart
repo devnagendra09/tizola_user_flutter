@@ -78,6 +78,8 @@ class ServiceOrderEntity extends Equatable {
     this.paymentStatus,
     this.deliveryLatitude,
     this.deliveryLongitude,
+    this.hasLiveTrackingPermission = false,
+    this.tipAmount,
   });
 
   final String refId;
@@ -101,6 +103,8 @@ class ServiceOrderEntity extends Equatable {
   final String? paymentStatus;
   final double? deliveryLatitude;
   final double? deliveryLongitude;
+  final bool hasLiveTrackingPermission;
+  final String? tipAmount;
 
   String get descriptionLine =>
       '$serviceStatus | ${cartItems.length} Items, Rs $grandTotal';
@@ -109,6 +113,29 @@ class ServiceOrderEntity extends Equatable {
       serviceStatus.toLowerCase() == 'out for delivery';
 
   bool get shouldListenDriverLocation => isOutForDelivery && !selfPickAccepted;
+
+  /// Android `OrderSummaryFragment` / `OrderTrackerActivity` track button.
+  bool get canShowTrackOrder {
+    if (!hasLiveTrackingPermission || selfPickAccepted) return false;
+    final status = serviceStatus.toLowerCase();
+    return status == 'pending' ||
+        status == 'out for delivery' ||
+        status == 'waiting for pickup' ||
+        status == 'waiting for delivery person';
+  }
+
+  /// Map on tracker screen (Android shows map whenever tracking is enabled).
+  bool get canShowTrackMap => hasLiveTrackingPermission && !selfPickAccepted;
+
+  /// Android cancel countdown — Pending / Waiting states.
+  bool get canCancelOrder {
+    final seconds = remainingSeconds;
+    if (seconds == null || seconds <= 0) return false;
+    final status = serviceStatus.toLowerCase();
+    return status == 'pending' ||
+        status == 'waiting for delivery person' ||
+        status == 'waiting for pickup';
+  }
 
   @override
   List<Object?> get props => [
@@ -133,5 +160,7 @@ class ServiceOrderEntity extends Equatable {
         paymentStatus,
         deliveryLatitude,
         deliveryLongitude,
+        hasLiveTrackingPermission,
+        tipAmount,
       ];
 }

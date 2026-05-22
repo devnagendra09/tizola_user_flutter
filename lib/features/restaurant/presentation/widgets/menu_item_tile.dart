@@ -40,9 +40,9 @@ class MenuItemTile extends StatelessWidget {
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      margin: const EdgeInsets.symmetric(horizontal: 5, vertical: 8),
       child: Material(
-        elevation: 0,
+        elevation: 2,
         borderRadius: BorderRadius.circular(20),
         color: Colors.white,
         child: InkWell(
@@ -51,7 +51,12 @@ class MenuItemTile extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: Colors.white,
+              gradient: LinearGradient(
+                colors: [
+                  AppColors.brandLite.withOpacity(0.2),
+                  const Color(0xFFFDFDFD),
+                ],
+              ),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
                 color: Colors.grey.shade100,
@@ -59,10 +64,10 @@ class MenuItemTile extends StatelessWidget {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
-                  blurRadius: 12,
-                  spreadRadius: 0,
-                  offset: const Offset(0, 2),
+                  color: Colors.blueAccent.withOpacity(0.06),
+                  blurRadius: 18,
+                  spreadRadius: 1,
+                  offset: const Offset(0, 6),
                 ),
               ],
             ),
@@ -73,13 +78,57 @@ class MenuItemTile extends StatelessWidget {
                 Stack(
                   children: [
                     ClipRRect(
-                      clipBehavior: Clip.hardEdge,
-                      borderRadius: BorderRadius.circular(12),
-                      child: NetworkImageBox(
-                        url: item.image,
-                        width: 80,
-                        height: 85,
-                        fit: BoxFit.cover,
+                      borderRadius: BorderRadius.circular(18),
+                      child: Stack(
+                        children: [
+
+                          NetworkImageBox(
+                            url: item.image,
+                            width: 92,
+                            height: 96,
+                            fit: BoxFit.cover,
+                          ),
+
+                          /// Gradient Overlay
+                          Positioned.fill(
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.bottomCenter,
+                                  end: Alignment.topCenter,
+                                  colors: [
+                                    Colors.black.withOpacity(0.15),
+                                    Colors.transparent,
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          /// Bestseller badge
+                          // Positioned(
+                          //   left: 6,
+                          //   top: 6,
+                          //   child: Container(
+                          //     padding: const EdgeInsets.symmetric(
+                          //       horizontal: 6,
+                          //       vertical: 3,
+                          //     ),
+                          //     decoration: BoxDecoration(
+                          //       color: Colors.orange,
+                          //       borderRadius: BorderRadius.circular(20),
+                          //     ),
+                          //     child: const Text(
+                          //       "BESTSELLER",
+                          //       style: TextStyle(
+                          //         color: Colors.white,
+                          //         fontSize: 8,
+                          //         fontWeight: FontWeight.bold,
+                          //       ),
+                          //     ),
+                          //   ),
+                          // ),
+                        ],
                       ),
                     ),
                     // Sold out overlay on image
@@ -166,56 +215,62 @@ class MenuItemTile extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 8,
-                              vertical: 4,
+                              vertical: 5,
                             ),
                             decoration: BoxDecoration(
-                              color: AppColors.brandLite.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(8),
+                              gradient: LinearGradient(
+                                colors: [
+                                  AppColors.brand.withOpacity(0.15),
+                                  AppColors.brand.withOpacity(0.05),
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
                               '₹${item.applicablePrice.toStringAsFixed(0)}',
                               style: const TextStyle(
-                                fontWeight: FontWeight.bold,
+                                fontWeight: FontWeight.w800,
                                 color: AppColors.brand,
-                                fontSize: 14,
+                                fontSize: 13,
                               ),
                             ),
                           ),
                           if (item.actualPrice > item.applicablePrice) ...[
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 4),
                             Text(
                               '₹${item.actualPrice.toStringAsFixed(0)}',
                               style: TextStyle(
                                 decoration: TextDecoration.lineThrough,
-                                color: Colors.grey.shade500,
+                                color: Colors.red.shade500,
                                 fontSize: 12,
                               ),
                             ),
-                            Container(
-                              margin: const EdgeInsets.only(left: 8),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.green.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                '${((item.actualPrice - item.applicablePrice) / item.actualPrice * 100).toInt()}% OFF',
-                                style: const TextStyle(
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.green,
-                                ),
-                              ),
-                            ),
+
+                            // Container(
+                            //   margin: const EdgeInsets.only(left: 4),
+                            //   padding: const EdgeInsets.symmetric(
+                            //     horizontal: 6,
+                            //     vertical: 2,
+                            //   ),
+                            //   decoration: BoxDecoration(
+                            //     color: Colors.green.withValues(alpha: 0.1),
+                            //     borderRadius: BorderRadius.circular(4),
+                            //   ),
+                            //   child: Text(
+                            //     '${((item.actualPrice - item.applicablePrice) / item.actualPrice * 100).toInt()}% OFF',
+                            //     style: const TextStyle(
+                            //       fontSize: 9,
+                            //       fontWeight: FontWeight.bold,
+                            //       color: Colors.green,
+                            //     ),
+                            //   ),
+                            // ),
                           ],
                         ],
                       ),
                       const SizedBox(height: 6),
                       // Customizable badge
-                      if (item.hasCustomizations)
+                      if (!item.hasCustomizations)
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 6,
@@ -231,7 +286,7 @@ class MenuItemTile extends StatelessWidget {
                               Icon(
                                 Icons.tune,
                                 size: 10,
-                                color: Colors.grey.shade600,
+                                color: Colors.red.shade600,
                               ),
                               const SizedBox(width: 3),
                               Text(
@@ -239,7 +294,7 @@ class MenuItemTile extends StatelessWidget {
                                 style: TextStyle(
                                   fontSize: 9,
                                   fontWeight: FontWeight.w500,
-                                  color: Colors.grey.shade700,
+                                  color: Colors.red.shade700,
                                 ),
                               ),
                             ],
@@ -248,7 +303,7 @@ class MenuItemTile extends StatelessWidget {
                     ],
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width:5 ),
                 _MenuItemActions(
                   item: item,
                   disabled: disabled,
@@ -315,15 +370,16 @@ class _MenuItemActions extends StatelessWidget {
             tooltip: 'Share',
           ),
           const SizedBox(height: 4),
+          _QuantityControl(
+            item: item,
+            disabled: disabled,
+            isPending: isPending,
+            onAdd: onAdd,
+            onIncrement: onIncrement,
+            onDecrement: onDecrement,
+          ),
         ],
-        _QuantityControl(
-          item: item,
-          disabled: disabled,
-          isPending: isPending,
-          onAdd: onAdd,
-          onIncrement: onIncrement,
-          onDecrement: onDecrement,
-        ),
+
       ],
     );
   }
@@ -356,13 +412,18 @@ class _QuantityControl extends StatelessWidget {
         isPending: isPending,
         child: Container(
           decoration: BoxDecoration(
-            color: AppColors.brand,
-            borderRadius: BorderRadius.circular(12),
+            gradient: LinearGradient(
+              colors: [
+                AppColors.brand,
+                AppColors.brand.withOpacity(0.85),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(14),
             boxShadow: [
               BoxShadow(
-                color: AppColors.brand.withValues(alpha: 0.3),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
+                color: AppColors.brand.withOpacity(0.25),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
@@ -374,14 +435,14 @@ class _QuantityControl extends StatelessWidget {
                 onTap: _actionsLocked ? null : onDecrement,
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 2),
                 child: AnimatedSwitcher(
                   duration: const Duration(milliseconds: 150),
                   child: isPending
                       ? const SizedBox(
                           key: ValueKey('qty-loader'),
-                          width: 18,
-                          height: 18,
+                          width: 14,
+                          height: 14,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
                             color: Colors.white,
@@ -393,7 +454,7 @@ class _QuantityControl extends StatelessWidget {
                           style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
-                            fontSize: 14,
+                            fontSize: 12,
                           ),
                         ),
                 ),
@@ -416,17 +477,19 @@ class _QuantityControl extends StatelessWidget {
         child: ElevatedButton(
           onPressed: _actionsLocked ? null : onAdd,
           style: ElevatedButton.styleFrom(
-            backgroundColor: isSoldOut ? Colors.grey.shade400 : AppColors.brand,
-            foregroundColor: Colors.white,
-            elevation: 0,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+            backgroundColor: AppColors.white,
+            foregroundColor: AppColors.brand,
+            elevation: 1,
+            padding: const EdgeInsets.symmetric(
+              horizontal: 10,
+              vertical: 0,
             ),
-            textStyle: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.5,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+              side: BorderSide(
+                color: isSoldOut ? Colors.grey.shade300 : AppColors.brand,
+                width: 1,
+              ),
             ),
           ),
           child: isPending
@@ -442,10 +505,10 @@ class _QuantityControl extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     if (!isSoldOut) ...[
-                      const Icon(Icons.add, size: 14),
-                      const SizedBox(width: 4),
+                      const Icon(Icons.add, size: 12),
+                      const SizedBox(width: 2),
                     ],
-                    Text(isSoldOut ? 'SOLD' : 'ADD'),
+                    Text(isSoldOut ? 'SOLD' : 'ADD',style: TextStyle(fontSize: 14),),
                   ],
                 ),
         ),

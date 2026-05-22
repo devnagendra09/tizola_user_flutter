@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 
 import '../../features/catalog/domain/entities/restaurant_entity.dart';
+import '../../features/main/presentation/cubit/main_cubit.dart';
 import '../../features/restaurant/presentation/pages/restaurant_detail_page.dart';
+import '../../injection_container.dart';
 
-void openRestaurantDetail(BuildContext context, RestaurantEntity restaurant) {
+Future<void> openRestaurantDetail(
+  BuildContext context,
+  RestaurantEntity restaurant,
+) async {
   final seoUrl = restaurant.seoUrl;
   if (seoUrl == null || seoUrl.isEmpty) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -12,7 +17,7 @@ void openRestaurantDetail(BuildContext context, RestaurantEntity restaurant) {
     return;
   }
 
-  Navigator.of(context).push(
+  await Navigator.of(context).push(
     MaterialPageRoute<void>(
       builder: (_) => RestaurantDetailPage(
         seoUrl: seoUrl,
@@ -20,4 +25,5 @@ void openRestaurantDetail(BuildContext context, RestaurantEntity restaurant) {
       ),
     ),
   );
+  await sl<MainCubit>().refreshCartBadge();
 }

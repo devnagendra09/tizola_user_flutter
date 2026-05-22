@@ -17,8 +17,7 @@ import '../cubit/home_cubit.dart';
 import '../cubit/home_state.dart';
 import 'home_filter_chips_row.dart';
 import 'home_promo_carousel.dart';
-import 'home_screen_header.dart';
-import 'home_search_bar.dart';
+import 'home_top_hero.dart';
 import 'home_service_highlights.dart';
 import 'restaurant_card.dart';
 
@@ -118,25 +117,24 @@ class _HomeViewState extends State<_HomeView> {
 
         return Scaffold(
           backgroundColor: const Color(0xFFFAFAFA),
-          body: SafeArea(
-            child: RefreshIndicator(
-              color: AppColors.brand,
-              onRefresh: () => context.read<HomeCubit>().refresh(),
-              child: CustomScrollView(
-                controller: _scrollController,
-                slivers: [
-                  SliverToBoxAdapter(
-                    child: HomeScreenHeader(
-                      location: mainState.deliveryLocation,
-                      onLocationTap: () => _openChangeLocation(context),
-                    ),
+          body: RefreshIndicator(
+            color: AppColors.brand,
+            onRefresh: () => context.read<HomeCubit>().refresh(),
+            child: CustomScrollView(
+              controller: _scrollController,
+              slivers: [
+                SliverToBoxAdapter(
+                  child: HomeTopHero(
+                    location: mainState.deliveryLocation,
+                    onLocationTap: () => _openChangeLocation(context),
+                    cartItemCount: mainState.cartItemCount,
                   ),
-                  const SliverToBoxAdapter(child: HomeSearchBar()),
-                  if (state.notificationMessage != null &&
-                      state.notificationMessage!.isNotEmpty)
-                    SliverToBoxAdapter(
+                ),
+                if (state.notificationMessage != null &&
+                    state.notificationMessage!.isNotEmpty)
+                  SliverToBoxAdapter(
                       child: Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                        padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
                         child: Material(
                           color: AppColors.brandLite,
                           borderRadius: BorderRadius.circular(12),
@@ -166,15 +164,20 @@ class _HomeViewState extends State<_HomeView> {
                       ),
                     ),
                   SliverToBoxAdapter(
-                    child: HomePromoCarousel(
-                      sliders: state.sliders,
-                      couponBanners: state.couponBanners,
+                    child: Transform.translate(
+                      offset: const Offset(0, -12),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical:8.0),
+                        child: HomeCouponBannerCarousel(
+                          banners: state.couponBanners,
+                        ),
+                      ),
                     ),
                   ),
                   if (state.cuisines.isNotEmpty) ...[
                     SliverToBoxAdapter(
                       child: Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
                         child: Row(
                           children: [
                             const Expanded(
@@ -214,6 +217,9 @@ class _HomeViewState extends State<_HomeView> {
                       ),
                     ),
                   ],
+                  SliverToBoxAdapter(
+                    child: HomeSliderCarousel(sliders: state.sliders),
+                  ),
                   const SliverToBoxAdapter(
                     child: Padding(
                       padding: EdgeInsets.only(top: 12, bottom: 8),
@@ -279,7 +285,6 @@ class _HomeViewState extends State<_HomeView> {
                     const SliverToBoxAdapter(child: ListFooterShimmer()),
                   const SliverToBoxAdapter(child: SizedBox(height: 24)),
                 ],
-              ),
             ),
           ),
         );

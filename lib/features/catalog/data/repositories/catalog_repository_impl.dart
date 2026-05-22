@@ -2,7 +2,7 @@ import '../../../../core/errors/failures.dart';
 import '../../../../core/utils/result.dart';
 import '../../../main/domain/entities/in_progress_order_entity.dart';
 import '../../domain/entities/cuisine_entity.dart';
-import '../../domain/entities/order_entity.dart';
+import '../../domain/entities/orders_page_entity.dart';
 import '../../domain/repositories/catalog_repository.dart';
 import '../../../search/domain/entities/search_suggestion_entity.dart';
 import '../../domain/enums/restaurant_food_filter.dart';
@@ -65,7 +65,7 @@ class CatalogRepositoryImpl implements CatalogRepository {
   }
 
   @override
-  Future<Result<({List<OrderEntity> orders, int totalPages})>> getOrders({
+  Future<Result<OrdersPageEntity>> getOrders({
     required String type,
     required int page,
   }) async {

@@ -9,6 +9,8 @@ import 'core/data/cuisine_filter_store.dart';
 import 'core/network/api_client.dart';
 import 'core/network/api_params_builder.dart';
 import 'core/network/dio_factory.dart';
+import 'core/push/push_notification_service.dart';
+import 'core/push/push_remote_data_source.dart';
 import 'features/auth/data/datasources/auth_local_data_source.dart';
 import 'features/auth/data/datasources/auth_remote_data_source.dart';
 import 'features/auth/data/repositories/auth_repository_impl.dart';
@@ -68,6 +70,12 @@ Future<void> initDependencies() async {
   sl.registerLazySingleton<DeepLinkStore>(() => DeepLinkStore());
   sl.registerLazySingleton<DeepLinkService>(
     () => DeepLinkService(sl()),
+  );
+  sl.registerLazySingleton<PushRemoteDataSource>(
+    () => PushRemoteDataSource(sl(), sl()),
+  );
+  sl.registerLazySingleton<PushNotificationService>(
+    () => PushNotificationService(sl(), sl()),
   );
 
   // --- Auth data ---
@@ -133,7 +141,7 @@ Future<void> initDependencies() async {
   sl.registerFactoryParam<OtpCubit, String, void>(
     (mobile, _) => OtpCubit(sl(), mobile: mobile),
   );
-  sl.registerLazySingleton(() => MainCubit(sl(), sl(), sl()));
+  sl.registerLazySingleton(() => MainCubit(sl(), sl(), sl(), sl()));
   sl.registerFactory(() => NearbyLocationCubit(sl()));
   sl.registerFactory(() => AccountCubit(sl()));
   sl.registerFactory(() => HomeCubit(sl(), sl()));

@@ -18,6 +18,8 @@ class OrdersState extends Equatable {
     this.pastTotalPages = 1,
     this.isLoadingMore = false,
     this.errorMessage,
+    this.upcomingEmptyMessage,
+    this.pastEmptyMessage,
   });
 
   final OrdersStatus status;
@@ -30,9 +32,15 @@ class OrdersState extends Equatable {
   final int pastTotalPages;
   final bool isLoadingMore;
   final String? errorMessage;
+  final String? upcomingEmptyMessage;
+  final String? pastEmptyMessage;
 
   List<OrderEntity> get currentOrders =>
       selectedTab == OrderTab.upcoming ? upcomingOrders : pastOrders;
+
+  String? get currentEmptyMessage => selectedTab == OrderTab.upcoming
+      ? upcomingEmptyMessage
+      : pastEmptyMessage;
 
   bool get hasMore => selectedTab == OrderTab.upcoming
       ? upcomingPage < upcomingTotalPages
@@ -49,6 +57,9 @@ class OrdersState extends Equatable {
     int? pastTotalPages,
     bool? isLoadingMore,
     String? errorMessage,
+    String? upcomingEmptyMessage,
+    String? pastEmptyMessage,
+    bool clearError = false,
   }) {
     return OrdersState(
       status: status ?? this.status,
@@ -60,7 +71,10 @@ class OrdersState extends Equatable {
       upcomingTotalPages: upcomingTotalPages ?? this.upcomingTotalPages,
       pastTotalPages: pastTotalPages ?? this.pastTotalPages,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
-      errorMessage: errorMessage ?? this.errorMessage,
+      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      upcomingEmptyMessage:
+          upcomingEmptyMessage ?? this.upcomingEmptyMessage,
+      pastEmptyMessage: pastEmptyMessage ?? this.pastEmptyMessage,
     );
   }
 
@@ -76,5 +90,7 @@ class OrdersState extends Equatable {
         pastTotalPages,
         isLoadingMore,
         errorMessage,
+        upcomingEmptyMessage,
+        pastEmptyMessage,
       ];
 }

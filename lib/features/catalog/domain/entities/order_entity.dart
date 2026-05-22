@@ -12,6 +12,9 @@ class OrderEntity extends Equatable {
     this.displayImage,
     this.deliveryPersonName,
     this.deliveryPersonContact,
+    this.deliveryBoyImage,
+    this.isFeedbackProvided = true,
+    this.selfPickAccepted = false,
   });
 
   final String refId;
@@ -24,6 +27,13 @@ class OrderEntity extends Equatable {
   final String? displayImage;
   final String? deliveryPersonName;
   final String? deliveryPersonContact;
+  final String? deliveryBoyImage;
+
+  /// Android `is_provided_feedback` — `0` means show feedback button.
+  final bool isFeedbackProvided;
+  final bool selfPickAccepted;
+
+  bool get canLeaveFeedback => !isFeedbackProvided;
 
   @override
   List<Object?> get props => [
@@ -37,5 +47,8 @@ class OrderEntity extends Equatable {
         displayImage,
         deliveryPersonName,
         deliveryPersonContact,
+        deliveryBoyImage,
+        isFeedbackProvided,
+        selfPickAccepted,
       ];
 }

@@ -14,6 +14,15 @@ abstract final class AppSystemUi {
     systemNavigationBarIconBrightness: Brightness.dark,
   );
 
+  /// Home hero (image or brand gradient) — light status icons, transparent bar.
+  static const SystemUiOverlayStyle homeHero = SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    statusBarIconBrightness: Brightness.light,
+    statusBarBrightness: Brightness.dark,
+    systemNavigationBarColor: Colors.white,
+    systemNavigationBarIconBrightness: Brightness.dark,
+  );
+
   /// Brand app bar — white status bar icons on blue.
   static const SystemUiOverlayStyle brandAppBar = SystemUiOverlayStyle(
     statusBarColor: AppColors.brand,

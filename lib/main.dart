@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'core/constants/app_constants.dart';
 import 'core/deeplink/deep_link_service.dart';
 import 'core/navigation/app_navigator.dart';
+import 'core/push/push_notification_service.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/system_ui_styles.dart';
 import 'core/data/app_local_data_source.dart';
@@ -23,6 +24,7 @@ void main() async {
   await sl<AppLocalDataSource>().ensureDeviceId();
   await sl<AuthRepository>().initDefaults();
   await sl<DeepLinkService>().initialize();
+  await sl<PushNotificationService>().initialize();
 
   SystemChrome.setSystemUIOverlayStyle(AppSystemUi.lightScreen);
 

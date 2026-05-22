@@ -6,6 +6,11 @@ import '../../domain/entities/service_order_entity.dart';
 
 abstract class OrdersRemoteDataSource {
   Future<ServiceOrderEntity> fetchServiceOrderView({required String refId});
+
+  Future<String> cancelOrder({
+    required String refId,
+    required String reason,
+  });
 }
 
 class OrdersRemoteDataSourceImpl implements OrdersRemoteDataSource {
@@ -118,6 +123,35 @@ class OrdersRemoteDataSourceImpl implements OrdersRemoteDataSource {
       paymentStatus: data['payment_status']?.toString(),
       deliveryLatitude: double.tryParse(data['delivery_lat']?.toString() ?? ''),
       deliveryLongitude: double.tryParse(data['delivery_lng']?.toString() ?? ''),
+      hasLiveTrackingPermission: _isTruthy(data['has_live_tracking_permission']),
+      tipAmount: data['tip_amount']?.toString(),
     );
+  }
+
+  bool _isTruthy(dynamic value) {
+    if (value is num) return value == 1;
+    final s = value?.toString().toLowerCase() ?? '';
+    return s == '1' || s == 'yes' || s == 'true';
+  }
+
+  @override
+  Future<String> cancelOrder({
+    required String refId,
+    required String reason,
+  }) async {
+    final params = _paramsBuilder.baseParams(includeSource: false);
+    params['ref_id'] = refId;
+    params['reason'] = reason;
+    params['request_from'] = 'mobile';
+
+    final response = await _client.post(
+      'customer/cancel_order/manual_cancel_order',
+      params,
+    );
+    final json = ApiResponseParser.decodeMap(response.body);
+    if (!ApiResponseParser.isValid(json)) {
+      throw ServerFailure(ApiResponseParser.message(json));
+    }
+    return ApiResponseParser.message(json);
   }
 }

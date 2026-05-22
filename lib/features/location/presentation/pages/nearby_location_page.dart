@@ -19,11 +19,10 @@ class NearbyLocationPage extends StatefulWidget {
 class _NearbyLocationPageState
     extends State<NearbyLocationPage>
     with SingleTickerProviderStateMixin {
-  late final AnimationController
-  _bounceController;
 
-  late final Animation<double>
-  _bounceAnimation;
+  late final AnimationController _bounceController;
+
+  late final Animation<double> _bounceAnimation;
 
   double _pinOffset = 0;
 
@@ -31,11 +30,9 @@ class _NearbyLocationPageState
   void initState() {
     super.initState();
 
-    _bounceController =
-    AnimationController(
+    _bounceController = AnimationController(
       vsync: this,
-      duration:
-      const Duration(milliseconds: 900),
+      duration: const Duration(milliseconds: 900),
     )..repeat(reverse: true);
 
     _bounceAnimation = Tween<double>(
@@ -51,8 +48,7 @@ class _NearbyLocationPageState
     _bounceController.addListener(() {
       if (mounted) {
         setState(() {
-          _pinOffset =
-              _bounceAnimation.value;
+          _pinOffset = _bounceAnimation.value;
         });
       }
     });
@@ -65,11 +61,9 @@ class _NearbyLocationPageState
   }
 
   void _goMain(BuildContext context) {
-    Navigator.of(context)
-        .pushAndRemoveUntil(
+    Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute<void>(
-        builder: (_) =>
-        const MainPage(),
+        builder: (_) => const MainPage(),
       ),
           (_) => false,
     );
@@ -77,21 +71,23 @@ class _NearbyLocationPageState
 
   @override
   Widget build(BuildContext context) {
+
     return BlocProvider(
       create: (_) =>
-      sl<NearbyLocationCubit>()
-        ..start(),
+      sl<NearbyLocationCubit>()..start(),
 
       child: BlocConsumer<
           NearbyLocationCubit,
           NearbyLocationState>(
+
         listenWhen: (p, c) =>
         p.status != c.status,
 
         listener: (context, state) {
+
           if (state.status ==
-              NearbyLocationStatus
-                  .navigateToMain) {
+              NearbyLocationStatus.navigateToMain) {
+
             _bounceController.stop();
 
             _goMain(context);
@@ -100,10 +96,10 @@ class _NearbyLocationPageState
           else if (state.status ==
               NearbyLocationStatus
                   .navigateToManualSetup) {
+
             _bounceController.stop();
 
-            Navigator.of(context)
-                .pushReplacement(
+            Navigator.of(context).pushReplacement(
               MaterialPageRoute<void>(
                 builder: (_) =>
                 const LocationOnboardingPage(),
@@ -113,393 +109,656 @@ class _NearbyLocationPageState
         },
 
         builder: (context, state) {
+
           final locating =
               state.status ==
-                  NearbyLocationStatus
-                      .locating ||
+                  NearbyLocationStatus.locating ||
                   state.status ==
-                      NearbyLocationStatus
-                          .initial;
+                      NearbyLocationStatus.initial;
 
-          if (state.status ==
-              NearbyLocationStatus
-                  .addressReady ||
-              state.showAddressCard) {
-            _bounceController.stop();
-          }
-
-          final revealPin =
+          final revealAddress =
               state.status ==
-                  NearbyLocationStatus
-                      .addressReady ||
+                  NearbyLocationStatus.addressReady ||
                   state.showAddressCard;
 
           return Scaffold(
             body: Container(
 
-              /// BEAUTIFUL GRADIENT
-              decoration:
-              const BoxDecoration(
+              decoration: const BoxDecoration(
                 gradient: LinearGradient(
-                  begin:
-                  Alignment.topCenter,
-                  end:
-                  Alignment.bottomCenter,
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
                   colors: [
-                    Color(0xFF66a4eb),
 
-                    Color(0xFFbfcdde),
-                   // Color(0xFFFFB067),
+                    Color(0xFF0057D9),
+                    Color(0xFF4A90FF),
+                    Color(0xFF89B8FF),
+
                   ],
                 ),
               ),
 
               child: SafeArea(
-                child: Column(
-                  children: [
+                child: SingleChildScrollView(
+                  physics:
+                  const BouncingScrollPhysics(),
 
-                    /// TOP SPACE
-                    const SizedBox(
-                        height: 50),
-
-                    /// TITLE
-                    const Text(
-                      'Detecting Location',
-                      style: TextStyle(
-                        color:
-                        Colors.white,
-                        fontSize: 30,
-                        fontWeight:
-                        FontWeight.bold,
-                      ),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight:
+                      MediaQuery.of(context)
+                          .size
+                          .height,
                     ),
 
-                    const SizedBox(
-                        height: 12),
-
-                    /// SUBTITLE
-                    Padding(
+                    child: Padding(
                       padding:
-                      const EdgeInsets
-                          .symmetric(
-                        horizontal: 30,
+                      const EdgeInsets.symmetric(
+                        horizontal: 22,
                       ),
 
-                      child: Text(
-                        locating
-                            ? 'Please wait while we find your current delivery location'
-                            : 'Your current delivery address',
-                        textAlign:
-                        TextAlign
-                            .center,
-                        style:
-                        TextStyle(
-                          color: Colors
-                              .white
-                              .withOpacity(
-                              0.9),
-                          fontSize: 15,
-                          height: 1.5,
-                        ),
-                      ),
-                    ),
+                      child: Column(
+                        children: [
 
-                    const Spacer(),
+                          const SizedBox(height: 24),
 
-                    /// LOCATION PIN
-                    AnimatedContainer(
-                      duration:
-                      const Duration(
-                        milliseconds:
-                        400,
-                      ),
+                          /// TOP ICON
+                          AnimatedSwitcher(
+                            duration:
+                            const Duration(
+                                milliseconds: 400),
 
-                      transform:
-                      Matrix4
-                          .translationValues(
-                        0,
-                        revealPin
-                            ? -60 -
-                            _pinOffset
-                            : -_pinOffset,
-                        0,
-                      ),
+                            child: revealAddress
 
-                      child: _LocationPin(
-                        pulsing:
-                        locating,
-                      ),
-                    ),
+                                ? Container(
+                              key:
+                              const ValueKey(
+                                  'success'),
 
-                    const SizedBox(
-                        height: 35),
+                              padding:
+                              const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 8,
+                              ),
 
-                    /// ADDRESS CARD
-                    AnimatedOpacity(
-                      opacity: state
-                          .showAddressCard
-                          ? 1
-                          : 0,
+                              decoration:
+                              BoxDecoration(
+                                color: Colors.white
+                                    .withOpacity(
+                                    0.18),
 
-                      duration:
-                      const Duration(
-                        milliseconds:
-                        500,
-                      ),
+                                borderRadius:
+                                BorderRadius.circular(
+                                    30),
+                              ),
 
-                      child:
-                      AnimatedSlide(
-                        offset: state
-                            .showAddressCard
-                            ? Offset.zero
-                            : const Offset(
-                          0,
-                          0.3,
-                        ),
+                              child: Row(
+                                mainAxisSize:
+                                MainAxisSize.min,
 
-                        duration:
-                        const Duration(
-                          milliseconds:
-                          500,
-                        ),
+                                children: [
 
-                        child: state
-                            .location ==
-                            null
-                            ? const SizedBox
-                            .shrink()
-                            : Padding(
-                          padding:
-                          const EdgeInsets
-                              .symmetric(
-                            horizontal:
-                            24,
+                                  const Icon(
+                                    Icons
+                                        .check_circle,
+                                    color:
+                                    Colors.white,
+                                    size: 18,
+                                  ),
+
+                                  const SizedBox(
+                                      width: 8),
+
+                                  const Text(
+                                    "Location Found",
+                                    style:
+                                    TextStyle(
+                                      color:
+                                      Colors.white,
+                                      fontWeight:
+                                      FontWeight
+                                          .w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+
+                                : Container(
+                              key:
+                              const ValueKey(
+                                  'loading'),
+
+                              padding:
+                              const EdgeInsets
+                                  .all(16),
+
+                              decoration:
+                              BoxDecoration(
+                                color: Colors
+                                    .white
+                                    .withOpacity(
+                                    0.15),
+
+                                shape: BoxShape
+                                    .circle,
+                              ),
+
+                              child:
+                              const Icon(
+                                Icons
+                                    .my_location_rounded,
+                                color:
+                                Colors.white,
+                                size: 34,
+                              ),
+                            ),
                           ),
 
-                          child:
-                          Container(
-                            width: double
-                                .infinity,
+                          const SizedBox(height: 22),
 
-                            padding:
-                            const EdgeInsets
-                                .all(
-                              22,
+                          /// TITLE
+                          Text(
+                            revealAddress
+                                ? "Location Ready"
+                                : "Finding Your Location",
+
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 28,
+                              fontWeight:
+                              FontWeight.w800,
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+
+                          const SizedBox(height: 12),
+
+                          /// SUBTITLE
+                          Text(
+                            locating
+                                ? 'Please wait while we detect your nearby delivery location'
+                                : 'Your nearby delivery address has been detected successfully',
+
+                            textAlign:
+                            TextAlign.center,
+
+                            style: TextStyle(
+                              color: Colors.white
+                                  .withOpacity(0.9),
+
+                              fontSize: 15,
+                              height: 1.6,
+                            ),
+                          ),
+
+                          const SizedBox(height: 40),
+
+                          /// LOCATION PIN
+                          AnimatedSwitcher(
+                            duration:
+                            const Duration(
+                              milliseconds: 400,
                             ),
 
-                            decoration:
-                            BoxDecoration(
-                              color: Colors
-                                  .white,
+                            child: revealAddress
 
-                              borderRadius:
-                              BorderRadius.circular(
-                                  28),
+                                ? const SizedBox
+                                .shrink()
 
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors
-                                      .black
-                                      .withOpacity(
-                                      0.12),
+                                : AnimatedContainer(
+                              duration:
+                              const Duration(
+                                milliseconds:
+                                400,
+                              ),
 
-                                  blurRadius:
-                                  20,
+                              transform: Matrix4
+                                  .translationValues(
+                                0,
+                                -_pinOffset,
+                                0,
+                              ),
 
-                                  offset:
-                                  const Offset(
-                                      0,
-                                      8),
-                                ),
-                              ],
+                              child:
+                              _LocationPin(
+                                pulsing:
+                                locating,
+                              ),
+                            ),
+                          ),
+
+                          if (!revealAddress)
+                            const SizedBox(
+                                height: 60),
+
+                          /// ADDRESS CARD
+                          AnimatedOpacity(
+                            opacity:
+                            revealAddress
+                                ? 1
+                                : 0,
+
+                            duration:
+                            const Duration(
+                              milliseconds: 500,
                             ),
 
                             child:
-                            Column(
-                              children: [
+                            AnimatedSlide(
+                              offset:
+                              revealAddress
+                                  ? Offset.zero
+                                  : const Offset(
+                                0,
+                                0.15,
+                              ),
 
-                                /// ICON
-                                Container(
-                                  height:
-                                  70,
-                                  width:
-                                  70,
+                              duration:
+                              const Duration(
+                                milliseconds:
+                                500,
+                              ),
 
-                                  decoration:
-                                  BoxDecoration(
-                                    color: AppColors
-                                        .brand
-                                        .withOpacity(
-                                        0.1),
+                              child: state
+                                  .location ==
+                                  null
 
-                                    shape:
-                                    BoxShape.circle,
-                                  ),
+                                  ? const SizedBox
+                                  .shrink()
 
-                                  child:
-                                  const Icon(
-                                    Icons
-                                        .location_on,
-                                    color:
-                                    AppColors.brand,
-                                    size:
-                                    38,
-                                  ),
+                                  : Container(
+                                width: double
+                                    .infinity,
+
+                                padding:
+                                const EdgeInsets
+                                    .all(
+                                  18,
                                 ),
 
-                                const SizedBox(
-                                    height:
-                                    18),
+                                decoration:
+                                BoxDecoration(
+                                  color: Colors
+                                      .white
+                                      .withOpacity(
+                                      0.94),
 
-                                /// ADDRESS TYPE
-                                Text(
-                                  state
-                                      .location!
-                                      .addressType
-                                      .toUpperCase(),
+                                  borderRadius:
+                                  BorderRadius
+                                      .circular(
+                                      30),
 
-                                  style:
-                                  const TextStyle(
-                                    fontSize:
-                                    20,
-                                    fontWeight:
-                                    FontWeight.bold,
-                                    color:
-                                    Colors.black87,
-                                  ),
-                                ),
-
-                                const SizedBox(
-                                    height:
-                                    10),
-
-                                /// ADDRESS
-                                Text(
-                                  state
-                                      .location!
-                                      .address,
-
-                                  textAlign:
-                                  TextAlign.center,
-
-                                  style:
-                                  TextStyle(
-                                    fontSize:
-                                    15,
-
+                                  border:
+                                  Border.all(
                                     color: Colors
-                                        .grey
-                                        .shade700,
-
-                                    height:
-                                    1.6,
+                                        .white
+                                        .withOpacity(
+                                        0.4),
                                   ),
+
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors
+                                          .black
+                                          .withOpacity(
+                                          0.10),
+
+                                      blurRadius:
+                                      24,
+
+                                      offset:
+                                      const Offset(
+                                          0,
+                                          10),
+                                    ),
+                                  ],
                                 ),
 
-                                const SizedBox(
-                                    height:
-                                    22),
+                                child:
+                                Column(
+                                  children: [
 
-                                /// BUTTON
-                                SizedBox(
-                                  width:
-                                  double.infinity,
+                                    /// HANDLE
+                                    Container(
+                                      width:
+                                      50,
+                                      height:
+                                      5,
 
-                                  height:
-                                  54,
+                                      decoration:
+                                      BoxDecoration(
+                                        color: Colors
+                                            .grey
+                                            .shade300,
 
-                                  child:
-                                  ElevatedButton(
-                                    onPressed:
-                                        () {
-                                      _goMain(
-                                          context);
-                                    },
+                                        borderRadius:
+                                        BorderRadius.circular(
+                                            20),
+                                      ),
+                                    ),
 
-                                    style:
-                                    ElevatedButton.styleFrom(
-                                      backgroundColor:
-                                      AppColors.brand,
+                                    const SizedBox(
+                                        height:
+                                        20),
 
-                                      foregroundColor:
-                                      Colors.white,
+                                    /// ICON
+                                    Container(
+                                      height:
+                                      64,
+                                      width:
+                                      64,
 
-                                      elevation:
-                                      0,
+                                      decoration:
+                                      BoxDecoration(
+                                        gradient:
+                                        LinearGradient(
+                                          colors: [
+                                            AppColors
+                                                .brand,
 
-                                      shape:
-                                      RoundedRectangleBorder(
+                                            AppColors
+                                                .brand
+                                                .withOpacity(
+                                                0.8),
+                                          ],
+                                        ),
+
+                                        shape:
+                                        BoxShape
+                                            .circle,
+                                      ),
+
+                                      child:
+                                      const Icon(
+                                        Icons
+                                            .location_on,
+                                        color:
+                                        Colors.white,
+                                        size:
+                                        34,
+                                      ),
+                                    ),
+
+                                    const SizedBox(
+                                        height:
+                                        18),
+
+                                    /// ADDRESS TYPE
+                                    Text(
+                                      state
+                                          .location!
+                                          .addressType
+                                          .toUpperCase(),
+
+                                      style:
+                                      const TextStyle(
+                                        fontSize:
+                                        20,
+
+                                        fontWeight:
+                                        FontWeight
+                                            .w800,
+
+                                        color: Colors
+                                            .black87,
+                                      ),
+                                    ),
+
+                                    const SizedBox(
+                                        height:
+                                        10),
+
+                                    /// ADDRESS
+                                    Text(
+                                      state
+                                          .location!
+                                          .address,
+
+                                      textAlign:
+                                      TextAlign
+                                          .center,
+
+                                      style:
+                                      TextStyle(
+                                        fontSize:
+                                        15,
+
+                                        color: Colors
+                                            .grey
+                                            .shade700,
+
+                                        height:
+                                        1.7,
+                                      ),
+                                    ),
+
+                                    const SizedBox(
+                                        height:
+                                        18),
+
+                                    /// RESTAURANTS
+                                    Container(
+                                      padding:
+                                      const EdgeInsets.symmetric(
+                                        horizontal:
+                                        12,
+                                        vertical:
+                                        8,
+                                      ),
+
+                                      decoration:
+                                      BoxDecoration(
+                                        color: AppColors
+                                            .brandLite
+                                            .withOpacity(
+                                            0.12),
+
+                                        borderRadius:
+                                        BorderRadius.circular(
+                                            14),
+                                      ),
+
+                                      child:
+                                      Row(
+                                        mainAxisSize:
+                                        MainAxisSize.min,
+
+                                        children: [
+
+                                          const Icon(
+                                            Icons
+                                                .restaurant,
+                                            size:
+                                            18,
+                                            color:
+                                            AppColors.brand,
+                                          ),
+
+                                          const SizedBox(
+                                              width:
+                                              6),
+
+                                          Text(
+                                            "12 restaurants available nearby",
+
+                                            style:
+                                            TextStyle(
+                                              color: Colors
+                                                  .grey
+                                                  .shade800,
+
+                                              fontWeight:
+                                              FontWeight
+                                                  .w600,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+
+                                    const SizedBox(
+                                        height:
+                                        24),
+
+                                    /// BUTTON
+                                    Container(
+                                      width: double
+                                          .infinity,
+
+                                      height: 56,
+
+                                      decoration:
+                                      BoxDecoration(
+                                        gradient:
+                                        LinearGradient(
+                                          colors: [
+
+                                            AppColors
+                                                .brand,
+
+                                            AppColors
+                                                .secondaryBrand,
+                                          ],
+                                        ),
+
                                         borderRadius:
                                         BorderRadius.circular(
                                             18),
                                       ),
-                                    ),
 
-                                    child:
-                                    const Text(
-                                      'Confirm Location',
-                                      style:
-                                      TextStyle(
-                                        fontSize:
-                                        16,
+                                      child:
+                                      ElevatedButton(
+                                        onPressed:
+                                            () {
+                                          _goMain(
+                                              context);
+                                        },
 
-                                        fontWeight:
-                                        FontWeight.bold,
+                                        style:
+                                        ElevatedButton.styleFrom(
+                                          backgroundColor:
+                                          Colors
+                                              .transparent,
+
+                                          shadowColor:
+                                          Colors
+                                              .transparent,
+
+                                          shape:
+                                          RoundedRectangleBorder(
+                                            borderRadius:
+                                            BorderRadius.circular(
+                                                18),
+                                          ),
+                                        ),
+
+                                        child:
+                                        const Text(
+                                          'Confirm Location',
+
+                                          style:
+                                          TextStyle(
+                                            fontSize:
+                                            16,
+
+                                            fontWeight:
+                                            FontWeight.bold,
+                                          ),
+                                        ),
                                       ),
                                     ),
+
+                                    const SizedBox(
+                                        height:
+                                        10),
+
+                                    /// MANUAL
+                                    TextButton(
+                                      onPressed:
+                                          () {
+                                        Navigator.of(
+                                            context)
+                                            .pushReplacement(
+                                          MaterialPageRoute<
+                                              void>(
+                                            builder:
+                                                (_) =>
+                                            const LocationOnboardingPage(),
+                                          ),
+                                        );
+                                      },
+
+                                      child:
+                                      const Text(
+                                        "Enter location manually",
+
+                                        style:
+                                        TextStyle(
+                                          color:
+                                          AppColors
+                                              .brand,
+
+                                          fontWeight:
+                                          FontWeight
+                                              .w600,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 40),
+
+                          /// LOADER
+                          if (locating &&
+                              !revealAddress)
+                            Column(
+                              children: [
+
+                                SizedBox(
+                                  height: 28,
+                                  width: 28,
+
+                                  child:
+                                  CircularProgressIndicator(
+                                    strokeWidth:
+                                    3,
+
+                                    color: Colors
+                                        .white,
+                                  ),
+                                ),
+
+                                const SizedBox(
+                                    height:
+                                    14),
+
+                                Text(
+                                  'Loading nearby restaurants...',
+
+                                  style:
+                                  TextStyle(
+                                    color: Colors
+                                        .white
+                                        .withOpacity(
+                                        0.9),
+
+                                    fontSize:
+                                    14,
                                   ),
                                 ),
                               ],
                             ),
-                          ),
-                        ),
-                      ),
-                    ),
 
-                    const Spacer(),
-
-                    /// LOADING
-                    if (locating)
-                      Column(
-                        children: [
-
-                          const SizedBox(
-                              height: 10),
-
-                          SizedBox(
-                            height: 28,
-                            width: 28,
-
-                            child:
-                            CircularProgressIndicator(
-                              strokeWidth:
-                              3,
-                              color:
-                              Colors.white,
-                            ),
-                          ),
-
-                          const SizedBox(
-                              height: 14),
-
-                          Text(
-                            'Fetching location...',
-                            style:
-                            TextStyle(
-                              color: Colors
-                                  .white
-                                  .withOpacity(
-                                  0.9),
-
-                              fontSize: 14,
-                            ),
-                          ),
+                          const SizedBox(height: 40),
                         ],
                       ),
-
-                    const SizedBox(
-                        height: 50),
-                  ],
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -519,11 +778,11 @@ class _LocationPin extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
     return Stack(
       alignment: Alignment.center,
       children: [
 
-        /// OUTER PULSE
         if (pulsing)
           Container(
             width: 180,
@@ -531,13 +790,11 @@ class _LocationPin extends StatelessWidget {
 
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-
               color: Colors.white
-                  .withOpacity(0.10),
+                  .withOpacity(0.08),
             ),
           ),
 
-        /// MIDDLE PULSE
         if (pulsing)
           Container(
             width: 130,
@@ -545,31 +802,36 @@ class _LocationPin extends StatelessWidget {
 
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-
               color: Colors.white
-                  .withOpacity(0.18),
+                  .withOpacity(0.14),
             ),
           ),
 
-        /// MAIN PIN
         Container(
           width: 100,
           height: 100,
 
           decoration: BoxDecoration(
-            color: Colors.white,
+
+            gradient: LinearGradient(
+              colors: [
+                Colors.white,
+                Colors.white.withOpacity(
+                    0.92),
+              ],
+            ),
 
             shape: BoxShape.circle,
 
             boxShadow: [
               BoxShadow(
-                color: Colors.black
-                    .withOpacity(0.15),
+                color: AppColors.brand
+                    .withOpacity(0.35),
 
-                blurRadius: 18,
+                blurRadius: 30,
 
                 offset:
-                const Offset(0, 8),
+                const Offset(0, 10),
               ),
             ],
           ),

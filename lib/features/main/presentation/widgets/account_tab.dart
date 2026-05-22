@@ -12,6 +12,7 @@ import '../../../splash/presentation/pages/splash_page.dart';
 import '../cubit/account/account_cubit.dart';
 import '../cubit/account/account_state.dart';
 import '../cubit/main_cubit.dart';
+import '../cubit/main_state.dart';
 import '../pages/account_faq_page.dart';
 import '../pages/account_language_page.dart';
 import '../pages/account_profile_page.dart';
@@ -28,8 +29,18 @@ class _AccountTabState extends State<AccountTab> {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => sl<AccountCubit>()..loadProfile(),
-      child: const _AccountView(),
+      create: (_) => sl<AccountCubit>(),
+      child: BlocListener<MainCubit, MainState>(
+        listenWhen: (prev, curr) =>
+            prev.currentIndex != curr.currentIndex && curr.currentIndex == 3,
+        listener: (context, _) {
+          final cubit = context.read<AccountCubit>();
+          if (cubit.state.status == AccountStatus.initial) {
+            cubit.loadProfile();
+          }
+        },
+        child: const _AccountView(),
+      ),
     );
   }
 }
@@ -99,7 +110,8 @@ class _AccountView extends StatelessWidget {
         }
       },
       builder: (context, state) {
-        if (state.status == AccountStatus.loading) {
+        if (state.status == AccountStatus.initial ||
+            state.status == AccountStatus.loading) {
           return const _AccountLoadingView();
         }
 

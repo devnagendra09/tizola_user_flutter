@@ -186,7 +186,8 @@ class _RestaurantDetailViewState extends State<_RestaurantDetailView> {
       BuildContext context,
       RestaurantDetailState state ,
       List<MenuItemEntity> items,
-      ) {
+      )
+  {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -302,7 +303,6 @@ class _RestaurantDetailViewState extends State<_RestaurantDetailView> {
       if (cat.id == 'recommended') {
         continue;
       }
-
       slivers.add(
         SliverToBoxAdapter(
           key: _sectionKeys[i],
@@ -371,36 +371,175 @@ class _RestaurantDetailViewState extends State<_RestaurantDetailView> {
   Future<void> _showCartConflictDialog(
       BuildContext context,
       String message,
-      ) async {
+      )
+  async {
     final cubit = context.read<RestaurantDetailCubit>();
-    final action = await showDialog<String>(
+
+    final action = await showGeneralDialog<String>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Different restaurant'),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, 'cancel'),
-            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, 'clear'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.brand,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+      barrierDismissible: true,
+      barrierLabel: '',
+      barrierColor: Colors.black54,
+      transitionDuration: const Duration(milliseconds: 300),
+
+      pageBuilder: (_, __, ___) {
+        return const SizedBox.shrink();
+      },
+
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        return Transform.scale(
+          scale: Curves.easeOutBack.transform(animation.value),
+          child: Opacity(
+            opacity: animation.value,
+            child: Center(
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 24),
+                padding: const EdgeInsets.all(22),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(28),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.12),
+                      blurRadius: 24,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+
+                child: Material(
+                  color: Colors.transparent,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+
+                      /// ICON
+                      Container(
+                        height: 72,
+                        width: 72,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.orange.shade300,
+                              Colors.deepOrange.shade400,
+                            ],
+                          ),
+                          shape: BoxShape.circle,
+                        ),
+
+                        child: const Icon(
+                          Icons.shopping_cart_checkout_rounded,
+                          color: Colors.white,
+                          size: 36,
+                        ),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      /// TITLE
+                      const Text(
+                        'Different Restaurant',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.black87,
+                        ),
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      /// MESSAGE
+                      Text(
+                        message,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 15,
+                          height: 1.5,
+                          color: Colors.grey.shade700,
+                        ),
+                      ),
+
+                      const SizedBox(height: 26),
+
+                      /// BUTTONS
+                      Row(
+                        children: [
+
+                          /// CANCEL
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () {
+                                Navigator.pop(context, 'cancel');
+                              },
+
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Colors.grey.shade700,
+                                side: BorderSide(
+                                  color: Colors.grey.shade300,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 15,
+                                ),
+                              ),
+
+                              child: const Text(
+                                'Cancel',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(width: 14),
+
+                          /// CLEAR CART
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () {
+                                Navigator.pop(context, 'clear');
+                              },
+
+                              style: ElevatedButton.styleFrom(
+                                elevation: 0,
+                                backgroundColor: AppColors.brand,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 15,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                              ),
+
+                              child: const Text(
+                                'Clear Cart',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
-            child: const Text('Clear cart'),
           ),
-        ],
-      ),
+        );
+      },
     );
 
     if (!context.mounted) return;
+
     cubit.dismissCartConflict();
+
     if (action == 'clear') {
       await cubit.clearCartAndReload();
     }

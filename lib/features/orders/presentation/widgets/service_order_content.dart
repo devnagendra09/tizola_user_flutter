@@ -36,23 +36,79 @@ class ServiceOrderContent extends StatelessWidget {
             margin: const EdgeInsets.only(bottom: 12),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: AppColors.brandLite,
+              color: AppColors.secondaryBrand,
               borderRadius: BorderRadius.circular(6),
             ),
-            child: Text(
-              'OTP: ${order.deliveryOtp}',
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                color: AppColors.brand,
-              ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    size: 10,
+                    Icons.lock_outline,
+                    color: Colors.white,
+                  ),
+                ),
+                SizedBox(width: 4,),
+                Text(
+                  'OTP: ${order.deliveryOtp}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.white,
+                  ),
+                ),
+              ],
             ),
           ),
-        Text(
-          'ORDER ID #${order.refId}',
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-          ),
+        Row(
+          children: [
+
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+
+                  Text(
+                    'ORDER ID',
+                    style: TextStyle(
+                      color: Colors.grey.shade600,
+                      fontSize: 12,
+                    ),
+                  ),
+
+                  Text(
+                    '#${order.refId}',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 17,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 6,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.orange.shade100,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                order.serviceStatus,
+                style: TextStyle(
+                  color: Colors.orange.shade800,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 4),
         Text(
@@ -60,22 +116,86 @@ class ServiceOrderContent extends StatelessWidget {
           style: TextStyle(color: Colors.grey.shade700),
         ),
         const SizedBox(height: 16),
+
         _sectionTitle('Restaurant'),
-        Text(
-          order.restaurant.name,
-          style: const TextStyle(fontWeight: FontWeight.w600),
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade50,
+            borderRadius: BorderRadius.circular(18),
+          ),
+
+          child: Row(
+            children: [
+              NetworkImageBox(
+                url: order.restaurant.imageUrl,
+                width: 60,
+                height: 60,
+                borderRadius: BorderRadius.circular(14),
+              ),
+
+              const SizedBox(width: 12),
+
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+
+                    Text(
+                      order.restaurant.name,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 16,
+                      ),
+                    ),
+
+                    const SizedBox(height: 4),
+
+                    Text(
+                      order.restaurant.displayAddress ?? '',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.grey.shade700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              IconButton(
+                onPressed: () => _call(order.restaurant.mobile),
+                icon: const Icon(
+                  Icons.phone,
+                  color: AppColors.brand,
+                ),
+              ),
+            ],
+          ),
         ),
-        if (order.restaurant.displayAddress != null)
-          Text(order.restaurant.displayAddress!),
         const SizedBox(height: 12),
         if (!order.selfPickAccepted) ...[
           _sectionTitle('Delivery'),
           if (order.addressType != null)
-            Text(
-              order.addressType!,
-              style: const TextStyle(fontWeight: FontWeight.w600),
+            Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(18),
+                ),
+          child:   Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                  order.addressType!,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+              if (order.deliveryAddress != null) Text(order.deliveryAddress!),
+
+            ],
+          ),
             ),
-          if (order.deliveryAddress != null) Text(order.deliveryAddress!),
           const SizedBox(height: 12),
         ],
         _sectionTitle('Order status'),
@@ -102,36 +222,22 @@ class ServiceOrderContent extends StatelessWidget {
         if (order.deliveryCharges != null)
           _billingRow('Delivery', order.deliveryCharges!),
         if (order.discount != null) _billingRow('Discount', order.discount!),
-        if (order.taxes != null) _billingRow('Taxes', order.taxes!),
+        if (order.tipAmount != null &&
+            order.tipAmount!.isNotEmpty &&
+            order.tipAmount != '0')
+          _billingRow('Delivery tips', order.tipAmount!),
+        if (order.taxes != null) _billingRow('Applied taxes', order.taxes!),
         _billingRow('Grand total', order.grandTotal, bold: true),
         if (order.paidAmount != null)
           _billingRow('Paid', order.paidAmount!, bold: true),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            if (showLiveTrackButton && onLiveTrackTap != null)
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: onLiveTrackTap,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.brand,
-                    foregroundColor: Colors.white,
-                  ),
-                  child: const Text('Live Tracking'),
-                ),
-              ),
-            if (order.customerCareNumber != null &&
-                order.customerCareNumber!.isNotEmpty) ...[
-              if (showLiveTrackButton) const SizedBox(width: 8),
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () => _call(order.customerCareNumber),
-                  child: const Text('Help / Call'),
-                ),
-              ),
-            ],
-          ],
-        ),
+        if (order.paymentStatus != null && order.paymentStatus!.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(
+              'Payment: ${order.paymentStatus}',
+              style: TextStyle(color: Colors.grey.shade700),
+            ),
+          ),
         if (order.selfPickAccepted) ...[
           const SizedBox(height: 16),
           _sectionTitle('Pickup location'),
@@ -168,13 +274,33 @@ class ServiceOrderContent extends StatelessWidget {
 
   Widget _sectionTitle(String text) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: Text(
-        text,
-        style: const TextStyle(
-          fontWeight: FontWeight.w600,
-          color: AppColors.secondaryBrand,
-        ),
+      padding: const EdgeInsets.only(
+        bottom: 10,
+        top: 6,
+      ),
+      child: Row(
+        children: [
+
+          Container(
+            width: 4,
+            height: 18,
+            decoration: BoxDecoration(
+              color: AppColors.brand,
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+
+          const SizedBox(width: 8),
+
+          Text(
+            text,
+            style: const TextStyle(
+              fontWeight: FontWeight.w700,
+              fontSize: 16,
+              color: Colors.black87,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -182,17 +308,28 @@ class ServiceOrderContent extends StatelessWidget {
   Widget _billingRow(String label, String value, {bool bold = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label),
-          Text(
-            '₹$value',
-            style: TextStyle(
-              fontWeight: bold ? FontWeight.bold : FontWeight.normal,
-            ),
+      child: Container(
+        padding: const EdgeInsets.all(5),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: Colors.grey.shade200,
           ),
-        ],
+        ),
+
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(label),
+            Text(
+              '₹$value',
+              style: TextStyle(
+                fontWeight: bold ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

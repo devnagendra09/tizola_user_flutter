@@ -9,6 +9,7 @@ import '../../../../core/navigation/categories_navigation.dart';
 import '../../../../core/navigation/deep_link_navigation.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/system_ui_styles.dart';
+import '../../../../core/push/push_notification_service.dart';
 import '../../../../injection_container.dart';
 import '../../../auth/presentation/pages/login_page.dart';
 import '../../../home/presentation/widgets/home_tab.dart';
@@ -47,7 +48,11 @@ class _MainViewState extends State<_MainView> with WidgetsBindingObserver {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         openPendingShareDeepLink(context);
-        context.read<MainCubit>().refreshInProgressOrder();
+        final mainCubit = context.read<MainCubit>();
+        mainCubit.refreshInProgressOrder();
+        mainCubit.refreshCartBadge();
+        sl<PushNotificationService>().syncTokenWithServer();
+        sl<PushNotificationService>().handlePendingNavigation();
       }
     });
   }
@@ -61,7 +66,10 @@ class _MainViewState extends State<_MainView> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed && mounted) {
-      context.read<MainCubit>().refreshInProgressOrder();
+      final mainCubit = context.read<MainCubit>();
+      mainCubit.refreshInProgressOrder();
+      mainCubit.refreshCartBadge();
+      sl<PushNotificationService>().syncTokenWithServer();
     }
   }
 
@@ -121,12 +129,13 @@ class _MainViewState extends State<_MainView> with WidgetsBindingObserver {
         builder: (context, state) {
           final onHomeTab = state.currentIndex == 0;
           return AnnotatedRegion<SystemUiOverlayStyle>(
-            value: onHomeTab ? AppSystemUi.lightScreen : AppSystemUi.brandAppBar,
+            value: onHomeTab ? AppSystemUi.homeHero : AppSystemUi.brandAppBar,
             child: Scaffold(
               appBar: onHomeTab
                   ? null
                   : MainLocationAppBar(
                       location: state.deliveryLocation,
+                      cartItemCount: state.cartItemCount,
                       onLocationTap: () => _openChangeLocation(context),
                       onSearch: () => openSearchScreen(context),
                       onCart: () => openCart(context),

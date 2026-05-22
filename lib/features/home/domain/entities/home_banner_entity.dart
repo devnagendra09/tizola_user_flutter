@@ -6,16 +6,18 @@ class HomeBannerEntity extends Equatable {
     this.promotionImage,
     this.restaurantId,
     this.restaurantName,
+    this.restaurantSeoUrl,
   });
 
   final String id;
   final String? promotionImage;
   final String? restaurantId;
   final String? restaurantName;
+  final String? restaurantSeoUrl;
 
   @override
   List<Object?> get props =>
-      [id, promotionImage, restaurantId, restaurantName];
+      [id, promotionImage, restaurantId, restaurantName, restaurantSeoUrl];
 }
 
 class HomeSliderEntity extends Equatable {

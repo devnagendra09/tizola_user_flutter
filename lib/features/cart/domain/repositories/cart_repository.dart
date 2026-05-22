@@ -44,4 +44,6 @@ abstract class CartRepository {
   Future<Result<void>> cancelOrderOnPaymentCancelled({required String refId});
 
   Future<Result<void>> clearSessionCart();
+
+  Future<Result<int>> fetchCartItemCount();
 }

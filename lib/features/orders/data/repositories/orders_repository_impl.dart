@@ -22,4 +22,20 @@ class OrdersRepositoryImpl implements OrdersRepository {
       return Result.failure(ServerFailure(e.toString()));
     }
   }
+
+  @override
+  Future<Result<String>> cancelOrder({
+    required String refId,
+    required String reason,
+  }) async {
+    try {
+      final message =
+          await _remote.cancelOrder(refId: refId, reason: reason);
+      return Result.success(message);
+    } on Failure catch (f) {
+      return Result.failure(f);
+    } catch (e) {
+      return Result.failure(ServerFailure(e.toString()));
+    }
+  }
 }

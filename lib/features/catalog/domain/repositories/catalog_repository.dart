@@ -1,7 +1,7 @@
 import '../../../../core/utils/result.dart';
 import '../../../main/domain/entities/in_progress_order_entity.dart';
 import '../entities/cuisine_entity.dart';
-import '../entities/order_entity.dart';
+import '../entities/orders_page_entity.dart';
 import '../../../home/domain/entities/restaurant_page_entity.dart';
 import '../../../search/domain/entities/search_suggestion_entity.dart';
 import '../enums/restaurant_food_filter.dart';
@@ -18,7 +18,7 @@ abstract class CatalogRepository {
     bool favouritesOnly = false,
     String? searchKey,
   });
-  Future<Result<({List<OrderEntity> orders, int totalPages})>> getOrders({
+  Future<Result<OrdersPageEntity>> getOrders({
     required String type,
     required int page,
   });

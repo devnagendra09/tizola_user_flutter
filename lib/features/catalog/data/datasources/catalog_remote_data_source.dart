@@ -8,6 +8,7 @@ import '../../../../core/network/api_response_parser.dart';
 import '../../../../core/utils/json_parse_utils.dart';
 import '../../domain/entities/cuisine_entity.dart';
 import '../../domain/entities/order_entity.dart';
+import '../../domain/entities/orders_page_entity.dart';
 import '../../domain/entities/restaurant_entity.dart';
 import '../../../home/domain/entities/restaurant_page_entity.dart';
 import '../../../main/domain/entities/in_progress_order_entity.dart';
@@ -27,7 +28,7 @@ abstract class CatalogRemoteDataSource {
     String? searchKey,
     bool refresh = false,
   });
-  Future<({List<OrderEntity> orders, int totalPages})> getOrders({
+  Future<OrdersPageEntity> getOrders({
     required String type,
     required int page,
   });
@@ -141,7 +142,7 @@ class CatalogRemoteDataSourceImpl implements CatalogRemoteDataSource {
   }
 
   @override
-  Future<({List<OrderEntity> orders, int totalPages})> getOrders({
+  Future<OrdersPageEntity> getOrders({
     required String type,
     required int page,
   }) async {
@@ -158,7 +159,11 @@ class CatalogRemoteDataSourceImpl implements CatalogRemoteDataSource {
         await _client.post('customer/service_orders', params);
     final json = ApiResponseParser.decodeMap(response.body);
     if (!ApiResponseParser.isValid(json)) {
-      throw ServerFailure(ApiResponseParser.message(json));
+      return OrdersPageEntity(
+        orders: const [],
+        totalPages: 1,
+        emptyMessage: ApiResponseParser.message(json),
+      );
     }
 
     final data = json['data'] as Map<String, dynamic>? ?? {};
@@ -166,9 +171,10 @@ class CatalogRemoteDataSourceImpl implements CatalogRemoteDataSource {
     final orders = results
         .map((e) => _parseOrder(e as Map<String, dynamic>))
         .toList();
-    return (
+    return OrdersPageEntity(
       orders: orders,
       totalPages: (data['total_pages'] as num?)?.toInt() ?? 1,
+      emptyMessage: json['message']?.toString(),
     );
   }
 
@@ -258,6 +264,9 @@ class CatalogRemoteDataSourceImpl implements CatalogRemoteDataSource {
   }
 
   OrderEntity _parseOrder(Map<String, dynamic> json) {
+    final feedbackFlag =
+        int.tryParse(json['is_provided_feedback']?.toString() ?? '1') ?? 1;
+
     return OrderEntity(
       refId: json['ref_id']?.toString() ?? '',
       restaurantName: json['restaurant_name']?.toString() ?? '',
@@ -270,6 +279,10 @@ class CatalogRemoteDataSourceImpl implements CatalogRemoteDataSource {
       deliveryPersonName: json['delivery_person_name']?.toString(),
       deliveryPersonContact:
           json['delivery_person_contact_number']?.toString(),
+      deliveryBoyImage: json['delivery_boy_image']?.toString(),
+      isFeedbackProvided: feedbackFlag != 0,
+      selfPickAccepted:
+          json['self_pick_accepted']?.toString().toLowerCase() == 'yes',
     );
   }
 }

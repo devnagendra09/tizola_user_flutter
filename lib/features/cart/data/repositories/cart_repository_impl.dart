@@ -193,4 +193,16 @@ class CartRepositoryImpl implements CartRepository {
       return Result.failure(const NetworkFailure());
     }
   }
+
+  @override
+  Future<Result<int>> fetchCartItemCount() async {
+    try {
+      final count = await _remote.fetchCartItemCount();
+      return Result.success(count);
+    } on Failure catch (e) {
+      return Result.failure(e);
+    } catch (_) {
+      return Result.failure(const NetworkFailure());
+    }
+  }
 }

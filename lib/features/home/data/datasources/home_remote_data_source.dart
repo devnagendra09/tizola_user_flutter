@@ -46,6 +46,7 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
         promotionImage: map['promotion_image_in_mobile']?.toString(),
         restaurantId: restaurant?['id']?.toString(),
         restaurantName: restaurant?['restaurant_name']?.toString(),
+        restaurantSeoUrl: restaurant?['seo_url']?.toString(),
       );
     }).toList();
   }
