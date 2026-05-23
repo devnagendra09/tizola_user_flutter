@@ -10,19 +10,23 @@ import '../../../../core/utils/result.dart';
 import '../../../auth/data/datasources/auth_local_data_source.dart';
 import '../../domain/entities/delivery_location_entity.dart';
 import '../../domain/repositories/location_repository.dart';
+import '../datasources/google_places_remote_data_source.dart';
 import '../datasources/location_remote_data_source.dart';
 import '../models/delivery_location_mapper.dart';
+import '../../domain/entities/place_prediction_entity.dart';
 
 class LocationRepositoryImpl implements LocationRepository {
   LocationRepositoryImpl(
     this._appLocal,
     this._authLocal,
     this._remote,
+    this._places,
   );
 
   final AppLocalDataSource _appLocal;
   final AuthLocalDataSource _authLocal;
   final LocationRemoteDataSource _remote;
+  final GooglePlacesRemoteDataSource _places;
 
   @override
   bool get hasSavedCoordinates => _appLocal.hasSavedCoordinates;
@@ -50,35 +54,57 @@ class LocationRepositoryImpl implements LocationRepository {
   }
 
   @override
-  Future<Result<List<DeliveryLocationEntity>>> searchPlaces(
+  Future<Result<List<PlacePredictionEntity>>> searchPlacePredictions(
     String query,
   ) async {
-    if (query.trim().length < 3) {
+    if (query.trim().length < 2) {
       return Result.success([]);
     }
     try {
-      final locations = await locationFromAddress(query);
-      final results = <DeliveryLocationEntity>[];
-      for (final loc in locations.take(6)) {
-        final placemarks = await placemarkFromCoordinates(
-          loc.latitude,
-          loc.longitude,
-        );
-        final place = placemarks.isNotEmpty ? placemarks.first : null;
-        final line = _formatAddress(place);
-        results.add(
-          DeliveryLocationEntity(
-            latitude: loc.latitude,
-            longitude: loc.longitude,
-            address: line.isNotEmpty ? line : query.trim(),
-            addressType: AppConstants.currentLocationLabel,
-            city: _cityFrom(place),
-          ),
-        );
-      }
-      return Result.success(results);
+      final list = await _places.autocomplete(query);
+      return Result.success(list);
+    } on Failure catch (e) {
+      return Result.failure(e);
     } catch (_) {
       return Result.success([]);
+    }
+  }
+
+  @override
+  Future<Result<DeliveryLocationEntity>> resolvePlaceDetails(
+    String placeId,
+  ) async {
+    try {
+      final place = await _places.placeDetails(placeId);
+      return Result.success(place);
+    } on Failure catch (e) {
+      return Result.failure(e);
+    } catch (e) {
+      return Result.failure(
+        ServerFailure(e.toString().replaceFirst('Exception: ', '')),
+      );
+    }
+  }
+
+  @override
+  Future<Result<DeliveryLocationEntity>> reverseGeocode({
+    required double latitude,
+    required double longitude,
+  }) async {
+    try {
+      final place = await _places.reverseGeocode(
+        latitude: latitude,
+        longitude: longitude,
+      );
+      return Result.success(
+        place.copyWith(addressType: AppConstants.currentLocationLabel),
+      );
+    } on Failure catch (e) {
+      return Result.failure(e);
+    } catch (_) {
+      return Result.failure(
+        const ValidationFailure('Unable to find address for this point'),
+      );
     }
   }
 
@@ -170,20 +196,24 @@ class LocationRepositoryImpl implements LocationRepository {
     }
   }
 
-  Future<DeliveryLocationEntity> _geocodePosition(Position position) async {
-    final placemarks = await placemarkFromCoordinates(
-      position.latitude,
-      position.longitude,
-    );
+  Future<DeliveryLocationEntity> _geocodePosition(Position position) {
+    return _geocodeLatLng(position.latitude, position.longitude);
+  }
+
+  Future<DeliveryLocationEntity> _geocodeLatLng(
+    double latitude,
+    double longitude,
+  ) async {
+    final placemarks = await placemarkFromCoordinates(latitude, longitude);
     final place = placemarks.isNotEmpty ? placemarks.first : null;
     final line = _formatAddress(place);
     final address = line.isNotEmpty
         ? line
-        : '${position.latitude.toStringAsFixed(5)}, ${position.longitude.toStringAsFixed(5)}';
+        : '${latitude.toStringAsFixed(5)}, ${longitude.toStringAsFixed(5)}';
 
     return DeliveryLocationEntity(
-      latitude: position.latitude,
-      longitude: position.longitude,
+      latitude: latitude,
+      longitude: longitude,
       address: address,
       addressType: AppConstants.currentLocationLabel,
       city: _cityFrom(place),

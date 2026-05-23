@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/data/restaurant_filter_store.dart';
 import '../../../../core/utils/result.dart';
 import '../../../catalog/domain/entities/cuisine_entity.dart';
 import '../../../catalog/domain/enums/restaurant_food_filter.dart';
@@ -9,24 +10,30 @@ import '../../domain/repositories/home_repository.dart';
 import 'home_state.dart';
 
 class HomeCubit extends Cubit<HomeState> {
-  HomeCubit(this._homeRepository, this._catalogRepository)
-      : super(const HomeState());
+  HomeCubit(
+    this._homeRepository,
+    this._catalogRepository,
+    this._filterStore,
+  ) : super(
+          HomeState(
+            sortOption: _filterStore.sortOption,
+            priceOption: _filterStore.priceOption,
+            cuisineFilterIds: _filterStore.cuisineIds,
+          ),
+        );
 
   final HomeRepository _homeRepository;
   final CatalogRepository _catalogRepository;
+  final RestaurantFilterStore _filterStore;
 
   Future<void> loadHome() async {
     emit(state.copyWith(status: HomeStatus.loading, clearError: true));
 
-    // Promotional APIs (weather notification, coupons, sliders) must not block restaurants.
     _mergeHomeFeed();
 
     final results = await Future.wait([
       _catalogRepository.getCuisines(),
-      _catalogRepository.getRestaurants(
-        page: 1,
-        foodFilter: state.foodFilter,
-      ),
+      _fetchRestaurants(page: 1),
     ]);
 
     if (isClosed) return;
@@ -91,6 +98,21 @@ class HomeCubit extends Cubit<HomeState> {
     await _reloadRestaurants(filter: filter);
   }
 
+  /// After Android `FilterFragment` Save / Reset.
+  Future<void> applyStoredFilters() async {
+    emit(
+      state.copyWith(
+        sortOption: _filterStore.sortOption,
+        priceOption: _filterStore.priceOption,
+        cuisineFilterIds: _filterStore.cuisineIds,
+        clearSortOption: _filterStore.sortOption == null,
+        clearPriceOption: _filterStore.priceOption == null,
+        clearCuisineFilterIds: _filterStore.cuisineIds.isEmpty,
+      ),
+    );
+    await _reloadRestaurants(filter: state.foodFilter);
+  }
+
   Future<void> _reloadRestaurants({required RestaurantFoodFilter filter}) async {
     emit(
       state.copyWith(
@@ -100,10 +122,7 @@ class HomeCubit extends Cubit<HomeState> {
       ),
     );
 
-    final result = await _catalogRepository.getRestaurants(
-      page: 1,
-      foodFilter: filter,
-    );
+    final result = await _fetchRestaurants(page: 1, foodFilter: filter);
 
     if (isClosed) return;
 
@@ -140,10 +159,7 @@ class HomeCubit extends Cubit<HomeState> {
     emit(state.copyWith(isLoadingMore: true));
 
     final nextPage = state.currentPage + 1;
-    final result = await _catalogRepository.getRestaurants(
-      page: nextPage,
-      foodFilter: state.foodFilter,
-    );
+    final result = await _fetchRestaurants(page: nextPage);
 
     if (result.isFailure) {
       emit(state.copyWith(isLoadingMore: false));
@@ -161,6 +177,19 @@ class HomeCubit extends Cubit<HomeState> {
         isLoadingMore: false,
         openRestaurantCount: merged.where((r) => r.isOpen).length,
       ),
+    );
+  }
+
+  Future<Result<RestaurantPageEntity>> _fetchRestaurants({
+    required int page,
+    RestaurantFoodFilter? foodFilter,
+  }) {
+    return _catalogRepository.getRestaurants(
+      page: page,
+      foodFilter: foodFilter ?? state.foodFilter,
+      cuisineIds: state.cuisineFilterIds,
+      sortOption: state.sortOption,
+      priceOption: state.priceOption,
     );
   }
 }

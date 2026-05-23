@@ -6,6 +6,8 @@ import '../../domain/entities/orders_page_entity.dart';
 import '../../domain/repositories/catalog_repository.dart';
 import '../../../search/domain/entities/search_suggestion_entity.dart';
 import '../../domain/enums/restaurant_food_filter.dart';
+import '../../domain/enums/restaurant_price_option.dart';
+import '../../domain/enums/restaurant_sort_option.dart';
 import '../datasources/catalog_remote_data_source.dart';
 import '../../../home/domain/entities/restaurant_page_entity.dart';
 
@@ -45,6 +47,8 @@ class CatalogRepositoryImpl implements CatalogRepository {
     required int page,
     RestaurantFoodFilter foodFilter = RestaurantFoodFilter.all,
     List<String> cuisineIds = const [],
+    RestaurantSortOption? sortOption,
+    RestaurantPriceOption? priceOption,
     bool favouritesOnly = false,
     String? searchKey,
   }) async {
@@ -53,6 +57,8 @@ class CatalogRepositoryImpl implements CatalogRepository {
         page: page,
         foodFilter: foodFilter,
         cuisineIds: cuisineIds,
+        sortOption: sortOption,
+        priceOption: priceOption,
         favouritesOnly: favouritesOnly,
         searchKey: searchKey,
       );

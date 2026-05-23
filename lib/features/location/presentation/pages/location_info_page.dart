@@ -6,6 +6,8 @@ import '../../../../injection_container.dart';
 import '../../domain/entities/delivery_location_entity.dart';
 import '../cubit/location_info_cubit.dart';
 import '../cubit/location_info_state.dart';
+import '../../domain/repositories/location_repository.dart';
+import 'location_map_picker_page.dart';
 import 'place_search_page.dart';
 
 class LocationInfoPage extends StatefulWidget {
@@ -42,16 +44,76 @@ class _LocationInfoPageState extends State<LocationInfoPage> {
     _otherLabel.text = draft.addressTypeText ?? '';
   }
 
+  Future<void> _openMapPicker(
+    BuildContext context, {
+    required double latitude,
+    required double longitude,
+    String? address,
+    String? city,
+    String? preserveId,
+  }) async {
+    final confirmed = await Navigator.of(context).push<DeliveryLocationEntity>(
+      MaterialPageRoute(
+        builder: (_) => LocationMapPickerPage(
+          initialLatitude: latitude,
+          initialLongitude: longitude,
+          initialAddress: address,
+          initialCity: city,
+        ),
+      ),
+    );
+    if (confirmed == null || !context.mounted) return;
+
+    final cubit = context.read<LocationInfoCubit>();
+    final type = cubit.state.addressType;
+    cubit.applyDraft(
+      confirmed.copyWith(
+        id: preserveId,
+        addressType: type == 'Other' ? type : 'Home',
+      ),
+    );
+    _lastDraftKey = null;
+  }
+
   Future<void> _openSearch(BuildContext context) async {
     final place = await Navigator.of(context).push<DeliveryLocationEntity>(
       MaterialPageRoute(builder: (_) => const PlaceSearchPage()),
     );
     if (place != null && context.mounted) {
       context.read<LocationInfoCubit>().applyDraft(
-            place.copyWith(id: null, addressType: 'Home'),
+            place.copyWith(
+              id: context.read<LocationInfoCubit>().state.draft?.id,
+              addressType: context.read<LocationInfoCubit>().state.addressType,
+            ),
           );
       _lastDraftKey = null;
     }
+  }
+
+  Future<void> _useCurrentLocationWithMap(BuildContext context) async {
+    final cubit = context.read<LocationInfoCubit>();
+    final repo = sl<LocationRepository>();
+    final result = await repo.resolveCurrentLocation();
+    if (!context.mounted) return;
+    if (result.isFailure) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            result.failure?.message ?? 'Could not get current location',
+          ),
+        ),
+      );
+      return;
+    }
+    final loc = result.data!;
+    await _openMapPicker(
+      context,
+      latitude: loc.latitude,
+      longitude: loc.longitude,
+      address: loc.address,
+      city: loc.city,
+      preserveId: cubit.state.draft?.id,
+    );
   }
 
   @override
@@ -127,36 +189,73 @@ class _LocationInfoPageState extends State<LocationInfoPage> {
                         ),
                         onTap: loading
                             ? null
-                            : () {
-                                context
-                                    .read<LocationInfoCubit>()
-                                    .useCurrentLocation();
-                                _lastDraftKey = null;
-                              },
+                            : () => _useCurrentLocationWithMap(context),
                       ),
                       if (state.hasMapPreview)
-                        Container(
-                          margin: const EdgeInsets.symmetric(
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
                             horizontal: 12,
                             vertical: 8,
                           ),
-                          padding: const EdgeInsets.all(10),
-                          color: AppColors.splash,
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.map,
-                                color: AppColors.brand,
-                                size: 22,
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  state.draft!.address,
-                                  style: const TextStyle(fontSize: 14),
+                          child: Material(
+                            color: AppColors.splash,
+                            borderRadius: BorderRadius.circular(8),
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(8),
+                              onTap: loading
+                                  ? null
+                                  : () {
+                                      final draft = state.draft!;
+                                      _openMapPicker(
+                                        context,
+                                        latitude: draft.latitude,
+                                        longitude: draft.longitude,
+                                        address: draft.address,
+                                        city: draft.city,
+                                        preserveId: draft.id,
+                                      );
+                                    },
+                              child: Padding(
+                                padding: const EdgeInsets.all(12),
+                                child: Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.map,
+                                      color: AppColors.brand,
+                                      size: 22,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            state.draft!.address,
+                                            style: const TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            'Tap to adjust on map',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey.shade600,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    Icon(
+                                      Icons.chevron_right,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                  ],
                                 ),
                               ),
-                            ],
+                            ),
                           ),
                         ),
                       Padding(

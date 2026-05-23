@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/data/restaurant_filter_store.dart';
 import '../../../../core/navigation/categories_navigation.dart';
 import '../../../../core/navigation/cuisine_navigation.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -16,6 +17,7 @@ import '../../../main/presentation/cubit/main_state.dart';
 import '../cubit/home_cubit.dart';
 import '../cubit/home_state.dart';
 import 'home_filter_chips_row.dart';
+import 'home_filter_sheet.dart';
 import 'home_promo_carousel.dart';
 import 'home_top_hero.dart';
 import 'home_service_highlights.dart';
@@ -231,6 +233,7 @@ class _HomeViewState extends State<_HomeView> {
                       padding: const EdgeInsets.only(bottom: 12),
                       child: HomeFilterChipsRow(
                         foodFilter: state.foodFilter,
+                        hasActiveFilters: state.hasRestaurantFilters,
                         onAllTap: () => context
                             .read<HomeCubit>()
                             .setFoodFilter(RestaurantFoodFilter.all),
@@ -247,6 +250,15 @@ class _HomeViewState extends State<_HomeView> {
                                 ? RestaurantFoodFilter.all
                                 : RestaurantFoodFilter.nonVeg,
                           );
+                        },
+                        onFilterTap: () async {
+                          final applied = await showHomeFilterSheet(
+                            context,
+                            store: sl<RestaurantFilterStore>(),
+                            cuisines: state.cuisines,
+                          );
+                          if (!context.mounted || !applied) return;
+                          await context.read<HomeCubit>().applyStoredFilters();
                         },
                       ),
                     ),

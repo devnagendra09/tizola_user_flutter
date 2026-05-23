@@ -6,6 +6,7 @@ import 'core/data/app_local_data_source.dart';
 import 'core/deeplink/deep_link_service.dart';
 import 'core/deeplink/deep_link_store.dart';
 import 'core/data/cuisine_filter_store.dart';
+import 'core/data/restaurant_filter_store.dart';
 import 'core/network/api_client.dart';
 import 'core/network/api_params_builder.dart';
 import 'core/network/dio_factory.dart';
@@ -29,6 +30,7 @@ import 'features/home/data/datasources/home_remote_data_source.dart';
 import 'features/home/data/repositories/home_repository_impl.dart';
 import 'features/home/domain/repositories/home_repository.dart';
 import 'features/home/presentation/cubit/home_cubit.dart';
+import 'features/location/data/datasources/google_places_remote_data_source.dart';
 import 'features/location/data/datasources/location_remote_data_source.dart';
 import 'features/location/data/repositories/location_repository_impl.dart';
 import 'features/location/domain/repositories/location_repository.dart';
@@ -67,6 +69,9 @@ Future<void> initDependencies() async {
     () => ApiParamsBuilder(sl(), sl()),
   );
   sl.registerLazySingleton<CuisineFilterStore>(() => CuisineFilterStore());
+  sl.registerLazySingleton<RestaurantFilterStore>(
+    () => RestaurantFilterStore(sl()),
+  );
   sl.registerLazySingleton<DeepLinkStore>(() => DeepLinkStore());
   sl.registerLazySingleton<DeepLinkService>(
     () => DeepLinkService(sl()),
@@ -93,8 +98,11 @@ Future<void> initDependencies() async {
   sl.registerLazySingleton<LocationRemoteDataSource>(
     () => LocationRemoteDataSourceImpl(sl()),
   );
+  sl.registerLazySingleton<GooglePlacesRemoteDataSource>(
+    GooglePlacesRemoteDataSource.new,
+  );
   sl.registerLazySingleton<LocationRepository>(
-    () => LocationRepositoryImpl(sl(), sl(), sl()),
+    () => LocationRepositoryImpl(sl(), sl(), sl(), sl()),
   );
 
   // --- Catalog / Home data ---
@@ -144,7 +152,7 @@ Future<void> initDependencies() async {
   sl.registerLazySingleton(() => MainCubit(sl(), sl(), sl(), sl()));
   sl.registerFactory(() => NearbyLocationCubit(sl()));
   sl.registerFactory(() => AccountCubit(sl()));
-  sl.registerFactory(() => HomeCubit(sl(), sl()));
+  sl.registerFactory(() => HomeCubit(sl(), sl(), sl()));
   sl.registerFactory(() => SearchCubit(sl()));
   sl.registerFactory(() => CategoryCubit(sl()));
   sl.registerFactory(() => CartCubit(sl(), sl()));

@@ -537,69 +537,69 @@ class _NearbyLocationPageState
                                         height:
                                         18),
 
-                                    /// RESTAURANTS
-                                    Container(
-                                      padding:
-                                      const EdgeInsets.symmetric(
-                                        horizontal:
-                                        12,
-                                        vertical:
-                                        8,
-                                      ),
-
-                                      decoration:
-                                      BoxDecoration(
-                                        color: AppColors
-                                            .brandLite
-                                            .withOpacity(
-                                            0.12),
-
-                                        borderRadius:
-                                        BorderRadius.circular(
-                                            14),
-                                      ),
-
-                                      child:
-                                      Row(
-                                        mainAxisSize:
-                                        MainAxisSize.min,
-
-                                        children: [
-
-                                          const Icon(
-                                            Icons
-                                                .restaurant,
-                                            size:
-                                            18,
-                                            color:
-                                            AppColors.brand,
-                                          ),
-
-                                          const SizedBox(
-                                              width:
-                                              6),
-
-                                          Text(
-                                            "12 restaurants available nearby",
-
-                                            style:
-                                            TextStyle(
-                                              color: Colors
-                                                  .grey
-                                                  .shade800,
-
-                                              fontWeight:
-                                              FontWeight
-                                                  .w600,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-
-                                    const SizedBox(
-                                        height:
-                                        24),
+                                    // /// RESTAURANTS
+                                    // Container(
+                                    //   padding:
+                                    //   const EdgeInsets.symmetric(
+                                    //     horizontal:
+                                    //     12,
+                                    //     vertical:
+                                    //     8,
+                                    //   ),
+                                    //
+                                    //   decoration:
+                                    //   BoxDecoration(
+                                    //     color: AppColors
+                                    //         .brandLite
+                                    //         .withOpacity(
+                                    //         0.12),
+                                    //
+                                    //     borderRadius:
+                                    //     BorderRadius.circular(
+                                    //         14),
+                                    //   ),
+                                    //
+                                    //   child:
+                                    //   Row(
+                                    //     mainAxisSize:
+                                    //     MainAxisSize.min,
+                                    //
+                                    //     children: [
+                                    //
+                                    //       const Icon(
+                                    //         Icons
+                                    //             .restaurant,
+                                    //         size:
+                                    //         18,
+                                    //         color:
+                                    //         AppColors.brand,
+                                    //       ),
+                                    //
+                                    //       const SizedBox(
+                                    //           width:
+                                    //           6),
+                                    //
+                                    //       Text(
+                                    //         "12 restaurants available nearby",
+                                    //
+                                    //         style:
+                                    //         TextStyle(
+                                    //           color: Colors
+                                    //               .grey
+                                    //               .shade800,
+                                    //
+                                    //           fontWeight:
+                                    //           FontWeight
+                                    //               .w600,
+                                    //         ),
+                                    //       ),
+                                    //     ],
+                                    //   ),
+                                    // ),
+                                    //
+                                    // const SizedBox(
+                                    //     height:
+                                    //     24),
 
                                     /// BUTTON
                                     Container(

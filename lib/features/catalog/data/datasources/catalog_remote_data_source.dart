@@ -14,6 +14,8 @@ import '../../../home/domain/entities/restaurant_page_entity.dart';
 import '../../../main/domain/entities/in_progress_order_entity.dart';
 import '../../../search/domain/entities/search_suggestion_entity.dart';
 import '../../domain/enums/restaurant_food_filter.dart';
+import '../../domain/enums/restaurant_price_option.dart';
+import '../../domain/enums/restaurant_sort_option.dart';
 
 abstract class CatalogRemoteDataSource {
   Future<List<CuisineEntity>> getCuisines();
@@ -24,6 +26,8 @@ abstract class CatalogRemoteDataSource {
     required int page,
     RestaurantFoodFilter foodFilter = RestaurantFoodFilter.all,
     List<String> cuisineIds = const [],
+    RestaurantSortOption? sortOption,
+    RestaurantPriceOption? priceOption,
     bool favouritesOnly = false,
     String? searchKey,
     bool refresh = false,
@@ -91,6 +95,8 @@ class CatalogRemoteDataSourceImpl implements CatalogRemoteDataSource {
     required int page,
     RestaurantFoodFilter foodFilter = RestaurantFoodFilter.all,
     List<String> cuisineIds = const [],
+    RestaurantSortOption? sortOption,
+    RestaurantPriceOption? priceOption,
     bool favouritesOnly = false,
     String? searchKey,
     bool refresh = false,
@@ -109,8 +115,18 @@ class CatalogRemoteDataSourceImpl implements CatalogRemoteDataSource {
       RestaurantFoodFilter.nonVeg => 'Non Veg',
       RestaurantFoodFilter.all => '',
     };
+    final mobileFilters = <String, dynamic>{};
     if (cuisineIds.isNotEmpty) {
-      params['mobile_filters'] = jsonEncode({'cuisines': cuisineIds});
+      mobileFilters['cuisines'] = cuisineIds;
+    }
+    if (sortOption != null) {
+      mobileFilters['m_sort'] = sortOption.apiValue;
+    }
+    if (priceOption != null) {
+      mobileFilters['m_price'] = priceOption.apiValue;
+    }
+    if (mobileFilters.isNotEmpty) {
+      params['mobile_filters'] = jsonEncode(mobileFilters);
     }
 
     final response = await _client.post('restaurants/mobile', params);
