@@ -1,0 +1,5 @@
+# Copy to key.properties (gitignored). Same as tizola-user-android/Keys/details.rtf
+storePassword=wmirchi.com
+keyPassword=wmirchi.com
+keyAlias=key0
+storeFile=keys/tizola.jks
