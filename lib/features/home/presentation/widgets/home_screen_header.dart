@@ -29,6 +29,9 @@ class HomeScreenHeader extends StatelessWidget {
     final secondary = lightForeground ? Colors.white70 : Colors.grey.shade600;
     final iconColor = lightForeground ? Colors.white : Colors.grey.shade800;
     final pinColor = lightForeground ? Colors.white : AppColors.brand;
+    final actionBackground = lightForeground
+        ? Colors.white.withValues(alpha: 0.18)
+        : Colors.grey.shade100;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 8, 4),
@@ -43,11 +46,7 @@ class HomeScreenHeader extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 4),
                 child: Row(
                   children: [
-                    Icon(
-                      Icons.location_on_outlined,
-                      color: pinColor,
-                      size: 22,
-                    ),
+                    Icon(Icons.location_on_outlined, color: pinColor, size: 22),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Column(
@@ -87,10 +86,7 @@ class HomeScreenHeader extends StatelessWidget {
                               subtitle,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: secondary,
-                              ),
+                              style: TextStyle(fontSize: 11, color: secondary),
                             ),
                         ],
                       ),
@@ -100,27 +96,20 @@ class HomeScreenHeader extends StatelessWidget {
               ),
             ),
           ),
-          IconButton(
-            onPressed: () {},
-            icon: Icon(
-              Icons.notifications_outlined,
-              color: iconColor,
-            ),
-          ),
           Stack(
             clipBehavior: Clip.none,
             children: [
-              IconButton(
-                onPressed: () => openCart(context),
-                icon: Icon(
-                  Icons.shopping_cart_outlined,
-                  color: iconColor,
-                ),
+              _HeaderActionButton(
+                icon: Icons.shopping_cart_outlined,
+                iconColor: iconColor,
+                backgroundColor: actionBackground,
+                tooltip: 'Cart',
+                onTap: () => openCart(context),
               ),
               if (cartItemCount > 0)
                 Positioned(
-                  right: 6,
-                  top: 6,
+                  right: 2,
+                  top: 2,
                   child: Container(
                     padding: const EdgeInsets.all(4),
                     decoration: const BoxDecoration(
@@ -145,6 +134,44 @@ class HomeScreenHeader extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _HeaderActionButton extends StatelessWidget {
+  const _HeaderActionButton({
+    required this.icon,
+    required this.iconColor,
+    required this.backgroundColor,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final Color iconColor;
+  final Color backgroundColor;
+  final String tooltip;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 8),
+      child: Material(
+        color: backgroundColor,
+        shape: const CircleBorder(),
+        child: InkWell(
+          onTap: onTap,
+          customBorder: const CircleBorder(),
+          child: Tooltip(
+            message: tooltip,
+            child: Padding(
+              padding: const EdgeInsets.all(10),
+              child: Icon(icon, color: iconColor, size: 22),
+            ),
+          ),
+        ),
       ),
     );
   }

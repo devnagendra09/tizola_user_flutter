@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_svg/svg.dart';
 
+import '../../../../core/constants/app_assets.dart';
 import '../../../../core/navigation/search_navigation.dart';
 import '../../../restaurant/presentation/pages/restaurant_detail_page.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -156,14 +158,27 @@ class _SearchViewState extends State<_SearchView> {
                   if (state.showEmpty) {
                     return Center(
                       child: Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: Text(
-                          'Nothing matched with your query. search again..!!',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.grey.shade700,
-                            fontSize: 15,
-                          ),
+                        padding: const EdgeInsets.all(18.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Image.asset(
+                              AppAssets.noSearchItemFound,
+                              width: 220,
+                              height: 190,
+                              fit: BoxFit.contain,
+                            ),
+                            SizedBox(height: 20),
+                            Text(
+                              'Nothing matched with your query. search again..!!',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.grey.shade700,
+                                fontSize: 15,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     );

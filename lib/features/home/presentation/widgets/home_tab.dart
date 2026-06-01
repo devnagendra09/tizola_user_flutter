@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+import '../../../../core/constants/app_assets.dart';
 import '../../../../core/data/restaurant_filter_store.dart';
 import '../../../../core/navigation/categories_navigation.dart';
 import '../../../../core/navigation/cuisine_navigation.dart';
@@ -119,184 +121,386 @@ class _HomeViewState extends State<_HomeView> {
 
         return Scaffold(
           backgroundColor: const Color(0xFFFAFAFA),
-          body: RefreshIndicator(
-            color: AppColors.brand,
-            onRefresh: () => context.read<HomeCubit>().refresh(),
-            child: CustomScrollView(
-              controller: _scrollController,
-              slivers: [
-                SliverToBoxAdapter(
-                  child: HomeTopHero(
-                    location: mainState.deliveryLocation,
-                    onLocationTap: () => _openChangeLocation(context),
-                    cartItemCount: mainState.cartItemCount,
-                  ),
-                ),
-                if (state.notificationMessage != null &&
-                    state.notificationMessage!.isNotEmpty)
-                  SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
-                        child: Material(
-                          color: AppColors.brandLite,
-                          borderRadius: BorderRadius.circular(12),
-                          child: Padding(
-                            padding: const EdgeInsets.all(12),
-                            child: Row(
-                              children: [
-                                const Icon(
-                                  Icons.campaign_outlined,
-                                  color: AppColors.brand,
-                                  size: 22,
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Text(
-                                    state.notificationMessage!,
-                                    style: const TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600,
+          body: Stack(
+            children: [
+              RefreshIndicator(
+                color: AppColors.brand,
+                onRefresh: () => context.read<HomeCubit>().refresh(),
+                child: CustomScrollView(
+                  controller: _scrollController,
+                  slivers: [
+                    SliverToBoxAdapter(
+                      child: HomeTopHero(
+                        location: mainState.deliveryLocation,
+                        onLocationTap: () => _openChangeLocation(context),
+                        cartItemCount: mainState.cartItemCount,
+                      ),
+                    ),
+                    if (state.notificationMessage != null &&
+                        state.notificationMessage!.isNotEmpty)
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
+                          child: Material(
+                            color: AppColors.brandLite,
+                            borderRadius: BorderRadius.circular(12),
+                            child: Padding(
+                              padding: const EdgeInsets.all(12),
+                              child: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.campaign_outlined,
+                                    color: AppColors.brand,
+                                    size: 22,
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      state.notificationMessage!,
+                                      style: const TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                      ),
                                     ),
                                   ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    SliverToBoxAdapter(
+                      child: Transform.translate(
+                        offset: const Offset(0, -12),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8.0),
+                          child: HomeCouponBannerCarousel(
+                            banners: state.couponBanners,
+                          ),
+                        ),
+                      ),
+                    ),
+                    if (state.cuisines.isNotEmpty) ...[
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                          child: Row(
+                            children: [
+                              const Expanded(
+                                child: Text(
+                                  'Categories',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                              ],
+                              ),
+                              GestureDetector(
+                                onTap: () => openCategoriesScreen(context),
+                                child: Text(
+                                  'View all',
+                                  style: TextStyle(
+                                    color: AppColors.brand,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      SliverToBoxAdapter(
+                        child: SizedBox(
+                          height: 108,
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            padding: const EdgeInsets.only(left: 16, right: 8),
+                            itemCount: state.cuisines.length,
+                            itemBuilder: (_, i) => _CuisineChip(
+                              cuisine: state.cuisines[i],
+                              index: i,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                    SliverToBoxAdapter(
+                      child: HomeSliderCarousel(sliders: state.sliders),
+                    ),
+                    const SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.only(top: 12, bottom: 8),
+                        child: HomeServiceHighlights(),
+                      ),
+                    ),
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: HomeFilterChipsRow(
+                          foodFilter: state.foodFilter,
+                          hasActiveFilters: state.hasRestaurantFilters,
+                          onAllTap: () => context
+                              .read<HomeCubit>()
+                              .setFoodFilter(RestaurantFoodFilter.all),
+                          onVegTap: () {
+                            context.read<HomeCubit>().setFoodFilter(
+                              state.foodFilter == RestaurantFoodFilter.veg
+                                  ? RestaurantFoodFilter.all
+                                  : RestaurantFoodFilter.veg,
+                            );
+                          },
+                          onNonVegTap: () {
+                            context.read<HomeCubit>().setFoodFilter(
+                              state.foodFilter == RestaurantFoodFilter.nonVeg
+                                  ? RestaurantFoodFilter.all
+                                  : RestaurantFoodFilter.nonVeg,
+                            );
+                          },
+                          onFilterTap: () async {
+                            final applied = await showHomeFilterSheet(
+                              context,
+                              store: sl<RestaurantFilterStore>(),
+                              cuisines: state.cuisines,
+                            );
+                            if (!context.mounted || !applied) return;
+                            await context
+                                .read<HomeCubit>()
+                                .applyStoredFilters();
+                          },
+                        ),
+                      ),
+                    ),
+                    const SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(16, 4, 16, 10),
+                        child: Text(
+                          'Recommended for you',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                    if (state.restaurants.isEmpty)
+                      SliverFillRemaining(
+                        hasScrollBody: false,
+                        child: MobileApiEmptyView(
+                          assetPath: AppAssets.noRestaurantFound,
+                          imageType: 'png',
+                          message: state.emptyMessage?.trim().isNotEmpty == true
+                              ? state.emptyMessage!.trim()
+                              : 'No restaurants found in your area ',
+                        ),
+                      )
+                    else
+                      SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) => RestaurantCard(
+                            restaurant: state.restaurants[index],
+                          ),
+                          childCount: state.restaurants.length,
+                        ),
+                      ),
+                    if (state.isLoadingMore)
+                      const SliverToBoxAdapter(child: ListFooterShimmer()),
+                    const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                  ],
+                ),
+              ),
+              if (state.customerCarePhone?.trim().isNotEmpty == true ||
+                  state.customerCareWhatsapp?.trim().isNotEmpty == true)
+                Positioned(
+                  right: 16,
+                  bottom: 24,
+                  child: SafeArea(
+                    top: false,
+                    child: HomeSupportFloatingButtons(
+                      phone: state.customerCarePhone,
+                      whatsApp: state.customerCareWhatsapp,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class HomeSupportFloatingButtons extends StatelessWidget {
+  const HomeSupportFloatingButtons({super.key, this.phone, this.whatsApp});
+
+  final String? phone;
+  final String? whatsApp;
+
+  Future<void> _launchCall(BuildContext context) async {
+    final trimmedPhone = phone?.trim();
+    if (trimmedPhone == null || trimmedPhone.isEmpty) return;
+
+    final uri = Uri.parse('tel:$trimmedPhone');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+      return;
+    }
+
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Unable to open call support')),
+    );
+  }
+
+  Future<void> _launchWhatsApp(BuildContext context) async {
+    final trimmedWhatsApp = whatsApp?.trim();
+    if (trimmedWhatsApp == null || trimmedWhatsApp.isEmpty) return;
+
+    final digits = trimmedWhatsApp.replaceAll(RegExp(r'\D'), '');
+    if (digits.isEmpty) return;
+
+    final uri = Uri.parse('https://wa.me/$digits');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+      return;
+    }
+
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Unable to open WhatsApp support')),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        if (whatsApp?.trim().isNotEmpty == true)
+          _SupportFloatingButton(
+            animationStyle: _SupportAnimationStyle.chat,
+            icon: Icons.chat,
+            backgroundColor: const Color(0xFF25D366),
+            tooltip: 'Chat support',
+            onTap: () => _launchWhatsApp(context),
+          ),
+        if (whatsApp?.trim().isNotEmpty == true && phone?.trim().isNotEmpty == true)
+          const SizedBox(height: 12),
+        if (phone?.trim().isNotEmpty == true)
+          _SupportFloatingButton(
+            animationStyle: _SupportAnimationStyle.call,
+            icon: Icons.call,
+            backgroundColor: AppColors.brand,
+            tooltip: 'Call support',
+            onTap: () => _launchCall(context),
+          ),
+      ],
+    );
+  }
+}
+
+enum _SupportAnimationStyle { call, chat }
+
+class _SupportFloatingButton extends StatefulWidget {
+  const _SupportFloatingButton({
+    required this.animationStyle,
+    required this.icon,
+    required this.backgroundColor,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  final _SupportAnimationStyle animationStyle;
+  final IconData icon;
+  final Color backgroundColor;
+  final String tooltip;
+  final VoidCallback onTap;
+
+  @override
+  State<_SupportFloatingButton> createState() => _SupportFloatingButtonState();
+}
+
+class _SupportFloatingButtonState extends State<_SupportFloatingButton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: Duration(
+      milliseconds: widget.animationStyle == _SupportAnimationStyle.call
+          ? 1000
+          : 1300,
+    ),
+  )..repeat(reverse: true);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) {
+        final animationValue = Curves.easeInOut.transform(_controller.value);
+        final pulseScale = 1 + (animationValue * 0.22);
+        final buttonScale = 1 + (animationValue * 0.05);
+        final iconRotation =
+            widget.animationStyle == _SupportAnimationStyle.call
+            ? (animationValue - 0.5) * 0.18
+            : 0.0;
+        final iconOffsetY = widget.animationStyle == _SupportAnimationStyle.chat
+            ? -2 * animationValue
+            : 0.0;
+
+        return Tooltip(
+          message: widget.tooltip,
+          child: SizedBox(
+            width: 72,
+            height: 72,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Transform.scale(
+                  scale: pulseScale,
+                  child: Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: widget.backgroundColor.withValues(alpha: 0.16),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+                Transform.scale(
+                  scale: buttonScale,
+                  child: Material(
+                    color: widget.backgroundColor,
+                    elevation: 10,
+                    shadowColor: Colors.black.withValues(alpha: 0.18),
+                    shape: const CircleBorder(),
+                    child: InkWell(
+                      onTap: widget.onTap,
+                      customBorder: const CircleBorder(),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Transform.translate(
+                          offset: Offset(0, iconOffsetY),
+                          child: Transform.rotate(
+                            angle: iconRotation,
+                            child: Icon(
+                              widget.icon,
+                              color: Colors.white,
+                              size: 24,
                             ),
                           ),
                         ),
                       ),
                     ),
-                  SliverToBoxAdapter(
-                    child: Transform.translate(
-                      offset: const Offset(0, -12),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical:8.0),
-                        child: HomeCouponBannerCarousel(
-                          banners: state.couponBanners,
-                        ),
-                      ),
-                    ),
                   ),
-                  if (state.cuisines.isNotEmpty) ...[
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-                        child: Row(
-                          children: [
-                            const Expanded(
-                              child: Text(
-                                'Categories',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                            GestureDetector(
-                              onTap: () => openCategoriesScreen(context),
-                              child: Text(
-                                'View all',
-                                style: TextStyle(
-                                  color: AppColors.brand,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    SliverToBoxAdapter(
-                      child: SizedBox(
-                        height: 108,
-                        child: ListView.builder(
-                          scrollDirection: Axis.horizontal,
-                          padding: const EdgeInsets.only(left: 16, right: 8),
-                          itemCount: state.cuisines.length,
-                          itemBuilder: (_, i) =>
-                              _CuisineChip(cuisine: state.cuisines[i], index: i),
-                        ),
-                      ),
-                    ),
-                  ],
-                  SliverToBoxAdapter(
-                    child: HomeSliderCarousel(sliders: state.sliders),
-                  ),
-                  const SliverToBoxAdapter(
-                    child: Padding(
-                      padding: EdgeInsets.only(top: 12, bottom: 8),
-                      child: HomeServiceHighlights(),
-                    ),
-                  ),
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: HomeFilterChipsRow(
-                        foodFilter: state.foodFilter,
-                        hasActiveFilters: state.hasRestaurantFilters,
-                        onAllTap: () => context
-                            .read<HomeCubit>()
-                            .setFoodFilter(RestaurantFoodFilter.all),
-                        onVegTap: () {
-                          context.read<HomeCubit>().setFoodFilter(
-                            state.foodFilter == RestaurantFoodFilter.veg
-                                ? RestaurantFoodFilter.all
-                                : RestaurantFoodFilter.veg,
-                          );
-                        },
-                        onNonVegTap: () {
-                          context.read<HomeCubit>().setFoodFilter(
-                            state.foodFilter == RestaurantFoodFilter.nonVeg
-                                ? RestaurantFoodFilter.all
-                                : RestaurantFoodFilter.nonVeg,
-                          );
-                        },
-                        onFilterTap: () async {
-                          final applied = await showHomeFilterSheet(
-                            context,
-                            store: sl<RestaurantFilterStore>(),
-                            cuisines: state.cuisines,
-                          );
-                          if (!context.mounted || !applied) return;
-                          await context.read<HomeCubit>().applyStoredFilters();
-                        },
-                      ),
-                    ),
-                  ),
-                  const SliverToBoxAdapter(
-                    child: Padding(
-                      padding: EdgeInsets.fromLTRB(16, 4, 16, 10),
-                      child: Text(
-                        'Recommended for you',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                  if (state.restaurants.isEmpty)
-                    SliverFillRemaining(
-                      hasScrollBody: false,
-                      child: MobileApiEmptyView(
-                        message: state.emptyMessage?.trim().isNotEmpty == true
-                            ? state.emptyMessage!.trim()
-                            : 'No restaurants found in your area',
-                      ),
-                    )
-                  else
-                    SliverList(
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) => RestaurantCard(
-                          restaurant: state.restaurants[index],
-                        ),
-                        childCount: state.restaurants.length,
-                      ),
-                    ),
-                  if (state.isLoadingMore)
-                    const SliverToBoxAdapter(child: ListFooterShimmer()),
-                  const SliverToBoxAdapter(child: SizedBox(height: 24)),
-                ],
+                ),
+              ],
             ),
           ),
         );
@@ -306,10 +510,7 @@ class _HomeViewState extends State<_HomeView> {
 }
 
 class _CuisineChip extends StatelessWidget {
-  const _CuisineChip({
-    required this.cuisine,
-    required this.index,
-  });
+  const _CuisineChip({required this.cuisine, required this.index});
 
   final CuisineEntity cuisine;
   final int index;
@@ -339,7 +540,6 @@ class _CuisineChip extends StatelessWidget {
         width: 84,
         child: Column(
           children: [
-
             /// CATEGORY CARD
             Container(
               height: 74,
@@ -354,25 +554,20 @@ class _CuisineChip extends StatelessWidget {
 
                 borderRadius: BorderRadius.circular(20),
 
-                border: Border.all(
-                  color: bg.withOpacity(0.15),
-                ),
+                border: Border.all(color: bg.withValues(alpha: 0.15)),
 
                 boxShadow: [
                   BoxShadow(
-                    color: bg.withOpacity(0.18),
+                    color: bg.withValues(alpha: 0.18),
                     blurRadius: 12,
-                    offset: const Offset(0, 4),
+                    offset: const Offset(1, 4),
                   ),
                 ],
               ),
 
               child: ClipOval(
-             //   borderRadius: BorderRadius.circular(14),
-                child: NetworkImageBox(
-                  url: cuisine.image,
-                  fit: BoxFit.cover,
-                ),
+                //   borderRadius: BorderRadius.circular(14),
+                child: NetworkImageBox(url: cuisine.image, fit: BoxFit.cover),
               ),
             ),
 

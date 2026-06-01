@@ -8,12 +8,14 @@ class MobileApiEmptyView extends StatelessWidget {
   const MobileApiEmptyView({
     super.key,
     required this.message,
-    this.assetPath = AppAssets.noRestaurantFound,
+    this.assetPath,
+    this.imageType,
     this.padding = const EdgeInsets.symmetric(horizontal: 24),
   });
 
   final String message;
-  final String assetPath;
+  final String? assetPath;
+  final String? imageType;
   final EdgeInsets padding;
 
   @override
@@ -24,12 +26,13 @@ class MobileApiEmptyView extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Image.asset(
-            assetPath,
+          imageType == 'svg' ?
+          SvgPicture.asset(
+            assetPath ?? AppAssets.noDataSvg,
             width: 220,
             height: 190,
             fit: BoxFit.contain,
-          ),
+          ):Image.asset(assetPath ?? AppAssets.noRestaurantFound,),
           const SizedBox(height: 20),
           Text(
             message,

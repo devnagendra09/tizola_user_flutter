@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/constants/app_assets.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_loading_shimmers.dart';
 import '../../../../core/widgets/mobile_api_empty_view.dart';
@@ -98,10 +99,14 @@ class _RestaurantListViewState extends State<_RestaurantListView> {
           }
 
           if (state.restaurants.isEmpty) {
-            return MobileApiEmptyView(
-              message: state.emptyMessage?.trim().isNotEmpty == true
-                  ? state.emptyMessage!.trim()
-                  : 'No restaurants found',
+            return Center(
+              child: MobileApiEmptyView(
+                assetPath: AppAssets.noRestaurantFound,
+                imageType: 'png',
+                message: state.emptyMessage?.trim().isNotEmpty == true
+                    ? state.emptyMessage!.trim()
+                    : 'No restaurants found',
+              ),
             );
           }
 

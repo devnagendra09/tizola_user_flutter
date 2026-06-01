@@ -31,7 +31,8 @@ class ApiClient {
   Future<ApiResponse> post(
     String endpoint,
     Map<String, String> body,
-  ) async {
+  )
+  async {
     try {
       final response = await _dio.post<Object?>(
         endpoint,

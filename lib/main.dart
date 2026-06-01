@@ -8,6 +8,7 @@ import 'core/navigation/app_navigator.dart';
 import 'core/push/push_notification_service.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/system_ui_styles.dart';
+import 'core/widgets/network_status_gate.dart';
 import 'core/data/app_local_data_source.dart';
 import 'core/firebase/firebase_bootstrap.dart';
 import 'core/maps/google_maps_bootstrap.dart';
@@ -54,6 +55,8 @@ class _TizolaAppState extends State<TizolaApp> {
         navigatorKey: appNavigatorKey,
         debugShowCheckedModeBanner: false,
         theme: AppTheme.light,
+        builder: (context, child) =>
+            NetworkStatusGate(child: child ?? const SizedBox.shrink()),
         home: const SplashPage(),
       ),
     );

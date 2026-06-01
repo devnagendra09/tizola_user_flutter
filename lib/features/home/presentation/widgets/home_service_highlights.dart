@@ -12,6 +12,7 @@ class HomeServiceHighlights extends StatelessWidget {
       subtitle: 'On first order',
       color: Color(0xFFFFF3E0),
       iconColor: Color(0xFFE65100),
+      borderColor: Color(0xFFFFC107),
     ),
     _Highlight(
       icon: Icons.delivery_dining_outlined,
@@ -19,6 +20,7 @@ class HomeServiceHighlights extends StatelessWidget {
       subtitle: 'On select stores',
       color: Color(0xFFE8F5E9),
       iconColor: AppColors.vegGreen,
+      borderColor:Color(0xFF4CAF50),
     ),
     // _Highlight(
     //   icon: Icons.replay_outlined,
@@ -33,6 +35,7 @@ class HomeServiceHighlights extends StatelessWidget {
       subtitle: 'Daily deals',
       color: Color(0xFFFCE4EC),
       iconColor: Color(0xFFC2185B),
+      borderColor: Color(0xFFE91E63),
     ),
   ];
 
@@ -53,12 +56,12 @@ class HomeServiceHighlights extends StatelessWidget {
             decoration: BoxDecoration(
               color: item.color,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.white, width: 1),
+              border: Border.all(color: item.borderColor ?? Colors.transparent, width: 1),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
+                  color: item.borderColor?.withValues(alpha: 0.1) ?? Colors.black.withValues(alpha: 0.1),
                   blurRadius: 8,
-                  offset: const Offset(0, 2),
+                  offset: const Offset(2, 2),
                 ),
               ],
             ),
@@ -108,6 +111,7 @@ class _Highlight {
     required this.subtitle,
     required this.color,
     required this.iconColor,
+     this.borderColor,
   });
 
   final IconData icon;
@@ -115,4 +119,5 @@ class _Highlight {
   final String subtitle;
   final Color color;
   final Color iconColor;
+  final Color? borderColor;
 }
