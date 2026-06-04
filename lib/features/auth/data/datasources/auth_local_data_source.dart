@@ -10,9 +10,18 @@ abstract class AuthLocalDataSource {
   String? get customerName;
   String? get email;
   String get countryId;
+  String get countryDialCode;
+  String? get countryName;
   String get appLanguageCode;
 
   Future<void> setCountryId(String id);
+  Future<void> saveCountrySelection({
+    required String id,
+    required String dialCode,
+    required String name,
+  });
+
+  bool get hasCountrySelection;
   Future<void> setAppLanguage(String code);
   Future<void> saveSession({
     required String phone,
@@ -45,6 +54,29 @@ class AuthLocalDataSourceImpl implements AuthLocalDataSource {
   String get countryId =>
       _prefs.getString(AppConstants.keyCountryId) ??
       AppConstants.defaultCountryId;
+
+  @override
+  String get countryDialCode =>
+      _prefs.getString(AppConstants.keyCountryDialCode) ??
+      AppConstants.defaultDialCode;
+
+  @override
+  String? get countryName => _prefs.getString(AppConstants.keyCountryName);
+
+  @override
+  bool get hasCountrySelection =>
+      _prefs.containsKey(AppConstants.keyCountryName);
+
+  @override
+  Future<void> saveCountrySelection({
+    required String id,
+    required String dialCode,
+    required String name,
+  }) async {
+    await _prefs.setString(AppConstants.keyCountryId, id);
+    await _prefs.setString(AppConstants.keyCountryDialCode, dialCode);
+    await _prefs.setString(AppConstants.keyCountryName, name);
+  }
 
   @override
   String get appLanguageCode =>

@@ -7,7 +7,7 @@ enum NearbyLocationStatus {
   locating,
   addressReady,
   navigateToMain,
-  navigateToManualSetup,
+  navigateToDeviceLocationSetup,
   failure,
 }
 

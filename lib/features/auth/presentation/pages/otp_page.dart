@@ -1,11 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:sms_autofill/sms_autofill.dart';
 
-import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/otp_input.dart';
 import '../../../../injection_container.dart';
 import '../../../location/presentation/pages/nearby_location_page.dart';
+import 'register_page.dart';
 import '../cubit/otp/otp_cubit.dart';
 import '../cubit/otp/otp_state.dart';
 
@@ -32,8 +35,49 @@ class _OtpView extends StatefulWidget {
   State<_OtpView> createState() => _OtpViewState();
 }
 
-class _OtpViewState extends State<_OtpView> {
+class _OtpViewState extends State<_OtpView> with CodeAutoFill {
   final _otpKey = GlobalKey<OtpInputState>();
+  StreamSubscription<String>? _smsSub;
+
+  @override
+  void initState() {
+    super.initState();
+    _listenForSms();
+  }
+
+  Future<void> _listenForSms() async {
+    try {
+      await SmsAutoFill().listenForCode();
+      _smsSub = SmsAutoFill().code.listen((code) {
+        final digits = code.replaceAll(RegExp(r'\D'), '');
+        if (digits.length >= 4 && mounted) {
+          final otp = digits.substring(0, 4);
+          _otpKey.currentState?.setCode(otp);
+          context.read<OtpCubit>().verifyOtp(otp);
+        }
+      });
+    } catch (_) {}
+  }
+
+  @override
+  void codeUpdated() {
+    final received = code;
+    if (received == null || received.isEmpty || !mounted) return;
+    final digits = received.replaceAll(RegExp(r'\D'), '');
+    if (digits.length >= 4) {
+      final otp = digits.substring(0, 4);
+      _otpKey.currentState?.setCode(otp);
+      context.read<OtpCubit>().verifyOtp(otp);
+    }
+  }
+
+  @override
+  void dispose() {
+    _smsSub?.cancel();
+    SmsAutoFill().unregisterListener();
+    cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +85,12 @@ class _OtpViewState extends State<_OtpView> {
       listenWhen: (prev, curr) =>
           prev.status != curr.status || prev.otpSentAgain != curr.otpSentAgain,
       listener: (context, state) {
-        if (state.status == OtpStatus.success) {
+        if (state.status == OtpStatus.needsRegistration) {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute<void>(builder: (_) => const RegisterPage()),
+            (_) => false,
+          );
+        } else if (state.status == OtpStatus.success) {
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute<void>(builder: (_) => const NearbyLocationPage()),
             (_) => false,

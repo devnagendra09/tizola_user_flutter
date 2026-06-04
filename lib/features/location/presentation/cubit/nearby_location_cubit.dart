@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/errors/failures.dart';
 import '../../domain/repositories/location_repository.dart';
 import 'nearby_location_state.dart';
 
@@ -20,10 +21,21 @@ class NearbyLocationCubit extends Cubit<NearbyLocationState> {
     final result = await _repository.resolveNearbyDeliveryLocation();
 
     if (result.isFailure) {
+      final failure = result.failure;
+      if (failure is NoSavedAddressesFailure) {
+        await Future<void>.delayed(const Duration(milliseconds: 1000));
+        if (isClosed) return;
+        emit(
+          state.copyWith(
+            status: NearbyLocationStatus.navigateToDeviceLocationSetup,
+          ),
+        );
+        return;
+      }
       emit(
         state.copyWith(
-          status: NearbyLocationStatus.navigateToManualSetup,
-          errorMessage: result.failure?.message,
+          status: NearbyLocationStatus.navigateToDeviceLocationSetup,
+          errorMessage: failure?.message,
         ),
       );
       return;

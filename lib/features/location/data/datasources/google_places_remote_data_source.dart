@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 
 import '../../../../core/constants/google_api_keys.dart';
 import '../../../../core/errors/failures.dart';
+import '../../../../core/network/api_logging_interceptor.dart';
 import '../../domain/entities/delivery_location_entity.dart';
 import '../../domain/entities/place_prediction_entity.dart';
 
@@ -12,13 +13,15 @@ class GooglePlacesRemoteDataSource {
   final Dio _dio;
 
   static Dio _createDio() {
-    return Dio(
+    final dio = Dio(
       BaseOptions(
         connectTimeout: const Duration(seconds: 15),
         receiveTimeout: const Duration(seconds: 15),
         validateStatus: (_) => true,
       ),
     );
+    dio.interceptors.add(ApiLoggingInterceptor());
+    return dio;
   }
 
   /// Android `Autocomplete.IntentBuilder` with `setCountry("IN")`.

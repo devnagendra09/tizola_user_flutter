@@ -18,6 +18,9 @@ import '../widgets/addons_selection_sheet.dart';
 import '../widgets/cart_summary_bar.dart';
 import '../widgets/menu_item_tile.dart';
 import '../widgets/recommended_dish_card.dart';
+import '../../../../l10n/app_localizations.dart';
+import '../widgets/restaurant_about_tab.dart';
+import '../widgets/restaurant_reviews_tab.dart';
 
 ///  Bounded height for horizontal recommended [ListView] (see Android `item_food_list_recommened`).
 const double _kRecommendedStripHeight = 212;
@@ -57,7 +60,9 @@ class _RestaurantDetailView extends StatefulWidget {
   State<_RestaurantDetailView> createState() => _RestaurantDetailViewState();
 }
 
-class _RestaurantDetailViewState extends State<_RestaurantDetailView> {
+class _RestaurantDetailViewState extends State<_RestaurantDetailView>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
   final _categoryScrollController = ScrollController();
   final _menuScrollController = ScrollController();
   final _sectionKeys = <GlobalKey>[];
@@ -65,7 +70,14 @@ class _RestaurantDetailViewState extends State<_RestaurantDetailView> {
   bool _sharedItemScrollDone = false;
 
   @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 3, vsync: this);
+  }
+
+  @override
   void dispose() {
+    _tabController.dispose();
     _categoryScrollController.dispose();
     _menuScrollController.dispose();
     super.dispose();
@@ -727,6 +739,37 @@ class _RestaurantDetailViewState extends State<_RestaurantDetailView> {
               ),
             ),
           ),
+        Material(
+          color: Colors.white,
+          child: TabBar(
+            controller: _tabController,
+            labelColor: AppColors.brand,
+            unselectedLabelColor: Colors.grey,
+            indicatorColor: AppColors.brand,
+            tabs: [
+              Tab(text: AppLocalizations.of(context).menuTab),
+              Tab(text: AppLocalizations.of(context).aboutTab),
+              Tab(text: AppLocalizations.of(context).reviewsTab),
+            ],
+          ),
+        ),
+        Expanded(
+          child: TabBarView(
+            controller: _tabController,
+            children: [
+              _buildMenuTab(context, state),
+              RestaurantAboutTab(seoUrl: state.seoUrl),
+              RestaurantReviewsTab(seoUrl: state.seoUrl),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMenuTab(BuildContext context, RestaurantDetailState state) {
+    return Column(
+      children: [
         const _RestaurantMenuSearchBar(),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -797,15 +840,15 @@ class _RestaurantDetailViewState extends State<_RestaurantDetailView> {
                   message: 'No menu items found',
                 )
               : RefreshIndicator(
-            color: AppColors.brand,
-            onRefresh: () =>
-                context.read<RestaurantDetailCubit>().reloadMenu(),
-            child: CustomScrollView(
-              controller: _menuScrollController,
-              physics: const AlwaysScrollableScrollPhysics(),
-              slivers: _buildMenuSlivers(context, state),
-            ),
-          ),
+                  color: AppColors.brand,
+                  onRefresh: () =>
+                      context.read<RestaurantDetailCubit>().reloadMenu(),
+                  child: CustomScrollView(
+                    controller: _menuScrollController,
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    slivers: _buildMenuSlivers(context, state),
+                  ),
+                ),
         ),
       ],
     );

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/locale/app_locale_notifier.dart';
 import '../../../../injection_container.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../auth/domain/repositories/auth_repository.dart';
 
 class AccountLanguagePage extends StatefulWidget {
@@ -28,27 +30,23 @@ class _AccountLanguagePageState extends State<AccountLanguagePage> {
 
   Future<void> _onSelect(String code) async {
     if (code == _selected) return;
-    final result = await sl<AuthRepository>().saveAppLanguage(code);
+    final l10n = AppLocalizations.of(context);
+    await sl<AppLocaleNotifier>().applyLanguageCode(code);
     if (!mounted) return;
-    if (result.isFailure) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not save language')),
-      );
-      return;
-    }
     setState(() => _selected = code);
-    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Language saved')),
+      SnackBar(content: Text(l10n.languageSaved)),
     );
     Navigator.of(context).pop();
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Language'),
+        title: Text(l10n.language),
         backgroundColor: AppColors.brand,
         foregroundColor: Colors.white,
       ),

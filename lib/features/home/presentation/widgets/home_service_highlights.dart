@@ -42,16 +42,16 @@ class HomeServiceHighlights extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 88,
+      height: 65,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 15),
         itemCount: _items.length,
         separatorBuilder: (_, index) => const SizedBox(width: 10),
         itemBuilder: (_, i) {
           final item = _items[i];
           return Container(
-            width: 132,
+            width: 120,
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               color: item.color,

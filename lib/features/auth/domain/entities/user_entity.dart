@@ -15,6 +15,28 @@ class UserEntity extends Equatable {
   final String? accessToken;
   final String? referralCode;
 
+  UserEntity copyWith({
+    String? phoneNumber,
+    String? name,
+    String? email,
+    String? accessToken,
+    String? referralCode,
+  }) {
+    return UserEntity(
+      phoneNumber: phoneNumber ?? this.phoneNumber,
+      name: name ?? this.name,
+      email: email ?? this.email,
+      accessToken: accessToken ?? this.accessToken,
+      referralCode: referralCode ?? this.referralCode,
+    );
+  }
+
+  bool get needsProfileCompletion {
+    final n = name?.trim() ?? '';
+    final e = email?.trim() ?? '';
+    return n.isEmpty && e.isEmpty;
+  }
+
   @override
   List<Object?> get props =>
       [phoneNumber, name, email, accessToken, referralCode];

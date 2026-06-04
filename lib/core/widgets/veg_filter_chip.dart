@@ -28,10 +28,10 @@ class VegFilterChip extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
         decoration: BoxDecoration(
           color: fillColor,
-          borderRadius: BorderRadius.circular(5),
+          borderRadius: BorderRadius.circular(18),
           border: Border.all(color: borderColor, width: 1),
         ),
         child: Row(

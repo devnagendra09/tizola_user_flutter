@@ -3,6 +3,8 @@ import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'core/data/app_local_data_source.dart';
+import 'core/locale/app_locale_notifier.dart';
+import 'core/maps/directions_service.dart';
 import 'core/deeplink/deep_link_service.dart';
 import 'core/deeplink/deep_link_store.dart';
 import 'core/data/cuisine_filter_store.dart';
@@ -18,6 +20,7 @@ import 'features/auth/data/repositories/auth_repository_impl.dart';
 import 'features/auth/domain/repositories/auth_repository.dart';
 import 'features/auth/presentation/cubit/login/login_cubit.dart';
 import 'features/auth/presentation/cubit/otp/otp_cubit.dart';
+import 'features/auth/presentation/cubit/register/register_cubit.dart';
 import 'features/catalog/data/datasources/catalog_remote_data_source.dart';
 import 'features/catalog/data/repositories/catalog_repository_impl.dart';
 import 'features/catalog/domain/repositories/catalog_repository.dart';
@@ -62,6 +65,10 @@ Future<void> initDependencies() async {
 
   // --- Core ---
   sl.registerLazySingleton<ApiClient>(() => ApiClient(sl()));
+  sl.registerLazySingleton<DirectionsService>(() => DirectionsService());
+  sl.registerLazySingleton<AppLocaleNotifier>(
+    () => AppLocaleNotifier(sl()),
+  );
   sl.registerLazySingleton<AppLocalDataSource>(
     () => AppLocalDataSourceImpl(sl()),
   );
@@ -144,8 +151,9 @@ Future<void> initDependencies() async {
   );
 
   // --- Cubits ---
-  sl.registerFactory(() => SplashCubit(sl()));
+  sl.registerFactory(() => SplashCubit(sl(), sl(), sl()));
   sl.registerFactory(() => LoginCubit(sl()));
+  sl.registerFactory(() => RegisterCubit(sl()));
   sl.registerFactoryParam<OtpCubit, String, void>(
     (mobile, _) => OtpCubit(sl(), mobile: mobile),
   );

@@ -30,6 +30,18 @@ class OtpInputState extends State<OtpInput> {
     widget.onChanged?.call('');
   }
 
+  void setCode(String code) {
+    final digits = code.replaceAll(RegExp(r'\D'), '');
+    for (var i = 0; i < _controllers.length; i++) {
+      _controllers[i].text =
+          i < digits.length ? digits[i] : '';
+    }
+    if (digits.length >= _controllers.length) {
+      widget.onCompleted(digits.substring(0, _controllers.length));
+    }
+    widget.onChanged?.call(value);
+  }
+
   String get value => _controllers.map((c) => c.text).join();
 
   @override

@@ -117,7 +117,7 @@ class HomeCubit extends Cubit<HomeState> {
     emit(
       state.copyWith(
         foodFilter: filter,
-        status: HomeStatus.loading,
+        isReloadingRestaurants: true,
         clearError: true,
       ),
     );
@@ -129,7 +129,7 @@ class HomeCubit extends Cubit<HomeState> {
     if (result.isFailure) {
       emit(
         state.copyWith(
-          status: HomeStatus.loaded,
+          isReloadingRestaurants: false,
           errorMessage: result.failure?.message,
         ),
       );
@@ -148,6 +148,7 @@ class HomeCubit extends Cubit<HomeState> {
         emptyMessage: page.emptyMessage,
         openRestaurantCount:
             page.restaurants.where((r) => r.isOpen).length,
+        isReloadingRestaurants: false,
         clearError: true,
       ),
     );

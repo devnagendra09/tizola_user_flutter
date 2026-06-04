@@ -8,6 +8,7 @@ import '../../../../core/widgets/network_image_box.dart';
 import '../../../../injection_container.dart';
 import '../../../auth/domain/repositories/auth_repository.dart';
 import '../../../auth/presentation/pages/login_page.dart';
+import '../../../location/domain/repositories/location_repository.dart';
 import '../../../location/presentation/pages/location_info_page.dart';
 import '../../../main/presentation/cubit/main_cubit.dart';
 import '../../domain/entities/cart_entity.dart';
@@ -163,12 +164,29 @@ class _CartView extends StatelessWidget {
   }
 
   Future<void> _changeAddress(BuildContext context) async {
+    final previous = sl<LocationRepository>().savedDeliveryLocation;
     final changed = await Navigator.of(context).push<bool>(
       MaterialPageRoute<bool>(builder: (_) => const LocationInfoPage()),
     );
-    if (context.mounted && changed == true) {
-      await context.read<CartCubit>().refreshDeliveryLocation();
-    }
+    if (!context.mounted || changed != true) return;
+
+    final rejection = await context
+        .read<CartCubit>()
+        .applyDeliveryLocationChange(previous);
+    if (!context.mounted || rejection == null) return;
+
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        content: Text(rejection),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Okay'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _goHome(BuildContext context) {

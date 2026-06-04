@@ -1,7 +1,9 @@
 import '../../../../core/errors/failures.dart';
 import '../../../../core/utils/result.dart';
 import '../../domain/entities/menu_entity.dart';
+import '../../domain/entities/restaurant_about_entity.dart';
 import '../../domain/entities/restaurant_detail_entities.dart';
+import '../../domain/entities/restaurant_review_entity.dart';
 import '../../domain/repositories/restaurant_repository.dart';
 import '../datasources/restaurant_remote_data_source.dart';
 import '../../../catalog/domain/enums/restaurant_food_filter.dart';
@@ -138,6 +140,34 @@ class RestaurantRepositoryImpl implements RestaurantRepository {
     try {
       await _remote.toggleFavourite(seoUrl: seoUrl);
       return Result.success(null);
+    } on Failure catch (e) {
+      return Result.failure(e);
+    } catch (_) {
+      return Result.failure(const NetworkFailure());
+    }
+  }
+
+  @override
+  Future<Result<RestaurantAboutEntity>> getAbout({required String seoUrl}) async {
+    try {
+      final data = await _remote.getAbout(seoUrl: seoUrl);
+      return Result.success(data);
+    } on Failure catch (e) {
+      return Result.failure(e);
+    } catch (_) {
+      return Result.failure(const NetworkFailure());
+    }
+  }
+
+  @override
+  Future<Result<({List<RestaurantReviewEntity> items, int totalPages})>>
+      getReviews({
+    required String seoUrl,
+    required int page,
+  }) async {
+    try {
+      final data = await _remote.getReviews(seoUrl: seoUrl, page: page);
+      return Result.success(data);
     } on Failure catch (e) {
       return Result.failure(e);
     } catch (_) {

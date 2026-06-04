@@ -44,7 +44,11 @@ class OtpCubit extends Cubit<OtpState> {
     final result = await _repository.verifyOtp(mobile: mobile, otp: otp);
 
     if (result.isSuccess) {
-      emit(state.copyWith(status: OtpStatus.success, clearError: true));
+      final user = result.data!;
+      final status = user.needsProfileCompletion
+          ? OtpStatus.needsRegistration
+          : OtpStatus.success;
+      emit(state.copyWith(status: status, clearError: true));
     } else {
       final message = result.failure?.message ?? 'Invalid OTP';
       emit(

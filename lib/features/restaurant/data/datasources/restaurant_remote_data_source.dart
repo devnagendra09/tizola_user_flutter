@@ -4,7 +4,9 @@ import '../../../../core/network/api_client.dart';
 import '../../../../core/network/api_params_builder.dart';
 import '../../../../core/network/api_response_parser.dart';
 import '../../domain/entities/menu_entity.dart';
+import '../../domain/entities/restaurant_about_entity.dart';
 import '../../domain/entities/restaurant_detail_entities.dart';
+import '../../domain/entities/restaurant_review_entity.dart';
 import '../../../catalog/domain/enums/restaurant_food_filter.dart';
 
 abstract class RestaurantRemoteDataSource {
@@ -28,6 +30,13 @@ abstract class RestaurantRemoteDataSource {
   Future<void> removeFromCart({required String tempCartItemId});
   Future<void> clearCart();
   Future<void> toggleFavourite({required String seoUrl});
+
+  Future<RestaurantAboutEntity> getAbout({required String seoUrl});
+
+  Future<({List<RestaurantReviewEntity> items, int totalPages})> getReviews({
+    required String seoUrl,
+    required int page,
+  });
 }
 
 class RestaurantRemoteDataSourceImpl implements RestaurantRemoteDataSource {
@@ -328,5 +337,75 @@ class RestaurantRemoteDataSourceImpl implements RestaurantRemoteDataSource {
             double.tryParse(map['actual_price']?.toString() ?? ''),
       );
     }).toList();
+  }
+
+  @override
+  Future<RestaurantAboutEntity> getAbout({required String seoUrl}) async {
+    final params = _paramsBuilder.baseParams();
+    params['seo_url'] = seoUrl;
+
+    final response = await _client.post('restaurant_data/about_us', params);
+    final json = ApiResponseParser.decodeMap(response.body);
+    if (!ApiResponseParser.isValid(json)) {
+      throw ServerFailure(ApiResponseParser.message(json));
+    }
+
+    final data = json['data'] as Map<String, dynamic>? ?? {};
+    final hoursJson = data['business_hours'] as List<dynamic>? ?? [];
+    final hours = hoursJson.map((entry) {
+      final h = entry as Map<String, dynamic>;
+      return RestaurantBusinessHourEntity(
+        weekName: h['display_week_name']?.toString() ?? '',
+        timings: h['display_timings']?.toString() ?? '',
+      );
+    }).toList();
+
+    final latStr = data['latitude']?.toString();
+    final lngStr = data['longitude']?.toString();
+
+    return RestaurantAboutEntity(
+      description: data['description']?.toString() ?? '',
+      displayAddress: data['display_address']?.toString() ?? '',
+      businessHours: hours,
+      latitude: latStr != null && latStr != 'null'
+          ? double.tryParse(latStr)
+          : null,
+      longitude: lngStr != null && lngStr != 'null'
+          ? double.tryParse(lngStr)
+          : null,
+    );
+  }
+
+  @override
+  Future<({List<RestaurantReviewEntity> items, int totalPages})> getReviews({
+    required String seoUrl,
+    required int page,
+  }) async {
+    final params = _paramsBuilder.baseParams();
+    params['seo_url'] = seoUrl;
+    params['page'] = page.toString();
+
+    final response = await _client.post('restaurant_data/reviews', params);
+    final json = ApiResponseParser.decodeMap(response.body);
+    if (!ApiResponseParser.isValid(json)) {
+      return (items: <RestaurantReviewEntity>[], totalPages: 1);
+    }
+
+    final data = json['data'] as Map<String, dynamic>? ?? {};
+    final totalPages =
+        int.tryParse(data['total_pages']?.toString() ?? '1') ?? 1;
+    final results = data['results'] as List<dynamic>? ?? [];
+
+    final items = results.map((entry) {
+      final map = entry as Map<String, dynamic>;
+      return RestaurantReviewEntity(
+        customerName: map['customer_name']?.toString() ?? '',
+        feedback: map['restaurant_feed_back']?.toString() ?? '',
+        rating:
+            double.tryParse(map['restaurant_rating']?.toString() ?? '') ?? 0,
+      );
+    }).toList();
+
+    return (items: items, totalPages: totalPages);
   }
 }

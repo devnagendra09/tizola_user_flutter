@@ -5,8 +5,14 @@ import '../../../../core/utils/result.dart';
 import '../../../main/domain/entities/faq_entity.dart';
 import '../../../main/domain/entities/refer_info_entity.dart';
 import '../../domain/entities/auth_session_entity.dart';
+import '../../domain/entities/country_entity.dart';
+import '../../domain/entities/pending_feedback_entity.dart';
+import '../../domain/entities/session_restore_result.dart';
 import '../../domain/entities/user_entity.dart';
+import '../../domain/entities/version_check_result.dart';
 import '../../domain/repositories/auth_repository.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+
 import '../datasources/auth_local_data_source.dart';
 import '../datasources/auth_remote_data_source.dart';
 
@@ -18,9 +24,170 @@ class AuthRepositoryImpl implements AuthRepository {
   final AppLocalDataSource _appLocal;
 
   @override
+  Future<Result<VersionCheckResult>> checkVersion() async {
+    try {
+      final info = await PackageInfo.fromPlatform();
+      final result = await _remote.checkVersion(
+        buildNumber: info.buildNumber,
+        source: AppConstants.source,
+      );
+      return Result.success(result);
+    } on ServerFailure catch (e) {
+      return Result.failure(e);
+    } catch (_) {
+      return Result.failure(const NetworkFailure());
+    }
+  }
+
+  @override
+  Future<Result<SessionRestoreResult>> restoreSession() async {
+    final phone = _local.phone;
+    if (phone == null || phone.isEmpty) {
+      return Result.failure(const CacheFailure());
+    }
+    try {
+      final result = await _remote.restoreSession(mobile: phone);
+      await _local.saveUser(result.user);
+      return Result.success(result);
+    } on Failure catch (e) {
+      return Result.failure(e);
+    } catch (_) {
+      return Result.failure(const NetworkFailure());
+    }
+  }
+
+  @override
+  Future<Result<UserEntity>> completeRegistration({
+    required String name,
+    required String email,
+    String? referralCode,
+  }) async {
+    final token = _local.accessToken;
+    if (token == null || token.isEmpty) {
+      return Result.failure(const CacheFailure());
+    }
+    try {
+      await _remote.completeRegistration(
+        accessToken: token,
+        countryId: _local.countryId,
+        name: name,
+        email: email,
+        referralCode: referralCode,
+      );
+      final user = UserEntity(
+        phoneNumber: _local.phone,
+        name: name,
+        email: email,
+        accessToken: token,
+      );
+      await _local.saveUser(user);
+      return Result.success(user);
+    } on Failure catch (e) {
+      return Result.failure(e);
+    } catch (_) {
+      return Result.failure(const NetworkFailure());
+    }
+  }
+
+  @override
+  Future<Result<void>> submitContactUs({
+    required String name,
+    required String email,
+    required String mobile,
+    required String message,
+    required String deviceInfo,
+  }) async {
+    final token = _local.accessToken;
+    if (token == null || token.isEmpty) {
+      return Result.failure(const CacheFailure());
+    }
+    try {
+      await _remote.submitContactUs(
+        accessToken: token,
+        name: name,
+        email: email,
+        mobile: mobile,
+        message: message,
+        deviceInfo: deviceInfo,
+      );
+      return Result.success(null);
+    } on Failure catch (e) {
+      return Result.failure(e);
+    } catch (_) {
+      return Result.failure(const NetworkFailure());
+    }
+  }
+
+  @override
+  Future<Result<PendingFeedbackEntity?>> fetchPendingFeedback() async {
+    final token = _local.accessToken;
+    if (token == null || token.isEmpty) {
+      return Result.success(null);
+    }
+    try {
+      final pending = await _remote.fetchPendingFeedback(accessToken: token);
+      return Result.success(pending);
+    } on ServerFailure catch (e) {
+      return Result.failure(e);
+    } catch (_) {
+      return Result.success(null);
+    }
+  }
+
+  @override
+  Future<Result<void>> skipOrderFeedback({required String refId}) async {
+    final token = _local.accessToken;
+    if (token == null || token.isEmpty) {
+      return Result.failure(const CacheFailure());
+    }
+    try {
+      await _remote.skipOrderFeedback(accessToken: token, refId: refId);
+      return Result.success(null);
+    } catch (_) {
+      return Result.success(null);
+    }
+  }
+
+  @override
+  String get countryDialCode => _local.countryDialCode;
+
+  @override
+  String? get countryName => _local.countryName;
+
+  @override
+  Future<Result<List<CountryEntity>>> fetchCountries() async {
+    try {
+      final list = await _remote.fetchCountries();
+      return Result.success(list);
+    } catch (_) {
+      return Result.failure(const NetworkFailure());
+    }
+  }
+
+  @override
+  Future<Result<void>> selectCountry(CountryEntity country) async {
+    try {
+      await _local.saveCountrySelection(
+        id: country.id,
+        dialCode: country.dialCode,
+        name: country.name,
+      );
+      return Result.success(null);
+    } catch (_) {
+      return Result.failure(const CacheFailure());
+    }
+  }
+
+  @override
   Future<Result<void>> initDefaults() async {
     try {
-      await _local.setCountryId(AppConstants.defaultCountryId);
+      if (!_local.hasCountrySelection) {
+        await _local.saveCountrySelection(
+          id: AppConstants.defaultCountryId,
+          dialCode: AppConstants.defaultDialCode,
+          name: 'India',
+        );
+      }
       return Result.success(null);
     } catch (_) {
       return Result.failure(const CacheFailure());
@@ -79,6 +246,10 @@ class AuthRepositoryImpl implements AuthRepository {
       } else {
         user = UserEntity(phoneNumber: mobile, accessToken: '');
         await _local.saveSession(phone: mobile, accessToken: '');
+      }
+
+      if (response.type?.toLowerCase() == 'details_not_found') {
+        user = user.copyWith(phoneNumber: user.phoneNumber ?? mobile);
       }
 
       return Result.success(user);

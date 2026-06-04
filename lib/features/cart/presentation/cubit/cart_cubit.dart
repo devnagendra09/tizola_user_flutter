@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../location/domain/entities/delivery_location_entity.dart';
 import '../../../location/domain/repositories/location_repository.dart';
 import '../../domain/entities/cart_entity.dart';
 import '../../domain/repositories/cart_repository.dart';
@@ -187,23 +188,61 @@ class CartCubit extends Cubit<CartState> {
     }
   }
 
-  Future<void> refreshDeliveryLocation() async {
+  /// Validates cart delivery zone (Android `CartFragment.validateAddress`).
+  /// [revertTo] is the address before the user picked a new one in [LocationInfoPage].
+  Future<String?> applyDeliveryLocationChange(
+    DeliveryLocationEntity? revertTo,
+  ) async {
     emit(
       state.copyWith(
         deliveryLocation: _locationRepository.savedDeliveryLocation,
       ),
     );
     final addressId = state.deliveryLocation?.id;
-    if (addressId != null && addressId.isNotEmpty) {
-      final result = await _cartRepository.updateDeliveryLocation(
-        addressId: addressId,
-      );
-      if (result.isFailure) {
-        emit(state.copyWith(errorMessage: result.failure?.message));
-        return;
-      }
+    if (addressId == null || addressId.isEmpty) {
+      await loadCart();
+      return null;
     }
+
+    final result = await _cartRepository.updateDeliveryLocation(
+      addressId: addressId,
+    );
+    if (result.isFailure) {
+      final message = result.failure?.message;
+      if (revertTo != null) {
+        await _locationRepository.selectDeliveryLocation(revertTo);
+      }
+      emit(
+        state.copyWith(
+          deliveryLocation: _locationRepository.savedDeliveryLocation,
+          errorMessage: message,
+        ),
+      );
+      await loadCart();
+      return message;
+    }
+
+    final update = result.data!;
+    if (!update.accepted) {
+      if (revertTo != null) {
+        await _locationRepository.selectDeliveryLocation(revertTo);
+      }
+      emit(
+        state.copyWith(
+          deliveryLocation: _locationRepository.savedDeliveryLocation,
+        ),
+      );
+      await loadCart();
+      return update.message ??
+          'This address is outside the delivery area';
+    }
+
     await loadCart();
+    return null;
+  }
+
+  Future<void> refreshDeliveryLocation() async {
+    await applyDeliveryLocationChange(null);
   }
 
   /// User tapped self-pick checkbox ON — show confirmation in UI before calling this.

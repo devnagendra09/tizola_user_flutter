@@ -17,6 +17,7 @@ class RestaurantCard extends StatelessWidget {
   final VoidCallback? onTap;
 
   static const double _imageSize = 88;
+  static const double _imageWidthSize = 120;
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +42,11 @@ class RestaurantCard extends StatelessWidget {
 
     final deliveryLine = <String>[
       if (hasEstimate) estimate,
-      if (hasDistance) distance,
+    //  if (hasDistance) distance,
+    ].join(' • ');
+    final distanceLine = <String>[
+     // if (hasEstimate) estimate,
+        if (hasDistance) distance,
     ].join(' • ');
 
     return Padding(
@@ -49,7 +54,7 @@ class RestaurantCard extends StatelessWidget {
       child: Material(
         color: Colors.white,
         elevation: 1,
-        shadowColor: Colors.black.withValues(alpha: 0.06),
+        shadowColor: Colors.blueAccent.withValues(alpha: 0.09),
         borderRadius: BorderRadius.circular(14),
         child: InkWell(
           onTap: onTap ?? () => openRestaurantDetail(context, restaurant),
@@ -57,7 +62,7 @@ class RestaurantCard extends StatelessWidget {
           child: Stack(
             children: [
               Padding(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(0),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -66,94 +71,125 @@ class RestaurantCard extends StatelessWidget {
                       showRating: showRating,
                       rating: rating,
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 5),
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  restaurant.name,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black87,
-                                    letterSpacing: -0.2,
-                                    height: 1.2,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              _OpenStatusPill(isOpen: restaurant.isOpen),
-                            ],
-                          ),
-                          if (metaLine.isNotEmpty) ...[
-                            const SizedBox(height: 4),
-                            Text(
-                              metaLine,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey.shade600,
-                              ),
-                            ),
-                          ],
-                          if (deliveryLine.isNotEmpty) ...[
-                            const SizedBox(height: 6),
-                            Text(
-                              deliveryLine,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.grey.shade700,
-                              ),
-                            ),
-                          ],
-                          if (hasOffer) ...[
-                            const SizedBox(height: 8),
-                            Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 5,
-                              ),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFFFEBEE),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.local_offer_outlined,
-                                    size: 14,
-                                    color: Colors.red.shade700,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Expanded(
-                                    child: Text(
-                                      offer,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.bold,
-                                        color: Color(0xFFC62828),
-                                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    restaurant.name,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black87,
+                                      letterSpacing: -0.2,
+                                      height: 1.2,
                                     ),
                                   ),
+                                ),
+                                const SizedBox(width: 8),
+                                _OpenStatusPill(isOpen: restaurant.isOpen),
+                              ],
+                            ),
+                            if (metaLine.isNotEmpty) ...[
+                              const SizedBox(height: 2),
+                              Text(
+                                metaLine,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
+                            ],
+                            if (deliveryLine.isNotEmpty) ...[
+                              const SizedBox(height: 6),
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.access_time,
+                                    size: 14,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    deliveryLine,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.grey.shade700,
+                                    ),
+                                  ),
+                                  SizedBox(width: 5,),
+                                  const SizedBox(width: 4,
+                                  child: Divider(height: 10,color: Colors.grey,),
+                                  ),
+                                  SizedBox(width: 5,),
+
+                                  Icon(
+                                    Icons.location_on,
+                                    size: 14,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                  const SizedBox(width: 2),
+                                  Text(
+                                    distanceLine,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  )
                                 ],
                               ),
-                            ),
+                            ],
+                            if (hasOffer) ...[
+                              const SizedBox(height: 8),
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 5,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFFEBEE),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.local_offer_outlined,
+                                      size: 14,
+                                      color: Colors.red.shade700,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Expanded(
+                                      child: Text(
+                                        offer,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFFC62828),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ],
-                        ],
+                        ),
                       ),
                     ),
                   ],
@@ -214,10 +250,10 @@ class _RestaurantImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Widget image = ClipRRect(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.only(topLeft:Radius.circular( 10),bottomLeft: Radius.circular(10)),
       child: NetworkImageBox(
         url: restaurant.imageUrl,
-        width: RestaurantCard._imageSize,
+        width: RestaurantCard._imageWidthSize,
         height: RestaurantCard._imageSize,
         fit: BoxFit.cover,
       ),
@@ -236,7 +272,7 @@ class _RestaurantImage extends StatelessWidget {
     }
 
     return SizedBox(
-      width: RestaurantCard._imageSize,
+      width: RestaurantCard._imageWidthSize,
       height: RestaurantCard._imageSize,
       child: Stack(
         clipBehavior: Clip.none,

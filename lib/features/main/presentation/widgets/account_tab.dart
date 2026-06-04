@@ -13,6 +13,8 @@ import '../cubit/account/account_cubit.dart';
 import '../cubit/account/account_state.dart';
 import '../cubit/main_cubit.dart';
 import '../cubit/main_state.dart';
+import '../../../../l10n/app_localizations.dart';
+import '../pages/account_contact_page.dart';
 import '../pages/account_faq_page.dart';
 import '../pages/account_language_page.dart';
 import '../pages/account_profile_page.dart';
@@ -116,6 +118,7 @@ class _AccountView extends StatelessWidget {
         }
 
         final user = state.user;
+        final l10n = AppLocalizations.of(context);
         final displayName =
             (user?.name?.trim().isNotEmpty == true ? user!.name! : 'Guest')
                 .toUpperCase();
@@ -207,7 +210,10 @@ class _AccountView extends StatelessWidget {
                   ..._buildMenuItems(context, user, state),
                   Padding(
                     padding: const EdgeInsets.fromLTRB(10, 12, 10, 0),
-                    child: _WalletCard(balance: state.walletBalance),
+                    child: _WalletCard(
+                      balance: state.walletBalance,
+                      title: l10n.walletBalance,
+                    ),
                   ),
                   Padding(
                     padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
@@ -228,7 +234,7 @@ class _AccountView extends StatelessWidget {
                             children: [
                               Expanded(
                                 child: Text(
-                                  user != null ? 'LOGOUT' : 'LOGIN',
+                                  user != null ? l10n.logout : l10n.login,
                                   textAlign: TextAlign.center,
                                   style: const TextStyle(
                                     color: Colors.white,
@@ -286,9 +292,10 @@ class _AccountView extends StatelessWidget {
     UserEntity? user,
     AccountState state,
   ) {
+    final l10n = AppLocalizations.of(context);
     final items = <_AccountMenuEntry>[
       _AccountMenuEntry(
-        title: 'Address Book',
+        title: l10n.addressBook,
         icon: Icons.location_on_outlined,
         onTap: () => _openLoggedIn(
           context,
@@ -301,7 +308,7 @@ class _AccountView extends StatelessWidget {
         ),
       ),
       _AccountMenuEntry(
-        title: 'All Orders',
+        title: l10n.allOrders,
         icon: Icons.receipt_long_outlined,
         onTap: () => _openLoggedIn(
           context,
@@ -310,15 +317,15 @@ class _AccountView extends StatelessWidget {
         ),
       ),
       _AccountMenuEntry(
-        title: 'Favourites',
+        title: l10n.favourites,
         icon: Icons.favorite_border,
         onTap: () => _openLoggedIn(
           context,
           user,
           () => Navigator.of(context).push(
             MaterialPageRoute<void>(
-              builder: (_) => const RestaurantListPage(
-                title: 'Favourites',
+              builder: (_) => RestaurantListPage(
+                title: l10n.favourites,
                 favouritesOnly: true,
               ),
             ),
@@ -326,7 +333,7 @@ class _AccountView extends StatelessWidget {
         ),
       ),
       _AccountMenuEntry(
-        title: 'Language',
+        title: l10n.language,
         icon: Icons.language,
         onTap: () => _openLoggedIn(
           context,
@@ -339,7 +346,7 @@ class _AccountView extends StatelessWidget {
         ),
       ),
       _AccountMenuEntry(
-        title: 'Refer & Earn',
+        title: l10n.referEarn,
         icon: Icons.card_giftcard_outlined,
         onTap: () => _openLoggedIn(
           context,
@@ -352,22 +359,20 @@ class _AccountView extends StatelessWidget {
         ),
       ),
       _AccountMenuEntry(
-        title: 'Help',
+        title: l10n.help,
         icon: Icons.support_agent_outlined,
         onTap: () => _openLoggedIn(
           context,
           user,
-          () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Contact customer care from the home screen'),
-              ),
-            );
-          },
+          () => Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => const AccountContactPage(),
+            ),
+          ),
         ),
       ),
       _AccountMenuEntry(
-        title: 'Help & FAQ',
+        title: l10n.helpFaq,
         icon: Icons.help_outline,
         onTap: () => _openLoggedIn(
           context,
@@ -483,9 +488,10 @@ class _AccountMenuCard extends StatelessWidget {
 }
 
 class _WalletCard extends StatelessWidget {
-  const _WalletCard({required this.balance});
+  const _WalletCard({required this.balance, required this.title});
 
   final String balance;
+  final String title;
 
   @override
   Widget build(BuildContext context) {
@@ -503,7 +509,7 @@ class _WalletCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Wallet balance',
+                    title,
                     style: TextStyle(
                       color: AppColors.secondaryBrand,
                       fontWeight: FontWeight.w600,

@@ -22,7 +22,9 @@ abstract class CartRemoteDataSource {
 
   Future<void> removeItem({required String cartItemId});
 
-  Future<void> updateDeliveryLocation({required String addressId});
+  Future<Map<String, dynamic>> updateDeliveryLocation({
+    required String addressId,
+  });
 
   Future<void> removeCouponCode();
 
@@ -188,15 +190,14 @@ class CartRemoteDataSourceImpl implements CartRemoteDataSource {
   }
 
   @override
-  Future<void> updateDeliveryLocation({required String addressId}) async {
+  Future<Map<String, dynamic>> updateDeliveryLocation({
+    required String addressId,
+  }) async {
     final params = _cartBaseParams();
     params['customers_addresses_id'] = addressId;
 
     final response = await _client.post('cart/update_delivery_location', params);
-    final json = ApiResponseParser.decodeMap(response.body);
-    if (!ApiResponseParser.isValid(json)) {
-      throw ServerFailure(ApiResponseParser.message(json));
-    }
+    return ApiResponseParser.decodeMap(response.body);
   }
 
   @override

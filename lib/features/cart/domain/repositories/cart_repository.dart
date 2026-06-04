@@ -1,6 +1,7 @@
 import '../../../../core/utils/result.dart';
 import '../entities/cart_entity.dart';
 import '../entities/coupon_offer_entity.dart';
+import '../entities/delivery_location_update_result.dart';
 
 abstract class CartRepository {
   Future<Result<CartEntity>> fetchCart({
@@ -17,7 +18,9 @@ abstract class CartRepository {
 
   Future<Result<void>> removeItem({required String cartItemId});
 
-  Future<Result<void>> updateDeliveryLocation({required String addressId});
+  Future<Result<DeliveryLocationUpdateResult>> updateDeliveryLocation({
+    required String addressId,
+  });
 
   Future<Result<void>> removeCouponCode();
 

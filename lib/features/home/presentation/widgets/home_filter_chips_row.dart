@@ -28,64 +28,69 @@ class HomeFilterChipsRow extends StatelessWidget {
     final allSelected = foodFilter == RestaurantFoodFilter.all;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
           Expanded(
-            child: SizedBox(
-              height: 40,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                children: [
-                  _FilterPill(
-                    label: 'All',
-                    selected: allSelected,
-                    onTap: onAllTap,
-                  ),
-                  const SizedBox(width: 8),
-                  VegFilterChip(
-                    isVeg: true,
-                    selected: foodFilter == RestaurantFoodFilter.veg,
-                    onTap: onVegTap,
-                  ),
-                  const SizedBox(width: 8),
-                  VegFilterChip(
-                    isVeg: false,
-                    selected: foodFilter == RestaurantFoodFilter.nonVeg,
-                    onTap: onNonVegTap,
-                  ),
-                ],
+            child: _FilterPill(
+              label: 'All',
+              selected: allSelected,
+              onTap: onAllTap,
+              expand: true,
+            ),
+          ),
+      //    const SizedBox(width: 8),
+          Expanded(
+            child: Center(
+              child: VegFilterChip(
+                isVeg: true,
+                selected: foodFilter == RestaurantFoodFilter.veg,
+                onTap: onVegTap,
               ),
             ),
           ),
-          const SizedBox(width: 8),
-          Material(
-            color: hasActiveFilters
-                ? AppColors.brand.withValues(alpha: 0.12)
-                : Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-              side: BorderSide(
-                color: hasActiveFilters
-                    ? AppColors.brand
-                    : Colors.grey.shade300,
+        //  const SizedBox(width: 8),
+          Expanded(
+            child: Center(
+              child: VegFilterChip(
+                isVeg: false,
+                selected: foodFilter == RestaurantFoodFilter.nonVeg,
+                onTap: onNonVegTap,
               ),
             ),
-            child: InkWell(
-              onTap: onFilterTap,
-              borderRadius: BorderRadius.circular(12),
-              child: Padding(
-                padding: const EdgeInsets.all(10),
-                child: Badge(
-                  isLabelVisible: hasActiveFilters,
-                  backgroundColor: AppColors.brand,
-                  smallSize: 8,
-                  child: Icon(
-                    Icons.tune,
-                    size: 22,
+          ),
+         // const SizedBox(width: 8),
+          Expanded(
+            child: Center(
+              child: Material(
+                color: hasActiveFilters
+                    ? AppColors.brand.withValues(alpha: 0.12)
+                    : Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(11),
+                  side: BorderSide(
                     color: hasActiveFilters
                         ? AppColors.brand
-                        : Colors.grey.shade700,
+                        : Colors.grey.shade300,
+                  ),
+                ),
+                child: InkWell(
+                  onTap: onFilterTap,
+                  borderRadius: BorderRadius.circular(12),
+                  child: Padding(
+                    padding: const EdgeInsets.all(10),
+                    child: Badge(
+                      isLabelVisible: hasActiveFilters,
+                      backgroundColor: AppColors.brand,
+                      smallSize: 8,
+                      child: Icon(
+                        Icons.tune,
+                        size: 22,
+                        color: hasActiveFilters
+                            ? AppColors.brand
+                            : Colors.grey.shade700,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -102,11 +107,13 @@ class _FilterPill extends StatelessWidget {
     required this.label,
     this.selected = false,
     this.onTap,
+    this.expand = false,
   });
 
   final String label;
   final bool selected;
   final VoidCallback? onTap;
+  final bool expand;
 
   @override
   Widget build(BuildContext context) {
@@ -114,6 +121,8 @@ class _FilterPill extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
+        width: expand ? double.infinity : null,
+        alignment: expand ? Alignment.center : null,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
           color: selected ? AppColors.brand : Colors.white,
@@ -133,6 +142,7 @@ class _FilterPill extends StatelessWidget {
         ),
         child: Text(
           label,
+          textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,

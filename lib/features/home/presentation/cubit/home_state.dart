@@ -24,6 +24,7 @@ class HomeState extends Equatable {
     this.currentPage = 1,
     this.totalPages = 1,
     this.isLoadingMore = false,
+    this.isReloadingRestaurants = false,
     this.isStoreAvailable = true,
     this.cityImage,
     this.emptyMessage,
@@ -46,6 +47,7 @@ class HomeState extends Equatable {
   final int currentPage;
   final int totalPages;
   final bool isLoadingMore;
+  final bool isReloadingRestaurants;
   final bool isStoreAvailable;
   final String? cityImage;
   final String? emptyMessage;
@@ -78,6 +80,7 @@ class HomeState extends Equatable {
     int? currentPage,
     int? totalPages,
     bool? isLoadingMore,
+    bool? isReloadingRestaurants,
     bool? isStoreAvailable,
     String? cityImage,
     String? emptyMessage,
@@ -105,6 +108,8 @@ class HomeState extends Equatable {
       currentPage: currentPage ?? this.currentPage,
       totalPages: totalPages ?? this.totalPages,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      isReloadingRestaurants:
+          isReloadingRestaurants ?? this.isReloadingRestaurants,
       isStoreAvailable: isStoreAvailable ?? this.isStoreAvailable,
       cityImage: cityImage ?? this.cityImage,
       emptyMessage: emptyMessage ?? this.emptyMessage,
@@ -131,6 +136,7 @@ class HomeState extends Equatable {
         currentPage,
         totalPages,
         isLoadingMore,
+        isReloadingRestaurants,
         isStoreAvailable,
         cityImage,
         emptyMessage,

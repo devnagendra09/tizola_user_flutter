@@ -7,10 +7,15 @@ import '../../../../core/navigation/order_navigation.dart';
 import '../../../../core/navigation/search_navigation.dart';
 import '../../../../core/navigation/categories_navigation.dart';
 import '../../../../core/navigation/deep_link_navigation.dart';
+import '../../../../core/errors/failures.dart';
+import '../../../auth/domain/repositories/auth_repository.dart';
+import '../../../orders/presentation/widgets/review_option_dialog.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/system_ui_styles.dart';
 import '../../../../core/push/push_notification_service.dart';
 import '../../../../injection_container.dart';
+import '../../../splash/presentation/pages/under_maintenance_page.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../auth/presentation/pages/login_page.dart';
 import '../../../home/presentation/widgets/home_tab.dart';
 import '../../../location/presentation/pages/location_info_page.dart';
@@ -53,8 +58,29 @@ class _MainViewState extends State<_MainView> with WidgetsBindingObserver {
         mainCubit.refreshCartBadge();
         sl<PushNotificationService>().syncTokenWithServer();
         sl<PushNotificationService>().handlePendingNavigation();
+        _checkPendingFeedback(context);
       }
     });
+  }
+
+  Future<void> _checkPendingFeedback(BuildContext context) async {
+    final result = await sl<AuthRepository>().fetchPendingFeedback();
+    if (!context.mounted) return;
+    if (result.isFailure && result.failure is ServerFailure) {
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => const UnderMaintenancePage(),
+        ),
+      );
+      return;
+    }
+    final pending = result.data;
+    if (pending == null) return;
+    await showReviewOptionDialog(
+      context,
+      feedback: pending,
+      onSkip: (refId) => sl<AuthRepository>().skipOrderFeedback(refId: refId),
+    );
   }
 
   @override
@@ -127,6 +153,7 @@ class _MainViewState extends State<_MainView> with WidgetsBindingObserver {
       },
       child: BlocBuilder<MainCubit, MainState>(
         builder: (context, state) {
+          final l10n = AppLocalizations.of(context);
           final onHomeTab = state.currentIndex == 0;
           return AnnotatedRegion<SystemUiOverlayStyle>(
             value: onHomeTab ? AppSystemUi.homeHero : AppSystemUi.brandAppBar,
@@ -169,26 +196,26 @@ class _MainViewState extends State<_MainView> with WidgetsBindingObserver {
                       }
                       context.read<MainCubit>().onTabSelected(index);
                     },
-                    items: const [
+                    items: [
                       BottomNavigationBarItem(
-                        icon: Icon(Icons.home_outlined),
-                        activeIcon: Icon(Icons.home),
-                        label: 'Home',
+                        icon: const Icon(Icons.home_outlined),
+                        activeIcon: const Icon(Icons.home),
+                        label: l10n.navHome,
                       ),
                       BottomNavigationBarItem(
-                        icon: Icon(Icons.grid_view_outlined),
-                        activeIcon: Icon(Icons.grid_view),
-                        label: 'Category',
+                        icon: const Icon(Icons.grid_view_outlined),
+                        activeIcon: const Icon(Icons.grid_view),
+                        label: l10n.navCategory,
                       ),
                       BottomNavigationBarItem(
-                        icon: Icon(Icons.receipt_long_outlined),
-                        activeIcon: Icon(Icons.receipt_long),
-                        label: 'Orders',
+                        icon: const Icon(Icons.receipt_long_outlined),
+                        activeIcon: const Icon(Icons.receipt_long),
+                        label: l10n.navOrders,
                       ),
                       BottomNavigationBarItem(
-                        icon: Icon(Icons.person_outline),
-                        activeIcon: Icon(Icons.person),
-                        label: 'Account',
+                        icon: const Icon(Icons.person_outline),
+                        activeIcon: const Icon(Icons.person),
+                        label: l10n.navAccount,
                       ),
                     ],
                   ),

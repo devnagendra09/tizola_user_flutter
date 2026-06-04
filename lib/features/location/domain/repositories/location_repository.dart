@@ -7,6 +7,9 @@ abstract class LocationRepository {
 
   DeliveryLocationEntity? get savedDeliveryLocation;
 
+  /// GPS permission granted and location services on (Android `currentLatLng` gate).
+  Future<bool> canResolveDevicePosition();
+
   Future<Result<DeliveryLocationEntity>> resolveNearbyDeliveryLocation();
 
   Future<Result<List<DeliveryLocationEntity>>> fetchSavedAddresses();

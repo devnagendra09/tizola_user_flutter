@@ -24,3 +24,10 @@ class ValidationFailure extends Failure {
 class CacheFailure extends Failure {
   const CacheFailure([super.message = 'Local storage error']);
 }
+
+/// No rows from `customer/addresses` — Android opens GetDeviceLocationActivity.
+class NoSavedAddressesFailure extends Failure {
+  const NoSavedAddressesFailure([
+    super.message = 'Add a delivery address to continue',
+  ]);
+}

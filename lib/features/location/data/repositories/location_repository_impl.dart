@@ -36,6 +36,13 @@ class LocationRepositoryImpl implements LocationRepository {
       _appLocal.savedDeliveryLocation;
 
   @override
+  Future<bool> canResolveDevicePosition() async {
+    final permission = await Permission.location.status;
+    if (!permission.isGranted) return false;
+    return Geolocator.isLocationServiceEnabled();
+  }
+
+  @override
   Future<Result<List<DeliveryLocationEntity>>> fetchSavedAddresses() async {
     final token = _authLocal.accessToken;
     if (token == null || token.isEmpty) {
@@ -99,12 +106,19 @@ class LocationRepositoryImpl implements LocationRepository {
       return Result.success(
         place.copyWith(addressType: AppConstants.currentLocationLabel),
       );
-    } on Failure catch (e) {
-      return Result.failure(e);
     } catch (_) {
-      return Result.failure(
-        const ValidationFailure('Unable to find address for this point'),
-      );
+      // Fallback when Geocoding API fails — device Geocoder like Android MapsFragment.
+      try {
+        return Result.success(
+          await _geocodeLatLng(latitude, longitude),
+        );
+      } on Failure catch (e) {
+        return Result.failure(e);
+      } catch (_) {
+        return Result.failure(
+          const ValidationFailure('Unable to find address for this point'),
+        );
+      }
     }
   }
 
@@ -168,6 +182,9 @@ class LocationRepositoryImpl implements LocationRepository {
       final token = _authLocal.accessToken;
       if (token != null && token.isNotEmpty) {
         final addresses = await _remote.fetchCustomerAddresses(token);
+        if (addresses.isEmpty) {
+          return Result.failure(const NoSavedAddressesFailure());
+        }
         for (final item in addresses) {
           final loc = DeliveryLocationMapper.fromApi(item);
           if (loc.latitude == 0 && loc.longitude == 0) continue;
@@ -204,9 +221,26 @@ class LocationRepositoryImpl implements LocationRepository {
     double latitude,
     double longitude,
   ) async {
-    final placemarks = await placemarkFromCoordinates(latitude, longitude);
-    final place = placemarks.isNotEmpty ? placemarks.first : null;
-    final line = _formatAddress(place);
+    var line = '';
+    var city = '';
+    try {
+      final placemarks = await placemarkFromCoordinates(latitude, longitude);
+      final place = placemarks.isNotEmpty ? placemarks.first : null;
+      line = _formatAddress(place);
+      city = _cityFrom(place);
+    } catch (_) {}
+
+    if (line.isEmpty) {
+      try {
+        final google = await _places.reverseGeocode(
+          latitude: latitude,
+          longitude: longitude,
+        );
+        line = google.address;
+        city = google.city ?? '';
+      } catch (_) {}
+    }
+
     final address = line.isNotEmpty
         ? line
         : '${latitude.toStringAsFixed(5)}, ${longitude.toStringAsFixed(5)}';
@@ -216,7 +250,7 @@ class LocationRepositoryImpl implements LocationRepository {
       longitude: longitude,
       address: address,
       addressType: AppConstants.currentLocationLabel,
-      city: _cityFrom(place),
+      city: city.isEmpty ? null : city,
     );
   }
 

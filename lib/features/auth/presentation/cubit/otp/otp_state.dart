@@ -1,6 +1,12 @@
 import 'package:equatable/equatable.dart';
 
-enum OtpStatus { initial, loading, success, failure }
+enum OtpStatus {
+  initial,
+  loading,
+  success,
+  needsRegistration,
+  failure,
+}
 
 class OtpState extends Equatable {
   const OtpState({

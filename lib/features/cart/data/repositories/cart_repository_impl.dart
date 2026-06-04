@@ -1,7 +1,9 @@
 import '../../../../core/errors/failures.dart';
+import '../../../../core/network/api_response_parser.dart';
 import '../../../../core/utils/result.dart';
 import '../../domain/entities/cart_entity.dart';
 import '../../domain/entities/coupon_offer_entity.dart';
+import '../../domain/entities/delivery_location_update_result.dart';
 import '../../domain/repositories/cart_repository.dart';
 import '../datasources/cart_remote_data_source.dart';
 
@@ -63,12 +65,31 @@ class CartRepositoryImpl implements CartRepository {
   }
 
   @override
-  Future<Result<void>> updateDeliveryLocation({
+  Future<Result<DeliveryLocationUpdateResult>> updateDeliveryLocation({
     required String addressId,
   }) async {
     try {
-      await _remote.updateDeliveryLocation(addressId: addressId);
-      return Result.success(null);
+      final json = await _remote.updateDeliveryLocation(addressId: addressId);
+      final errCode = json['err_code']?.toString().toLowerCase() ?? '';
+      if (errCode == 'invalid') {
+        return Result.success(
+          DeliveryLocationUpdateResult(
+            accepted: false,
+            message: ApiResponseParser.message(
+              json,
+              'This address is outside the delivery area',
+            ),
+          ),
+        );
+      }
+      if (!ApiResponseParser.isValid(json)) {
+        return Result.failure(
+          ServerFailure(ApiResponseParser.message(json)),
+        );
+      }
+      return Result.success(
+        const DeliveryLocationUpdateResult(accepted: true),
+      );
     } on Failure catch (e) {
       return Result.failure(e);
     } catch (_) {

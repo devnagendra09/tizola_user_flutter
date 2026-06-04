@@ -30,12 +30,15 @@ class LocationMapPickerPage extends StatefulWidget {
 
 class _LocationMapPickerPageState extends State<LocationMapPickerPage> {
   final _repository = sl<LocationRepository>();
+  final _mapKey = GlobalKey();
   GoogleMapController? _mapController;
   LatLng _center = LatLng(0, 0);
   String _address = '';
   String? _city;
   bool _geocoding = false;
   Timer? _geocodeDebounce;
+  int _geocodeGeneration = 0;
+  Size? _mapSize;
 
   @override
   void initState() {
@@ -43,9 +46,9 @@ class _LocationMapPickerPageState extends State<LocationMapPickerPage> {
     _center = LatLng(widget.initialLatitude, widget.initialLongitude);
     _address = widget.initialAddress ?? '';
     _city = widget.initialCity;
-    if (_address.isEmpty) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       _reverseGeocode(_center);
-    }
+    });
   }
 
   @override
@@ -55,33 +58,80 @@ class _LocationMapPickerPageState extends State<LocationMapPickerPage> {
     super.dispose();
   }
 
-  void _scheduleReverseGeocode(LatLng target) {
+  void _onCameraMove(CameraPosition position) {
+    _center = position.target;
+  }
+
+  void _onCameraIdle() {
     _geocodeDebounce?.cancel();
-    _geocodeDebounce = Timer(const Duration(milliseconds: 400), () {
-      _reverseGeocode(target);
+    _geocodeDebounce = Timer(const Duration(milliseconds: 350), () {
+      _resolveCenterAndGeocode();
     });
   }
 
+  Future<void> _resolveCenterAndGeocode() async {
+    final controller = _mapController;
+    final mapSize = _mapSize;
+    if (controller != null && mapSize != null && mapSize.width > 0) {
+      try {
+        final dpr = MediaQuery.devicePixelRatioOf(context);
+        final latLng = await controller.getLatLng(
+          ScreenCoordinate(
+            x: (mapSize.width * dpr / 2).round(),
+            y: (mapSize.height * dpr / 2).round(),
+          ),
+        );
+        _center = latLng;
+      } catch (_) {}
+    }
+    await _reverseGeocode(_center);
+  }
+
   Future<void> _reverseGeocode(LatLng target) async {
-    setState(() => _geocoding = true);
+    final generation = ++_geocodeGeneration;
+    if (!mounted) return;
+    setState(() {
+      _geocoding = true;
+      _center = target;
+    });
+
     final result = await _repository.reverseGeocode(
       latitude: target.latitude,
       longitude: target.longitude,
     );
-    if (!mounted) return;
+
+    if (!mounted || generation != _geocodeGeneration) return;
+
     setState(() {
       _geocoding = false;
       if (result.isSuccess && result.data != null) {
         _address = result.data!.address;
         _city = result.data!.city;
+        _center = LatLng(result.data!.latitude, result.data!.longitude);
+      } else {
+        _address =
+            '${target.latitude.toStringAsFixed(5)}, ${target.longitude.toStringAsFixed(5)}';
       }
     });
+
+    if (result.isFailure && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            result.failure?.message ?? 'Could not update address',
+          ),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   void _confirm() {
-    if (_address.trim().isEmpty) {
+    if (_address.trim().isEmpty || _geocoding) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Unable to locate address. Try again.')),
+        const SnackBar(
+          content: Text('Wait for the address to update, or try another spot'),
+        ),
       );
       return;
     }
@@ -116,55 +166,61 @@ class _LocationMapPickerPageState extends State<LocationMapPickerPage> {
       body: Column(
         children: [
           Expanded(
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                GoogleMap(
-                  initialCameraPosition: CameraPosition(
-                    target: _center,
-                    zoom: 18,
-                  ),
-                  myLocationEnabled: true,
-                  myLocationButtonEnabled: true,
-                  zoomControlsEnabled: false,
-                  onMapCreated: (controller) {
-                    _mapController = controller;
-                  },
-                  onCameraMove: (position) {
-                    setState(() => _center = position.target);
-                  },
-                  onCameraIdle: () => _scheduleReverseGeocode(_center),
-                ),
-                const Icon(
-                  Icons.location_on,
-                  size: 48,
-                  color: AppColors.brand,
-                ),
-                if (_geocoding)
-                  const Positioned(
-                    top: 12,
-                    child: Card(
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            ),
-                            SizedBox(width: 8),
-                            Text('Updating address…'),
-                          ],
-                        ),
+            child: LayoutBuilder(
+              key: _mapKey,
+              builder: (context, constraints) {
+                _mapSize = Size(constraints.maxWidth, constraints.maxHeight);
+                return Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    GoogleMap(
+                      initialCameraPosition: CameraPosition(
+                        target: _center,
+                        zoom: 18,
+                      ),
+                      myLocationEnabled: true,
+                      myLocationButtonEnabled: true,
+                      zoomControlsEnabled: false,
+                      onMapCreated: (controller) {
+                        _mapController = controller;
+                      },
+                      onCameraMove: _onCameraMove,
+                      onCameraIdle: _onCameraIdle,
+                    ),
+                    IgnorePointer(
+                      child: Icon(
+                        Icons.location_on,
+                        size: 48,
+                        color: AppColors.brand.withValues(alpha: 0.95),
                       ),
                     ),
-                  ),
-              ],
+                    if (_geocoding)
+                      const Positioned(
+                        top: 12,
+                        child: Card(
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                ),
+                                SizedBox(width: 8),
+                                Text('Updating address…'),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+              },
             ),
           ),
           Material(
@@ -178,9 +234,11 @@ class _LocationMapPickerPageState extends State<LocationMapPickerPage> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      _address.isEmpty
-                          ? 'Move the map to pick your delivery point'
-                          : _address,
+                      _geocoding
+                          ? 'Fetching address for pin location…'
+                          : (_address.isEmpty
+                              ? 'Move the map to pick your delivery point'
+                              : _address),
                       style: const TextStyle(fontSize: 15),
                     ),
                     const SizedBox(height: 12),

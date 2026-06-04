@@ -12,7 +12,7 @@ class ApiLoggingInterceptor extends Interceptor {
     ApiLogger.logRequest(
       method: options.method,
       uri: options.uri,
-      params: _paramsFrom(options.data),
+      params: _requestParamsFrom(options),
     );
     _stopwatches[options] = Stopwatch()..start();
     handler.next(options);
@@ -53,13 +53,23 @@ class ApiLoggingInterceptor extends Interceptor {
     handler.next(err);
   }
 
-  Map<String, String> _paramsFrom(Object? data) {
-    if (data is Map) {
-      return data.map(
-        (key, value) => MapEntry(key.toString(), value?.toString() ?? ''),
-      );
+  Map<String, String> _requestParamsFrom(RequestOptions options) {
+    final params = <String, String>{};
+
+    for (final entry in options.queryParameters.entries) {
+      params['query.${entry.key}'] = entry.value?.toString() ?? '';
     }
-    return const {};
+
+    final data = options.data;
+    if (data is Map) {
+      for (final entry in data.entries) {
+        params['body.${entry.key}'] = entry.value?.toString() ?? '';
+      }
+    } else if (data != null) {
+      params['body'] = data.toString();
+    }
+
+    return params;
   }
 
   String _bodyAsString(Object? data) {

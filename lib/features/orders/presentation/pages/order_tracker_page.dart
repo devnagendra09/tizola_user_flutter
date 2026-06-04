@@ -9,6 +9,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../../../core/constants/firebase_constants.dart';
 import '../../../../core/push/push_order_refresh_listener.dart';
 import '../../../../core/data/app_local_data_source.dart';
+import '../../../../core/maps/directions_service.dart';
 import '../../../../core/maps/google_maps_bootstrap.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/service_order_entity.dart';
@@ -57,11 +58,17 @@ class _OrderTrackerViewState extends State<_OrderTrackerView> {
   StreamSubscription<DatabaseEvent>? _driverSub;
   LatLng? _userLatLng;
   LatLng? _driverLatLng;
+  LatLng? _restaurantLatLng;
+  ServiceOrderEntity? _order;
   final _markers = <Marker>{};
+  final _polylines = <Polyline>{};
   var _trackingStarted = false;
+  Timer? _routeDebounce;
+  var _routeFetchGeneration = 0;
 
   @override
   void dispose() {
+    _routeDebounce?.cancel();
     _driverSub?.cancel();
     _mapController?.dispose();
     super.dispose();
@@ -102,16 +109,18 @@ class _OrderTrackerViewState extends State<_OrderTrackerView> {
     final lng = double.tryParse(order.restaurant.longitude ?? '');
     if (lat == null || lng == null) return;
     if (!mounted) return;
+    _restaurantLatLng = LatLng(lat, lng);
     setState(() {
       _markers.add(
         Marker(
           markerId: const MarkerId('restaurant'),
-          position: LatLng(lat, lng),
+          position: _restaurantLatLng!,
           icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
         ),
       );
     });
     _fitCamera();
+    _scheduleRouteRefresh();
   }
 
   void _setUserLatLng(LatLng latLng) {
@@ -129,6 +138,7 @@ class _OrderTrackerViewState extends State<_OrderTrackerView> {
         );
     });
     _fitCamera();
+    _scheduleRouteRefresh();
   }
 
   void _setDriverLatLng(LatLng latLng) {
@@ -146,6 +156,100 @@ class _OrderTrackerViewState extends State<_OrderTrackerView> {
         );
     });
     _fitCamera();
+    _scheduleRouteRefresh();
+  }
+
+  void _scheduleRouteRefresh() {
+    _routeDebounce?.cancel();
+    _routeDebounce = Timer(const Duration(milliseconds: 400), _refreshRoutePolyline);
+  }
+
+  bool _shouldShowUserToRestaurantDashed() {
+    final order = _order;
+    if (order == null || _userLatLng == null || _restaurantLatLng == null) {
+      return false;
+    }
+    final status = order.serviceStatus.toLowerCase();
+    return status == 'pending' ||
+        status == 'waiting for delivery person' ||
+        status == 'waiting for pickup';
+  }
+
+  void _applyPolyline({
+    required List<LatLng> points,
+    bool dashed = false,
+  }) {
+    if (!mounted || points.length < 2) return;
+    setState(() {
+      _polylines
+        ..clear()
+        ..add(
+          Polyline(
+            polylineId: const PolylineId('route'),
+            points: points,
+            color: AppColors.brand,
+            width: 5,
+            geodesic: true,
+            patterns: dashed
+                ? <PatternItem>[
+                    PatternItem.dash(28),
+                    PatternItem.gap(14),
+                  ]
+                : <PatternItem>[],
+          ),
+        );
+    });
+    _fitCamera();
+  }
+
+  List<LatLng> _straightLinePoints(LatLng from, LatLng to, {int segments = 16}) {
+    if (segments < 2) return [from, to];
+    return List<LatLng>.generate(segments + 1, (i) {
+      final t = i / segments;
+      return LatLng(
+        from.latitude + (to.latitude - from.latitude) * t,
+        from.longitude + (to.longitude - from.longitude) * t,
+      );
+    });
+  }
+
+  Future<void> _refreshRoutePolyline() async {
+    if (!mounted) return;
+
+    final order = _order;
+    final user = _userLatLng;
+    final driver = _driverLatLng;
+    final restaurant = _restaurantLatLng;
+
+    if (order != null &&
+        order.shouldListenDriverLocation &&
+        driver != null &&
+        user != null) {
+      final generation = ++_routeFetchGeneration;
+      final points = await sl<DirectionsService>().fetchRoute(
+        origin: driver,
+        destination: user,
+      );
+      if (!mounted || generation != _routeFetchGeneration) return;
+
+      if (points.isNotEmpty) {
+        _applyPolyline(points: points);
+        return;
+      }
+
+      _applyPolyline(
+        points: _straightLinePoints(driver, user),
+        dashed: true,
+      );
+      return;
+    }
+
+    if (_shouldShowUserToRestaurantDashed() && user != null && restaurant != null) {
+      _applyPolyline(
+        points: _straightLinePoints(user, restaurant),
+        dashed: true,
+      );
+    }
   }
 
   void _fitCamera() {
@@ -155,6 +259,7 @@ class _OrderTrackerViewState extends State<_OrderTrackerView> {
     final points = <LatLng>[
       if (_userLatLng != null) _userLatLng!,
       if (_driverLatLng != null) _driverLatLng!,
+      ..._polylines.expand((p) => p.points),
     ];
     if (points.isEmpty) return;
     if (points.length == 1) {
@@ -258,6 +363,7 @@ class _OrderTrackerViewState extends State<_OrderTrackerView> {
 
           if (_trackingStarted) return;
           _trackingStarted = true;
+          _order = order;
 
           _initUserLocation(order);
           _addRestaurantMarker(order);
@@ -312,6 +418,7 @@ class _OrderTrackerViewState extends State<_OrderTrackerView> {
                           zoom: 14,
                         ),
                         markers: _markers,
+                        polylines: _polylines,
                         myLocationButtonEnabled: false,
                         zoomControlsEnabled: false,
                         onMapCreated: (controller) {

@@ -191,7 +191,7 @@ class _HomeViewState extends State<_HomeView> {
                                   'Categories',
                                   style: TextStyle(
                                     fontSize: 18,
-                                    fontWeight: FontWeight.bold,
+                                    fontWeight: FontWeight.w600,
                                   ),
                                 ),
                               ),
@@ -236,7 +236,7 @@ class _HomeViewState extends State<_HomeView> {
                     ),
                     SliverToBoxAdapter(
                       child: Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.only(bottom: 12,top: 10),
                         child: HomeFilterChipsRow(
                           foodFilter: state.foodFilter,
                           hasActiveFilters: state.hasRestaurantFilters,
@@ -283,7 +283,11 @@ class _HomeViewState extends State<_HomeView> {
                         ),
                       ),
                     ),
-                    if (state.restaurants.isEmpty)
+                    if (state.isReloadingRestaurants)
+                      const SliverToBoxAdapter(
+                        child: RestaurantListShimmer(itemCount: 4),
+                      )
+                    else if (state.restaurants.isEmpty)
                       SliverFillRemaining(
                         hasScrollBody: false,
                         child: MobileApiEmptyView(
@@ -537,13 +541,13 @@ class _CuisineChip extends StatelessWidget {
     return GestureDetector(
       onTap: () => openCuisineRestaurants(context, cuisine),
       child: SizedBox(
-        width: 84,
+        width: 80,
         child: Column(
           children: [
             /// CATEGORY CARD
             Container(
-              height: 74,
-              width: 74,
+              height: 60, 
+              width: 60,
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -559,8 +563,8 @@ class _CuisineChip extends StatelessWidget {
                 boxShadow: [
                   BoxShadow(
                     color: bg.withValues(alpha: 0.18),
-                    blurRadius: 12,
-                    offset: const Offset(1, 4),
+                    blurRadius: 5,
+                    offset: const Offset(1, 2),
                   ),
                 ],
               ),
@@ -581,7 +585,7 @@ class _CuisineChip extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
                 fontSize: 10,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w900,
                 color: Colors.black87,
                 height: 1.2,
               ),

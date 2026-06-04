@@ -1,6 +1,8 @@
 import '../../../../core/utils/result.dart';
 import '../entities/menu_entity.dart';
+import '../entities/restaurant_about_entity.dart';
 import '../entities/restaurant_detail_entities.dart';
+import '../entities/restaurant_review_entity.dart';
 import '../../../catalog/domain/enums/restaurant_food_filter.dart';
 
 abstract class RestaurantRepository {
@@ -36,4 +38,12 @@ abstract class RestaurantRepository {
   Future<Result<void>> clearCart();
 
   Future<Result<void>> toggleFavourite({required String seoUrl});
+
+  Future<Result<RestaurantAboutEntity>> getAbout({required String seoUrl});
+
+  Future<Result<({List<RestaurantReviewEntity> items, int totalPages})>>
+      getReviews({
+    required String seoUrl,
+    required int page,
+  });
 }

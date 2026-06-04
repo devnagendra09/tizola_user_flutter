@@ -1,7 +1,7 @@
 class AppConstants {
   static const String appName = 'Tizola';
-  //static const String apiBaseUrl = 'https://tizola.in/api/';
-  static const String apiBaseUrl = 'http://76.13.247.242/tizola/api/';
+  static const String apiBaseUrl = 'https://tizola.in/api/';
+  //static const String apiBaseUrl = 'http://76.13.247.242/tizola/api/';
   /// Android `AppController.SOURCE` — cart/payment APIs use this for session behavior.
   static const String source = 'android_app';
 
@@ -9,6 +9,8 @@ class AppConstants {
   static const String keyUsername = 'user_name';
   static const String keyAccessToken = 'access_token';
   static const String keyCountryId = 'country_id';
+  static const String keyCountryDialCode = 'country_dial_code';
+  static const String keyCountryName = 'country_name';
   static const String keyUserName = 'customer_name';
   static const String keyUserEmail = 'email';
   static const String keyDeviceId = 'device_id';

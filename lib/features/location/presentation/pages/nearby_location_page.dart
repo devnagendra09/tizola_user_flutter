@@ -6,6 +6,7 @@ import '../../../../injection_container.dart';
 import '../../../main/presentation/pages/main_page.dart';
 import '../cubit/nearby_location_cubit.dart';
 import '../cubit/nearby_location_state.dart';
+import 'device_location_setup_page.dart';
 import 'location_onboarding_page.dart';
 
 class NearbyLocationPage extends StatefulWidget {
@@ -94,15 +95,13 @@ class _NearbyLocationPageState
           }
 
           else if (state.status ==
-              NearbyLocationStatus
-                  .navigateToManualSetup) {
+              NearbyLocationStatus.navigateToDeviceLocationSetup) {
 
             _bounceController.stop();
 
             Navigator.of(context).pushReplacement(
               MaterialPageRoute<void>(
-                builder: (_) =>
-                const LocationOnboardingPage(),
+                builder: (_) => const DeviceLocationSetupPage(),
               ),
             );
           }
@@ -677,14 +676,11 @@ class _NearbyLocationPageState
                                     TextButton(
                                       onPressed:
                                           () {
-                                        Navigator.of(
-                                            context)
+                                        Navigator.of(context)
                                             .pushReplacement(
-                                          MaterialPageRoute<
-                                              void>(
-                                            builder:
-                                                (_) =>
-                                            const LocationOnboardingPage(),
+                                          MaterialPageRoute<void>(
+                                            builder: (_) =>
+                                                const DeviceLocationSetupPage(),
                                           ),
                                         );
                                       },
