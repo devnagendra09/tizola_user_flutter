@@ -8,6 +8,7 @@ import '../../../../core/navigation/search_navigation.dart';
 import '../../../restaurant/presentation/pages/restaurant_detail_page.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/system_ui_styles.dart';
+import '../../../../core/cache/hive_local_cache.dart';
 import '../../../../injection_container.dart';
 import '../../domain/entities/search_suggestion_entity.dart';
 import '../cubit/search_cubit.dart';
@@ -35,13 +36,26 @@ class _SearchView extends StatefulWidget {
 class _SearchViewState extends State<_SearchView> {
   final _controller = TextEditingController();
   final _focusNode = FocusNode();
+  List<String> _recentSearches = const [];
 
   @override
   void initState() {
     super.initState();
+    _recentSearches = sl<HiveLocalCache>().readRecentSearches();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _focusNode.requestFocus();
     });
+  }
+
+  void _reloadRecent() {
+    setState(() {
+      _recentSearches = sl<HiveLocalCache>().readRecentSearches();
+    });
+  }
+
+  void _searchRecent(String term) {
+    _controller.text = term;
+    context.read<SearchCubit>().onQueryChanged(term);
   }
 
   @override
@@ -52,6 +66,9 @@ class _SearchViewState extends State<_SearchView> {
   }
 
   void _onSuggestionTap(SearchSuggestionEntity item) {
+    sl<HiveLocalCache>().addRecentSearch(item.restaurantName);
+    _reloadRecent();
+
     if (item.isDish) {
       openSearchResultsScreen(context, searchKey: item.restaurantName);
       return;
@@ -147,11 +164,34 @@ class _SearchViewState extends State<_SearchView> {
                   }
 
                   if (state.query.trim().isEmpty) {
-                    return Center(
-                      child: Text(
-                        'Type to search restaurants or dishes',
-                        style: TextStyle(color: Colors.grey.shade600),
-                      ),
+                    if (_recentSearches.isEmpty) {
+                      return Center(
+                        child: Text(
+                          'Type to search restaurants or dishes',
+                          style: TextStyle(color: Colors.grey.shade600),
+                        ),
+                      );
+                    }
+                    return ListView(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      children: [
+                        Text(
+                          'Recent searches',
+                          style: TextStyle(
+                            color: Colors.grey.shade700,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        ..._recentSearches.map(
+                          (term) => ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            leading: const Icon(Icons.history),
+                            title: Text(term),
+                            onTap: () => _searchRecent(term),
+                          ),
+                        ),
+                      ],
                     );
                   }
 

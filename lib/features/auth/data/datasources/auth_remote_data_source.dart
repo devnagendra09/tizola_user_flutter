@@ -336,10 +336,14 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     final needsRegistration = name.isEmpty && email.isEmpty;
 
     DeliveryLocationEntity? defaultLocation;
+    var requiresDeviceLocationSetup = false;
     if (userDetails.containsKey('default_location')) {
       final loc = userDetails['default_location'] as Map<String, dynamic>?;
       if (loc != null) {
         defaultLocation = _parseDefaultLocation(loc);
+        if (defaultLocation == null) {
+          requiresDeviceLocationSetup = true;
+        }
       }
     }
 
@@ -349,6 +353,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
           : user.copyWith(phoneNumber: mobile),
       needsRegistration: needsRegistration,
       defaultLocation: defaultLocation,
+      requiresDeviceLocationSetup: requiresDeviceLocationSetup,
     );
   }
 

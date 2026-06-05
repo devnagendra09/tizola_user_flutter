@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'core/cache/hive_local_cache.dart';
 import 'core/data/app_local_data_source.dart';
 import 'core/locale/app_locale_notifier.dart';
 import 'core/maps/directions_service.dart';
@@ -72,6 +73,9 @@ Future<void> initDependencies() async {
   sl.registerLazySingleton<AppLocalDataSource>(
     () => AppLocalDataSourceImpl(sl()),
   );
+  sl.registerLazySingleton<HiveLocalCache>(
+    () => HiveLocalCache(sl()),
+  );
   sl.registerLazySingleton<ApiParamsBuilder>(
     () => ApiParamsBuilder(sl(), sl()),
   );
@@ -109,7 +113,7 @@ Future<void> initDependencies() async {
     GooglePlacesRemoteDataSource.new,
   );
   sl.registerLazySingleton<LocationRepository>(
-    () => LocationRepositoryImpl(sl(), sl(), sl(), sl()),
+    () => LocationRepositoryImpl(sl(), sl(), sl(), sl(), sl()),
   );
 
   // --- Catalog / Home data ---
@@ -159,11 +163,15 @@ Future<void> initDependencies() async {
   );
   sl.registerLazySingleton(() => MainCubit(sl(), sl(), sl(), sl()));
   sl.registerFactory(() => NearbyLocationCubit(sl()));
-  sl.registerFactory(() => AccountCubit(sl()));
-  sl.registerFactory(() => HomeCubit(sl(), sl(), sl()));
+  // Long-lived tab cubits — survive navigation like Zomato/Swiggy.
+  sl.registerLazySingleton(
+    () => HomeCubit(sl(), sl(), sl(), sl()),
+  );
+  sl.registerLazySingleton(() => OrdersCubit(sl(), sl()));
+  sl.registerLazySingleton(() => AccountCubit(sl(), sl()));
+  sl.registerLazySingleton(() => CartCubit(sl(), sl(), sl()));
   sl.registerFactory(() => SearchCubit(sl()));
-  sl.registerFactory(() => CategoryCubit(sl()));
-  sl.registerFactory(() => CartCubit(sl(), sl()));
+  sl.registerLazySingleton(() => CategoryCubit(sl(), sl()));
   sl.registerFactory(() => RestaurantListCubit(sl(), sl()));
   sl.registerFactoryParam<RestaurantDetailCubit, String, String?>(
     (seoUrl, fallbackName) => RestaurantDetailCubit(
@@ -172,7 +180,6 @@ Future<void> initDependencies() async {
       fallbackName: fallbackName,
     ),
   );
-  sl.registerFactory(() => OrdersCubit(sl()));
   sl.registerFactory(() => ServiceOrderCubit(sl()));
   sl.registerFactory(() => LocationOnboardingCubit(sl()));
   sl.registerFactory(() => LocationInfoCubit(sl()));

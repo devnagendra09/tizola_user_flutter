@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/app_assets.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../injection_container.dart';
-import '../../../location/presentation/pages/nearby_location_page.dart';
+import '../../../../core/navigation/location_gate_navigation.dart';
 import '../cubit/register/register_cubit.dart';
 import '../cubit/register/register_state.dart';
 
@@ -42,10 +42,7 @@ class _RegisterViewState extends State<_RegisterView> {
   }
 
   Future<void> _navigateAfterRegister(BuildContext context) async {
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute<void>(builder: (_) => const NearbyLocationPage()),
-      (_) => false,
-    );
+    await navigateAfterAuthLocationGate(context);
   }
 
   @override

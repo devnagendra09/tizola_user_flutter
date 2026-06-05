@@ -1,5 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/cache/data_cache_policy.dart';
+import '../../../../core/cache/hive_local_cache.dart';
 import '../../../../core/data/restaurant_filter_store.dart';
 import '../../../../core/utils/result.dart';
 import '../../../catalog/domain/entities/cuisine_entity.dart';
@@ -14,6 +16,7 @@ class HomeCubit extends Cubit<HomeState> {
     this._homeRepository,
     this._catalogRepository,
     this._filterStore,
+    this._hiveCache,
   ) : super(
           HomeState(
             sortOption: _filterStore.sortOption,
@@ -25,9 +28,35 @@ class HomeCubit extends Cubit<HomeState> {
   final HomeRepository _homeRepository;
   final CatalogRepository _catalogRepository;
   final RestaurantFilterStore _filterStore;
+  final HiveLocalCache _hiveCache;
+  final _cache = DataCachePolicy();
 
-  Future<void> loadHome() async {
-    emit(state.copyWith(status: HomeStatus.loading, clearError: true));
+  /// Memory + Hive disk cache, then API if stale.
+  Future<void> loadHomeIfNeeded() async {
+    await _restoreFromDisk();
+    await loadHome();
+  }
+
+  Future<void> _restoreFromDisk() async {
+    if (state.restaurants.isNotEmpty) return;
+    final cached = _hiveCache.readHome(state);
+    if (cached == null) return;
+    emit(cached);
+    _cache.markFresh();
+  }
+
+  Future<void> loadHome({bool force = false}) async {
+    if (!force &&
+        state.status == HomeStatus.loaded &&
+        state.restaurants.isNotEmpty &&
+        _cache.isFresh) {
+      return;
+    }
+
+    final showBlockingLoader = state.restaurants.isEmpty;
+    if (showBlockingLoader) {
+      emit(state.copyWith(status: HomeStatus.loading, clearError: true));
+    }
 
     _mergeHomeFeed();
 
@@ -68,6 +97,13 @@ class HomeCubit extends Cubit<HomeState> {
         clearError: true,
       ),
     );
+    _cache.markFresh();
+    await _hiveCache.saveHome(state);
+  }
+
+  Future<void> invalidateCache() async {
+    _cache.invalidate();
+    await _hiveCache.clearHomeForCurrentLocation();
   }
 
   Future<void> _mergeHomeFeed() async {
@@ -88,7 +124,10 @@ class HomeCubit extends Cubit<HomeState> {
     );
   }
 
-  Future<void> refresh() => loadHome();
+  Future<void> refresh() async {
+    await invalidateCache();
+    await loadHome(force: true);
+  }
 
   Future<void> setFoodFilter(RestaurantFoodFilter filter) async {
     if (state.foodFilter == filter) {
@@ -152,6 +191,7 @@ class HomeCubit extends Cubit<HomeState> {
         clearError: true,
       ),
     );
+    await _hiveCache.saveHome(state);
   }
 
   Future<void> loadMoreRestaurants() async {
@@ -179,6 +219,7 @@ class HomeCubit extends Cubit<HomeState> {
         openRestaurantCount: merged.where((r) => r.isOpen).length,
       ),
     );
+    await _hiveCache.saveHome(state);
   }
 
   Future<Result<RestaurantPageEntity>> _fetchRestaurants({

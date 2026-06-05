@@ -25,22 +25,35 @@ import 'home_top_hero.dart';
 import 'home_service_highlights.dart';
 import 'restaurant_card.dart';
 
-class HomeTab extends StatelessWidget {
+class HomeTab extends StatefulWidget {
   const HomeTab({super.key});
 
   @override
+  State<HomeTab> createState() => _HomeTabState();
+}
+
+class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  void initState() {
+    super.initState();
+    sl<HomeCubit>().loadHomeIfNeeded();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => sl<HomeCubit>()..loadHome(),
-      child: BlocListener<MainCubit, MainState>(
-        listenWhen: (prev, curr) =>
-            prev.deliveryLocation != curr.deliveryLocation &&
-            curr.deliveryLocation != null,
-        listener: (context, state) {
-          context.read<HomeCubit>().loadHome();
-        },
-        child: const _HomeView(),
-      ),
+    super.build(context);
+    return BlocListener<MainCubit, MainState>(
+      listenWhen: (prev, curr) =>
+          prev.deliveryLocation != curr.deliveryLocation &&
+          curr.deliveryLocation != null,
+      listener: (context, state) {
+        final home = context.read<HomeCubit>();
+        home.invalidateCache().then((_) => home.loadHome(force: true));
+      },
+      child: const _HomeView(),
     );
   }
 }
@@ -546,7 +559,7 @@ class _CuisineChip extends StatelessWidget {
           children: [
             /// CATEGORY CARD
             Container(
-              height: 60, 
+              height: 60,
               width: 60,
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(

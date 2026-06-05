@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:permission_handler/permission_handler.dart';
 
+import '../../../../core/cache/hive_local_cache.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/brand_header.dart';
 import '../../../../injection_container.dart';
+import '../../../category/presentation/cubit/category_cubit.dart';
+import '../../../home/presentation/cubit/home_cubit.dart';
 import '../../../main/presentation/pages/main_page.dart';
 import '../../domain/entities/delivery_location_entity.dart';
 import '../../domain/repositories/location_repository.dart';
@@ -30,6 +34,7 @@ class _DeviceLocationSetupPageState extends State<DeviceLocationSetupPage> {
   bool _loading = true;
   bool _saving = false;
   String? _error;
+  var _promptedMap = false;
 
   @override
   void initState() {
@@ -58,6 +63,7 @@ class _DeviceLocationSetupPageState extends State<DeviceLocationSetupPage> {
         _draft = result.data;
         _loading = false;
       });
+      _maybeOpenMapPicker();
       return;
     }
     setState(() {
@@ -70,6 +76,23 @@ class _DeviceLocationSetupPageState extends State<DeviceLocationSetupPage> {
         addressType: 'Home',
       );
     });
+    _maybeOpenMapPicker();
+  }
+
+  void _maybeOpenMapPicker() {
+    if (_promptedMap) return;
+    final draft = _draft;
+    if (draft == null) return;
+    if (draft.address.trim().isNotEmpty) return;
+    _promptedMap = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _openMapPicker();
+    });
+  }
+
+  Future<void> _openAppSettings() async {
+    await openAppSettings();
+    await _bootstrap();
   }
 
   void _applyDraft(DeliveryLocationEntity draft) {
@@ -149,6 +172,10 @@ class _DeviceLocationSetupPageState extends State<DeviceLocationSetupPage> {
       return;
     }
 
+    await sl<HiveLocalCache>().clearHomeForCurrentLocation();
+    await sl<HomeCubit>().invalidateCache();
+    await sl<CategoryCubit>().reloadForLocationChange();
+
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute<void>(builder: (_) => const MainPage()),
       (_) => false,
@@ -198,14 +225,22 @@ class _DeviceLocationSetupPageState extends State<DeviceLocationSetupPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          if (_error != null)
+                          if (_error != null) ...[
                             Padding(
-                              padding: const EdgeInsets.only(bottom: 12),
+                              padding: const EdgeInsets.only(bottom: 8),
                               child: OutlinedButton(
                                 onPressed: _openGpsSettings,
                                 child: const Text('Turn on GPS'),
                               ),
                             ),
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: OutlinedButton(
+                                onPressed: _openAppSettings,
+                                child: const Text('Open app settings'),
+                              ),
+                            ),
+                          ],
                           Row(
                             children: [
                               Expanded(

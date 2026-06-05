@@ -1,22 +1,60 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/cache/hive_local_cache.dart';
 import '../../../catalog/domain/repositories/catalog_repository.dart';
 import 'orders_state.dart';
 
 class OrdersCubit extends Cubit<OrdersState> {
-  OrdersCubit(this._repository) : super(const OrdersState());
+  OrdersCubit(this._repository, this._hiveCache) : super(const OrdersState());
 
   final CatalogRepository _repository;
+  final HiveLocalCache _hiveCache;
 
-  Future<void> loadOrders({OrderTab? tab}) async {
+  Future<void> _restoreFromDiskIfNeeded() async {
+    if (state.upcomingOrders.isNotEmpty || state.pastOrders.isNotEmpty) {
+      return;
+    }
+    final cached = _hiveCache.readOrdersState(state);
+    if (cached != null) emit(cached);
+  }
+
+  Future<void> loadOrdersIfNeeded({OrderTab? tab}) async {
+    await _restoreFromDiskIfNeeded();
+
     final target = tab ?? state.selectedTab;
-    emit(
-      state.copyWith(
-        status: OrdersStatus.loading,
-        selectedTab: target,
-        clearError: true,
-      ),
-    );
+    final hasData = target == OrderTab.upcoming
+        ? state.upcomingOrders.isNotEmpty
+        : state.pastOrders.isNotEmpty;
+    if (hasData && state.status == OrdersStatus.loaded) {
+      if (tab != null && tab != state.selectedTab) {
+        emit(state.copyWith(selectedTab: tab));
+      }
+      return;
+    }
+    await loadOrders(tab: tab);
+  }
+
+  Future<void> loadOrders({OrderTab? tab, bool force = false}) async {
+    final target = tab ?? state.selectedTab;
+    if (!force) {
+      await _restoreFromDiskIfNeeded();
+    }
+
+    final hasData = target == OrderTab.upcoming
+        ? state.upcomingOrders.isNotEmpty
+        : state.pastOrders.isNotEmpty;
+
+    if (!hasData) {
+      emit(
+        state.copyWith(
+          status: OrdersStatus.loading,
+          selectedTab: target,
+          clearError: true,
+        ),
+      );
+    } else {
+      emit(state.copyWith(selectedTab: target, clearError: true));
+    }
 
     final type = target == OrderTab.upcoming ? 'Upcoming' : 'Past';
     final result = await _repository.getOrders(type: type, page: 1);
@@ -33,6 +71,11 @@ class OrdersCubit extends Cubit<OrdersState> {
             upcomingEmptyMessage: data.emptyMessage,
           ),
         );
+        await _hiveCache.saveOrdersUpcoming(
+          orders: data.orders,
+          totalPages: data.totalPages,
+          emptyMessage: data.emptyMessage,
+        );
       } else {
         emit(
           state.copyWith(
@@ -43,8 +86,13 @@ class OrdersCubit extends Cubit<OrdersState> {
             pastEmptyMessage: data.emptyMessage,
           ),
         );
+        await _hiveCache.saveOrdersPast(
+          orders: data.orders,
+          totalPages: data.totalPages,
+          emptyMessage: data.emptyMessage,
+        );
       }
-    } else {
+    } else if (!hasData) {
       emit(
         state.copyWith(
           status: OrdersStatus.failure,

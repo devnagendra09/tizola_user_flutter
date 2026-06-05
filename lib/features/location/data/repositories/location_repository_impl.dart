@@ -2,6 +2,7 @@ import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+import '../../../../core/cache/hive_local_cache.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/data/app_local_data_source.dart';
 import '../../../../core/errors/failures.dart';
@@ -21,12 +22,14 @@ class LocationRepositoryImpl implements LocationRepository {
     this._authLocal,
     this._remote,
     this._places,
+    this._hiveCache,
   );
 
   final AppLocalDataSource _appLocal;
   final AuthLocalDataSource _authLocal;
   final LocationRemoteDataSource _remote;
   final GooglePlacesRemoteDataSource _places;
+  final HiveLocalCache _hiveCache;
 
   @override
   bool get hasSavedCoordinates => _appLocal.hasSavedCoordinates;
@@ -50,10 +53,14 @@ class LocationRepositoryImpl implements LocationRepository {
     }
     try {
       final list = await _remote.fetchCustomerAddresses(token);
-      return Result.success(
-        list.map(DeliveryLocationMapper.fromApi).toList(),
-      );
+      final entities = list.map(DeliveryLocationMapper.fromApi).toList();
+      await _hiveCache.saveAddresses(entities);
+      return Result.success(entities);
     } catch (e) {
+      final cached = _hiveCache.readAddresses();
+      if (cached != null && cached.isNotEmpty) {
+        return Result.success(cached);
+      }
       return Result.failure(
         ServerFailure(e.toString().replaceFirst('Exception: ', '')),
       );
@@ -180,26 +187,28 @@ class LocationRepositoryImpl implements LocationRepository {
       );
 
       final token = _authLocal.accessToken;
-      if (token != null && token.isNotEmpty) {
-        final addresses = await _remote.fetchCustomerAddresses(token);
-        if (addresses.isEmpty) {
-          return Result.failure(const NoSavedAddressesFailure());
-        }
-        for (final item in addresses) {
-          final loc = DeliveryLocationMapper.fromApi(item);
-          if (loc.latitude == 0 && loc.longitude == 0) continue;
+      if (token == null || token.isEmpty) {
+        return Result.failure(const NoSavedAddressesFailure());
+      }
 
-          final km = GeoUtils.distanceKm(
-            position.latitude,
-            position.longitude,
-            loc.latitude,
-            loc.longitude,
-          );
+      final addresses = await _remote.fetchCustomerAddresses(token);
+      if (addresses.isEmpty) {
+        return Result.failure(const NoSavedAddressesFailure());
+      }
+      for (final item in addresses) {
+        final loc = DeliveryLocationMapper.fromApi(item);
+        if (loc.latitude == 0 && loc.longitude == 0) continue;
 
-          if (km <= AppConstants.nearbyAddressKmThreshold) {
-            await _appLocal.saveDeliveryLocation(loc);
-            return Result.success(loc);
-          }
+        final km = GeoUtils.distanceKm(
+          position.latitude,
+          position.longitude,
+          loc.latitude,
+          loc.longitude,
+        );
+
+        if (km <= AppConstants.nearbyAddressKmThreshold) {
+          await _appLocal.saveDeliveryLocation(loc);
+          return Result.success(loc);
         }
       }
 

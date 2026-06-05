@@ -8,12 +8,21 @@ class SessionRestoreResult extends Equatable {
     required this.user,
     this.needsRegistration = false,
     this.defaultLocation,
+    this.requiresDeviceLocationSetup = false,
   });
 
   final UserEntity user;
   final bool needsRegistration;
   final DeliveryLocationEntity? defaultLocation;
 
+  /// `default_location` present but lat/lng/address invalid — Android GetDeviceLocation.
+  final bool requiresDeviceLocationSetup;
+
   @override
-  List<Object?> get props => [user, needsRegistration, defaultLocation];
+  List<Object?> get props => [
+        user,
+        needsRegistration,
+        defaultLocation,
+        requiresDeviceLocationSetup,
+      ];
 }

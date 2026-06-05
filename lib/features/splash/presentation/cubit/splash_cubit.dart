@@ -77,6 +77,11 @@ class SplashCubit extends Cubit<SplashState> {
       return;
     }
 
+    if (restored.requiresDeviceLocationSetup) {
+      emit(state.copyWith(status: SplashStatus.navigateToDeviceLocationSetup));
+      return;
+    }
+
     if (restored.defaultLocation != null) {
       await _locationRepository.selectDeliveryLocation(restored.defaultLocation!);
       // Android: default_location + GPS → NearBy; without GPS → Main.
@@ -91,6 +96,13 @@ class SplashCubit extends Cubit<SplashState> {
       return;
     }
 
-    emit(state.copyWith(status: SplashStatus.navigateToNearby));
+    final useDeviceSetup = !await _locationRepository.canResolveDevicePosition();
+    emit(
+      state.copyWith(
+        status: useDeviceSetup
+            ? SplashStatus.navigateToDeviceLocationSetup
+            : SplashStatus.navigateToNearby,
+      ),
+    );
   }
 }

@@ -21,13 +21,24 @@ import 'coupon_offers_page.dart';
 import 'order_success_page.dart';
 import 'payment_options_page.dart';
 
-class CartPage extends StatelessWidget {
+class CartPage extends StatefulWidget {
   const CartPage({super.key});
 
   @override
+  State<CartPage> createState() => _CartPageState();
+}
+
+class _CartPageState extends State<CartPage> {
+  @override
+  void initState() {
+    super.initState();
+    sl<CartCubit>().ensureCartLoaded();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => sl<CartCubit>()..loadCart(),
+    return BlocProvider.value(
+      value: sl<CartCubit>(),
       child: const _CartView(),
     );
   }

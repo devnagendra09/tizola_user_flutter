@@ -3,11 +3,13 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../../core/constants/app_assets.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/system_ui_styles.dart';
 import '../../../../injection_container.dart';
 import '../../../auth/presentation/pages/login_page.dart';
 import '../../../auth/presentation/pages/register_page.dart';
+import '../../../location/presentation/pages/device_location_setup_page.dart';
 import '../../../location/presentation/pages/nearby_location_page.dart';
 import '../../../main/presentation/pages/main_page.dart';
 import '../cubit/splash_cubit.dart';
@@ -87,6 +89,13 @@ class _SplashView extends StatelessWidget {
               builder: (_) => const NearbyLocationPage(),
             ),
           );
+        } else if (state.status ==
+            SplashStatus.navigateToDeviceLocationSetup) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute<void>(
+              builder: (_) => const DeviceLocationSetupPage(),
+            ),
+          );
         } else if (state.status == SplashStatus.navigateToRegister) {
           Navigator.of(context).pushReplacement(
             MaterialPageRoute<void>(builder: (_) => const RegisterPage()),
@@ -100,28 +109,37 @@ class _SplashView extends StatelessWidget {
       child: AnnotatedRegion<SystemUiOverlayStyle>(
         value: AppSystemUi.lightScreen,
         child: Scaffold(
-          backgroundColor: Colors.white,
-          body: Center(
+          backgroundColor: AppColors.brand,
+          body: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color(0xFF89B8FF),
+                  Color(0xFF89B8FF),
+                  Color(0xFF4A90FF),
+
+                ],
+              ),
+            ),
             child: SafeArea(
               child: Column(
                 children: [
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 50),
                   Image.asset(
-                    'assets/images/flag.png',
-                    height: 120,
+                    'assets/images/flag_nobg.png',
+                    height: 150,
                     fit: BoxFit.contain,
                   ),
                   const Spacer(),
                   Image.asset(
-                    'assets/images/user_icon.png',
+                    AppAssets.logoWhite,
                     height: 220,
                     fit: BoxFit.contain,
                   ),
                   const Spacer(),
-                  const Padding(
-                    padding: EdgeInsets.all(24),
-                    child: CircularProgressIndicator(color: AppColors.brand),
-                  ),
+
                   const SizedBox(height: 16),
                 ],
               ),

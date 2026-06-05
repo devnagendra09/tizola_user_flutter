@@ -5,7 +5,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/navigation/cart_navigation.dart';
 import '../../../../core/navigation/order_navigation.dart';
 import '../../../../core/navigation/search_navigation.dart';
-import '../../../../core/navigation/categories_navigation.dart';
 import '../../../../core/navigation/deep_link_navigation.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../auth/domain/repositories/auth_repository.dart';
@@ -17,6 +16,7 @@ import '../../../../injection_container.dart';
 import '../../../splash/presentation/pages/under_maintenance_page.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../auth/presentation/pages/login_page.dart';
+import '../../../category/presentation/widgets/categories_tab.dart';
 import '../../../home/presentation/widgets/home_tab.dart';
 import '../../../location/presentation/pages/location_info_page.dart';
 import '../../../orders/presentation/widgets/orders_tab.dart';
@@ -101,7 +101,7 @@ class _MainViewState extends State<_MainView> with WidgetsBindingObserver {
 
   static const _tabs = [
     HomeTab(),
-    SizedBox.shrink(),
+    CategoriesTab(),
     OrdersTab(),
     AccountTab(),
   ];
@@ -114,6 +114,39 @@ class _MainViewState extends State<_MainView> with WidgetsBindingObserver {
     );
     if (context.mounted && changed == true) {
       context.read<MainCubit>().loadDeliveryLocation();
+    }
+  }
+
+  Future<bool?> _confirmExitApp(BuildContext context) {
+    return showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Exit app'),
+        content: const Text('Are you sure you want to exit?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('No'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Yes'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _onMainBackPressed(BuildContext context) async {
+    final index = context.read<MainCubit>().state.currentIndex;
+    if (index != 0) {
+      context.read<MainCubit>().selectTab(0);
+      return;
+    }
+
+    final shouldExit = await _confirmExitApp(context);
+    if (shouldExit == true && context.mounted) {
+      SystemNavigator.pop();
     }
   }
 
@@ -155,7 +188,13 @@ class _MainViewState extends State<_MainView> with WidgetsBindingObserver {
         builder: (context, state) {
           final l10n = AppLocalizations.of(context);
           final onHomeTab = state.currentIndex == 0;
-          return AnnotatedRegion<SystemUiOverlayStyle>(
+          return PopScope(
+            canPop: false,
+            onPopInvokedWithResult: (didPop, _) {
+              if (didPop) return;
+              _onMainBackPressed(context);
+            },
+            child: AnnotatedRegion<SystemUiOverlayStyle>(
             value: onHomeTab ? AppSystemUi.homeHero : AppSystemUi.brandAppBar,
             child: Scaffold(
               appBar: onHomeTab
@@ -190,10 +229,6 @@ class _MainViewState extends State<_MainView> with WidgetsBindingObserver {
                     selectedItemColor: AppColors.brand,
                     unselectedItemColor: Colors.grey,
                     onTap: (index) {
-                      if (index == 1) {
-                        openCategoriesScreen(context);
-                        return;
-                      }
                       context.read<MainCubit>().onTabSelected(index);
                     },
                     items: [
@@ -221,6 +256,7 @@ class _MainViewState extends State<_MainView> with WidgetsBindingObserver {
                   ),
                 ],
               ),
+            ),
             ),
           );
         },

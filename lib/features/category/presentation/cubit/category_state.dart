@@ -19,11 +19,12 @@ class CategoryState extends Equatable {
     CategoryStatus? status,
     List<CuisineEntity>? cuisines,
     String? errorMessage,
+    bool clearError = false,
   }) {
     return CategoryState(
       status: status ?? this.status,
       cuisines: cuisines ?? this.cuisines,
-      errorMessage: errorMessage ?? this.errorMessage,
+      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
     );
   }
 

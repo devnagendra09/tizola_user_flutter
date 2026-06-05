@@ -4,6 +4,7 @@ enum SplashStatus {
   initial,
   loading,
   navigateToNearby,
+  navigateToDeviceLocationSetup,
   navigateToMain,
   navigateToLogin,
   navigateToRegister,

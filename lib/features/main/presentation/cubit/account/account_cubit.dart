@@ -1,13 +1,20 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
+import '../../../../../core/cache/hive_local_cache.dart';
 import '../../../../auth/domain/repositories/auth_repository.dart';
 import 'account_state.dart';
 
 class AccountCubit extends Cubit<AccountState> {
-  AccountCubit(this._repository) : super(const AccountState());
+  AccountCubit(this._repository, this._hiveCache) : super(const AccountState());
 
   final AuthRepository _repository;
+  final HiveLocalCache _hiveCache;
+
+  Future<void> loadProfileIfNeeded() async {
+    if (state.status == AccountStatus.loaded && state.user != null) return;
+    await loadProfile();
+  }
 
   Future<void> loadProfile() async {
     emit(state.copyWith(status: AccountStatus.loading, clearError: true));
@@ -49,6 +56,7 @@ class AccountCubit extends Cubit<AccountState> {
       );
       return;
     }
+    await _hiveCache.clearUserSessionCache();
     emit(state.copyWith(status: AccountStatus.loggedOut));
   }
 }

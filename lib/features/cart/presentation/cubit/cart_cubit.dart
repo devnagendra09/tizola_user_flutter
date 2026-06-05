@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/cache/hive_local_cache.dart';
 import '../../../location/domain/entities/delivery_location_entity.dart';
 import '../../../location/domain/repositories/location_repository.dart';
 import '../../domain/entities/cart_entity.dart';
@@ -7,7 +8,7 @@ import '../../domain/repositories/cart_repository.dart';
 import 'cart_state.dart';
 
 class CartCubit extends Cubit<CartState> {
-  CartCubit(this._cartRepository, this._locationRepository)
+  CartCubit(this._cartRepository, this._locationRepository, this._hiveCache)
       : super(
           CartState(
             deliveryLocation: _locationRepository.savedDeliveryLocation,
@@ -16,6 +17,31 @@ class CartCubit extends Cubit<CartState> {
 
   final CartRepository _cartRepository;
   final LocationRepository _locationRepository;
+  final HiveLocalCache _hiveCache;
+
+  /// Memory + Hive, then API refresh.
+  Future<void> ensureCartLoaded() async {
+    if (state.status == CartStatus.loaded) {
+      if (!state.cart.isEmpty) {
+        await loadCart();
+      }
+      return;
+    }
+
+    final cached = _hiveCache.readCart();
+    if (cached != null && !cached.isEmpty) {
+      emit(
+        state.copyWith(
+          status: CartStatus.loaded,
+          cart: cached,
+          couponCodeInput: cached.couponCode ?? '',
+          clearError: true,
+        ),
+      );
+    }
+
+    await loadCart();
+  }
 
   /// [tipAmountOverride] — use `'0'` to clear tip on server (Android sends `""` / `"0"`).
   Future<void> loadCart({String? tipAmountOverride}) async {
@@ -53,6 +79,7 @@ class CartCubit extends Cubit<CartState> {
 
     final cart = result.data ?? const CartEntity();
     if (cart.isEmpty) {
+      await _hiveCache.clearCart();
       emit(_emptyCartState());
       return;
     }
@@ -69,6 +96,7 @@ class CartCubit extends Cubit<CartState> {
         isSelfPickup: supportsPickup && state.isSelfPickup,
       ),
     );
+    await _hiveCache.saveCart(cart);
   }
 
   CartState _emptyCartState() {

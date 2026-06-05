@@ -7,7 +7,7 @@ import 'package:sms_autofill/sms_autofill.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/otp_input.dart';
 import '../../../../injection_container.dart';
-import '../../../location/presentation/pages/nearby_location_page.dart';
+import '../../../../core/navigation/location_gate_navigation.dart';
 import 'register_page.dart';
 import '../cubit/otp/otp_cubit.dart';
 import '../cubit/otp/otp_state.dart';
@@ -91,10 +91,7 @@ class _OtpViewState extends State<_OtpView> with CodeAutoFill {
             (_) => false,
           );
         } else if (state.status == OtpStatus.success) {
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute<void>(builder: (_) => const NearbyLocationPage()),
-            (_) => false,
-          );
+          navigateAfterAuthLocationGate(context);
         }
 
         if (state.status == OtpStatus.failure) {

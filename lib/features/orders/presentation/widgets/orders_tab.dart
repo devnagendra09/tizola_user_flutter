@@ -11,15 +11,21 @@ import '../cubit/orders_cubit.dart';
 import '../cubit/orders_state.dart';
 import 'order_list_item.dart';
 
-class OrdersTab extends StatelessWidget {
+class OrdersTab extends StatefulWidget {
   const OrdersTab({super.key});
 
   @override
+  State<OrdersTab> createState() => _OrdersTabState();
+}
+
+class _OrdersTabState extends State<OrdersTab> with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => sl<OrdersCubit>(),
-      child: const _OrdersTabContent(),
-    );
+    super.build(context);
+    return const _OrdersTabContent();
   }
 }
 
@@ -61,7 +67,7 @@ class _OrdersTabContentState extends State<_OrdersTabContent>
       listenWhen: (prev, curr) =>
           prev.currentIndex != curr.currentIndex && curr.currentIndex == 2,
       listener: (context, _) {
-        context.read<OrdersCubit>().loadOrders();
+        context.read<OrdersCubit>().loadOrdersIfNeeded();
       },
       child: Column(
         children: [

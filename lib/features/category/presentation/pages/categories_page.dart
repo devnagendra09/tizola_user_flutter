@@ -13,13 +13,24 @@ import '../cubit/category_state.dart';
 
 /// Full-screen categories list — mirrors Android `PlainActivity` (title "Categories")
 /// + `fragment_category.xml` + `categories_view.xml` item layout.
-class CategoriesPage extends StatelessWidget {
+class CategoriesPage extends StatefulWidget {
   const CategoriesPage({super.key});
 
   @override
+  State<CategoriesPage> createState() => _CategoriesPageState();
+}
+
+class _CategoriesPageState extends State<CategoriesPage> {
+  @override
+  void initState() {
+    super.initState();
+    sl<CategoryCubit>().loadCategoriesIfNeeded();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => sl<CategoryCubit>()..loadCategories(),
+    return BlocProvider.value(
+      value: sl<CategoryCubit>(),
       child: const _CategoriesScaffold(),
     );
   }

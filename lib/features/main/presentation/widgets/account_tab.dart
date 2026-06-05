@@ -27,22 +27,21 @@ class AccountTab extends StatefulWidget {
   State<AccountTab> createState() => _AccountTabState();
 }
 
-class _AccountTabState extends State<AccountTab> {
+class _AccountTabState extends State<AccountTab>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => sl<AccountCubit>(),
-      child: BlocListener<MainCubit, MainState>(
-        listenWhen: (prev, curr) =>
-            prev.currentIndex != curr.currentIndex && curr.currentIndex == 3,
-        listener: (context, _) {
-          final cubit = context.read<AccountCubit>();
-          if (cubit.state.status == AccountStatus.initial) {
-            cubit.loadProfile();
-          }
-        },
-        child: const _AccountView(),
-      ),
+    super.build(context);
+    return BlocListener<MainCubit, MainState>(
+      listenWhen: (prev, curr) =>
+          prev.currentIndex != curr.currentIndex && curr.currentIndex == 3,
+      listener: (context, _) {
+        context.read<AccountCubit>().loadProfileIfNeeded();
+      },
+      child: const _AccountView(),
     );
   }
 }
