@@ -21,4 +21,11 @@ class GeoUtils {
   }
 
   static double _deg2rad(double deg) => deg * (pi / 180);
+
+  /// True when address is our lat/lng fallback (not a real street address).
+  static bool isCoordinateOnlyAddress(String address) {
+    final trimmed = address.trim();
+    if (trimmed.isEmpty) return false;
+    return RegExp(r'^-?\d+\.\d+,\s*-?\d+\.\d+$').hasMatch(trimmed);
+  }
 }

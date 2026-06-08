@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
 
+import '../../../restaurant/domain/entities/restaurant_detail_entities.dart';
+
 enum FoodType { both, veg, nonVeg }
 
 class RestaurantEntity extends Equatable {
@@ -48,6 +50,15 @@ class RestaurantEntity extends Equatable {
 
   bool get showNonVegBadge =>
       foodType == FoodType.nonVeg || foodType == FoodType.both;
+
+  /// Header preview for restaurant detail — avoids waiting on full `restaurant_data`.
+  RestaurantDetailEntity toDetailPreview() => RestaurantDetailEntity(
+        name: name,
+        isOpened: isOpened,
+        isFavourite: isFavourite,
+        address: address,
+        distance: distance,
+      );
 
   String? get formattedOpenTime => _formatTime(fromTime);
 

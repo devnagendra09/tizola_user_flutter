@@ -4,6 +4,7 @@ import 'package:permission_handler/permission_handler.dart';
 
 import '../../../../core/cache/hive_local_cache.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/geo_utils.dart';
 import '../../../../core/widgets/brand_header.dart';
 import '../../../../injection_container.dart';
 import '../../../category/presentation/cubit/category_cubit.dart';
@@ -59,8 +60,18 @@ class _DeviceLocationSetupPageState extends State<DeviceLocationSetupPage> {
     final result = await _repo.resolveCurrentLocation();
     if (!mounted) return;
     if (result.isSuccess && result.data != null) {
+      var draft = result.data!;
+      if (GeoUtils.isCoordinateOnlyAddress(draft.address)) {
+        final geocoded = await _repo.reverseGeocode(
+          latitude: draft.latitude,
+          longitude: draft.longitude,
+        );
+        if (geocoded.isSuccess && geocoded.data != null) {
+          draft = geocoded.data!;
+        }
+      }
       setState(() {
-        _draft = result.data;
+        _draft = draft;
         _loading = false;
       });
       _maybeOpenMapPicker();
@@ -83,7 +94,10 @@ class _DeviceLocationSetupPageState extends State<DeviceLocationSetupPage> {
     if (_promptedMap) return;
     final draft = _draft;
     if (draft == null) return;
-    if (draft.address.trim().isNotEmpty) return;
+    if (draft.address.trim().isNotEmpty &&
+        !GeoUtils.isCoordinateOnlyAddress(draft.address)) {
+      return;
+    }
     _promptedMap = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _openMapPicker();
@@ -267,7 +281,9 @@ class _DeviceLocationSetupPageState extends State<DeviceLocationSetupPage> {
                             label: const Text('Use current location'),
                           ),
                           const SizedBox(height: 16),
-                          if (draft != null && draft.address.isNotEmpty)
+                          if (draft != null &&
+                              draft.address.isNotEmpty &&
+                              !GeoUtils.isCoordinateOnlyAddress(draft.address))
                             Card(
                               child: Padding(
                                 padding: const EdgeInsets.all(14),

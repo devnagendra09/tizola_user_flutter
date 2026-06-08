@@ -22,6 +22,7 @@ Future<void> openRestaurantDetail(
       builder: (_) => RestaurantDetailPage(
         seoUrl: seoUrl,
         fallbackName: restaurant.name,
+        initialDetail: restaurant.toDetailPreview(),
       ),
     ),
   );

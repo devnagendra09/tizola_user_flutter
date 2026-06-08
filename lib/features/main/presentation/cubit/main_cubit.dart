@@ -13,8 +13,6 @@ class MainCubit extends Cubit<MainState> {
     this._catalogRepository,
     this._cartRepository,
   ) : super(const MainState()) {
-
-    loadDeliveryLocation();
     refreshInProgressOrder();
     refreshCartBadge();
   }

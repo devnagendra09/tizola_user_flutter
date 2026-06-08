@@ -3,8 +3,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/data/app_local_data_source.dart';
 import '../../../../core/errors/failures.dart';
+import '../../../../injection_container.dart';
 import '../../../auth/domain/repositories/auth_repository.dart';
 import '../../../location/domain/repositories/location_repository.dart';
+import '../../../main/presentation/cubit/main_cubit.dart';
 import 'splash_state.dart';
 
 class SplashCubit extends Cubit<SplashState> {
@@ -84,6 +86,7 @@ class SplashCubit extends Cubit<SplashState> {
 
     if (restored.defaultLocation != null) {
       await _locationRepository.selectDeliveryLocation(restored.defaultLocation!);
+      sl<MainCubit>().loadDeliveryLocation();
       // Android: default_location + GPS → NearBy; without GPS → Main.
       final useNearby = await _locationRepository.canResolveDevicePosition();
       emit(

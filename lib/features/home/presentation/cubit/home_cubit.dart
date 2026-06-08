@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/cache/data_cache_policy.dart';
 import '../../../../core/cache/hive_local_cache.dart';
 import '../../../../core/data/restaurant_filter_store.dart';
+import '../../../../core/errors/failures.dart';
 import '../../../../core/utils/result.dart';
 import '../../../catalog/domain/entities/cuisine_entity.dart';
 import '../../../catalog/domain/enums/restaurant_food_filter.dart';
@@ -30,6 +33,7 @@ class HomeCubit extends Cubit<HomeState> {
   final RestaurantFilterStore _filterStore;
   final HiveLocalCache _hiveCache;
   final _cache = DataCachePolicy();
+  var _loadGeneration = 0;
 
   /// Memory + Hive disk cache, then API if stale.
   Future<void> loadHomeIfNeeded() async {
@@ -45,32 +49,37 @@ class HomeCubit extends Cubit<HomeState> {
     _cache.markFresh();
   }
 
+  /// P1: restaurants (show list). P2: banners, sliders, cuisines (background).
   Future<void> loadHome({bool force = false}) async {
+    final generation = ++_loadGeneration;
+
     if (!force &&
         state.status == HomeStatus.loaded &&
         state.restaurants.isNotEmpty &&
         _cache.isFresh) {
+      unawaited(_loadSecondaryContent(generation));
       return;
     }
 
-    final showBlockingLoader = state.restaurants.isEmpty;
-    if (showBlockingLoader) {
+    final hadRestaurants = state.restaurants.isNotEmpty;
+    if (!hadRestaurants) {
       emit(state.copyWith(status: HomeStatus.loading, clearError: true));
     }
 
-    _mergeHomeFeed();
+    final restaurantsResult = await _fetchRestaurantsWithRetry(page: 1);
 
-    final results = await Future.wait([
-      _catalogRepository.getCuisines(),
-      _fetchRestaurants(page: 1),
-    ]);
-
-    if (isClosed) return;
-
-    final cuisinesResult = results[0] as Result<List<CuisineEntity>>;
-    final restaurantsResult = results[1] as Result<RestaurantPageEntity>;
+    if (isClosed || generation != _loadGeneration) return;
 
     if (restaurantsResult.isFailure) {
+      if (hadRestaurants) {
+        emit(
+          state.copyWith(
+            status: HomeStatus.loaded,
+            errorMessage: restaurantsResult.failure?.message,
+          ),
+        );
+        return;
+      }
       emit(
         state.copyWith(
           status: HomeStatus.failure,
@@ -81,12 +90,9 @@ class HomeCubit extends Cubit<HomeState> {
     }
 
     final page = restaurantsResult.data!;
-    final cuisines = cuisinesResult.data ?? [];
-
     emit(
       state.copyWith(
         status: HomeStatus.loaded,
-        cuisines: cuisines,
         restaurants: page.restaurants,
         currentPage: page.currentPage,
         totalPages: page.totalPages,
@@ -98,7 +104,9 @@ class HomeCubit extends Cubit<HomeState> {
       ),
     );
     _cache.markFresh();
-    await _hiveCache.saveHome(state);
+    unawaited(_hiveCache.saveHome(state));
+
+    unawaited(_loadSecondaryContent(generation));
   }
 
   Future<void> invalidateCache() async {
@@ -106,22 +114,56 @@ class HomeCubit extends Cubit<HomeState> {
     await _hiveCache.clearHomeForCurrentLocation();
   }
 
-  Future<void> _mergeHomeFeed() async {
-    final feedResult = await _homeRepository.loadHomeFeed();
-    if (isClosed || feedResult.isFailure) return;
+  Future<void> _loadSecondaryContent(int generation) async {
+    final results = await Future.wait([
+      _homeRepository.loadHomeFeed(),
+      _catalogRepository.getCuisines(),
+    ]);
 
-    final feed = feedResult.data;
-    if (feed == null) return;
+    if (isClosed || generation != _loadGeneration) return;
+
+    final feedResult = results[0] as Result<HomeFeedEntity>;
+    final cuisinesResult = results[1] as Result<List<CuisineEntity>>;
+
+    HomeFeedEntity? feed;
+    if (feedResult.isSuccess) {
+      feed = feedResult.data;
+    }
+
+    final cuisines =
+        cuisinesResult.isSuccess ? (cuisinesResult.data ?? <CuisineEntity>[]) : null;
+
+    if (feed == null && cuisines == null) return;
 
     emit(
       state.copyWith(
-        notificationMessage: feed.notificationMessage,
-        couponBanners: feed.couponBanners,
-        sliders: feed.sliders,
-        customerCarePhone: feed.customerCare?.phone,
-        customerCareWhatsapp: feed.customerCare?.whatsapp,
+        notificationMessage: feed?.notificationMessage,
+        couponBanners: feed?.couponBanners ?? state.couponBanners,
+        sliders: feed?.sliders ?? state.sliders,
+        customerCarePhone: feed?.customerCare?.phone ?? state.customerCarePhone,
+        customerCareWhatsapp:
+            feed?.customerCare?.whatsapp ?? state.customerCareWhatsapp,
+        cuisines: cuisines ?? state.cuisines,
       ),
     );
+    unawaited(_hiveCache.saveHome(state));
+  }
+
+  Future<Result<RestaurantPageEntity>> _fetchRestaurantsWithRetry({
+    required int page,
+    RestaurantFoodFilter? foodFilter,
+    int maxAttempts = 2,
+  }) async {
+    Result<RestaurantPageEntity>? last;
+    for (var attempt = 0; attempt < maxAttempts; attempt++) {
+      if (attempt > 0) {
+        await Future<void>.delayed(const Duration(milliseconds: 700));
+        if (isClosed) break;
+      }
+      last = await _fetchRestaurants(page: page, foodFilter: foodFilter);
+      if (last.isSuccess) return last;
+    }
+    return last ?? Result.failure(const NetworkFailure());
   }
 
   Future<void> refresh() async {

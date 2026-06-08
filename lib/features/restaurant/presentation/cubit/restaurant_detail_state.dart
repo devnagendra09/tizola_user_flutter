@@ -30,6 +30,7 @@ class RestaurantDetailState extends Equatable {
     this.cartSummary = const CartSummaryEntity(),
     this.pendingCartItemIds = const {},
     this.isClearingCart = false,
+    this.isLoadingMenu = false,
     this.cartConflict,
     this.errorMessage,
   });
@@ -47,6 +48,7 @@ class RestaurantDetailState extends Equatable {
   final CartSummaryEntity cartSummary;
   final Set<String> pendingCartItemIds;
   final bool isClearingCart;
+  final bool isLoadingMenu;
   final CartConflictEvent? cartConflict;
   final String? errorMessage;
 
@@ -66,6 +68,7 @@ class RestaurantDetailState extends Equatable {
     CartSummaryEntity? cartSummary,
     Set<String>? pendingCartItemIds,
     bool? isClearingCart,
+    bool? isLoadingMenu,
     CartConflictEvent? cartConflict,
     String? errorMessage,
     bool clearCartConflict = false,
@@ -85,6 +88,7 @@ class RestaurantDetailState extends Equatable {
       cartSummary: cartSummary ?? this.cartSummary,
       pendingCartItemIds: pendingCartItemIds ?? this.pendingCartItemIds,
       isClearingCart: isClearingCart ?? this.isClearingCart,
+      isLoadingMenu: isLoadingMenu ?? this.isLoadingMenu,
       cartConflict: clearCartConflict ? null : (cartConflict ?? this.cartConflict),
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
     );
@@ -105,6 +109,7 @@ class RestaurantDetailState extends Equatable {
         cartSummary,
         pendingCartItemIds,
         isClearingCart,
+        isLoadingMenu,
         cartConflict,
         errorMessage,
       ];

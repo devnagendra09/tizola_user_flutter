@@ -103,11 +103,26 @@ class _HomeViewState extends State<_HomeView> {
     return BlocBuilder<HomeCubit, HomeState>(
       builder: (context, state) {
         if (state.status == HomeStatus.loading && state.restaurants.isEmpty) {
-          return const Scaffold(
-            backgroundColor: Colors.white,
+          return Scaffold(
+            backgroundColor: const Color(0xFFFAFAFA),
             body: SafeArea(
-              child: SingleChildScrollView(
-                child: RestaurantListShimmer(itemCount: 6),
+              top: false,
+              child: CustomScrollView(
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: HomeTopHero(
+                      location: mainState.deliveryLocation,
+                      onLocationTap: () => _openChangeLocation(context),
+                      cartItemCount: mainState.cartItemCount,
+                    ),
+                  ),
+                  const SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(0, 8, 0, 24),
+                      child: RestaurantListShimmer(itemCount: 6),
+                    ),
+                  ),
+                ],
               ),
             ),
           );
@@ -123,7 +138,8 @@ class _HomeViewState extends State<_HomeView> {
                   Text(state.errorMessage ?? 'Failed to load'),
                   const SizedBox(height: 12),
                   ElevatedButton(
-                    onPressed: () => context.read<HomeCubit>().loadHome(),
+                    onPressed: () =>
+                        context.read<HomeCubit>().loadHome(force: true),
                     child: const Text('Retry'),
                   ),
                 ],

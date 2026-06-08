@@ -3,6 +3,7 @@ import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'core/cache/hive_local_cache.dart';
+import 'core/cache/restaurant_menu_cache.dart';
 import 'core/data/app_local_data_source.dart';
 import 'core/locale/app_locale_notifier.dart';
 import 'core/maps/directions_service.dart';
@@ -51,7 +52,6 @@ import 'features/orders/presentation/cubit/service_order_cubit.dart';
 import 'features/restaurant/data/datasources/restaurant_remote_data_source.dart';
 import 'features/restaurant/data/repositories/restaurant_repository_impl.dart';
 import 'features/restaurant/domain/repositories/restaurant_repository.dart';
-import 'features/restaurant/presentation/cubit/restaurant_detail_cubit.dart';
 import 'features/restaurant/presentation/cubit/restaurant_list_cubit.dart';
 import 'features/search/presentation/cubit/search_cubit.dart';
 import 'features/splash/presentation/cubit/splash_cubit.dart';
@@ -173,13 +173,7 @@ Future<void> initDependencies() async {
   sl.registerFactory(() => SearchCubit(sl()));
   sl.registerLazySingleton(() => CategoryCubit(sl(), sl()));
   sl.registerFactory(() => RestaurantListCubit(sl(), sl()));
-  sl.registerFactoryParam<RestaurantDetailCubit, String, String?>(
-    (seoUrl, fallbackName) => RestaurantDetailCubit(
-      sl(),
-      seoUrl: seoUrl,
-      fallbackName: fallbackName,
-    ),
-  );
+  sl.registerLazySingleton(() => RestaurantMenuCache());
   sl.registerFactory(() => ServiceOrderCubit(sl()));
   sl.registerFactory(() => LocationOnboardingCubit(sl()));
   sl.registerFactory(() => LocationInfoCubit(sl()));

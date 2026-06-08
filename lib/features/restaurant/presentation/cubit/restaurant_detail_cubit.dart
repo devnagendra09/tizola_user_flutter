@@ -2,6 +2,9 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/cache/restaurant_menu_cache.dart';
+import '../../../../core/errors/failures.dart';
+import '../../../../core/utils/result.dart';
 import '../../../catalog/domain/enums/restaurant_food_filter.dart';
 import '../../domain/entities/menu_entity.dart';
 import '../../domain/entities/restaurant_detail_entities.dart';
@@ -10,18 +13,26 @@ import 'restaurant_detail_state.dart';
 
 class RestaurantDetailCubit extends Cubit<RestaurantDetailState> {
   RestaurantDetailCubit(
-    this._repository, {
+    this._repository,
+    this._menuCache, {
     required String seoUrl,
     String? fallbackName,
+    RestaurantDetailEntity? initialDetail,
   }) : super(
           RestaurantDetailState(
             seoUrl: seoUrl,
             fallbackName: fallbackName,
+            detail: initialDetail,
+            status: initialDetail != null
+                ? RestaurantDetailStatus.loaded
+                : RestaurantDetailStatus.initial,
           ),
         );
 
   final RestaurantRepository _repository;
+  final RestaurantMenuCache _menuCache;
   Timer? _cartRefreshDebounce;
+  var _loadGeneration = 0;
 
   @override
   Future<void> close() {
@@ -29,62 +40,162 @@ class RestaurantDetailCubit extends Cubit<RestaurantDetailState> {
     return super.close();
   }
 
-  Future<void> loadInitial() async {
+  String get _filterKey => state.foodFilter.name;
+
+  /// P1: menu + cart (show list). P2: header + banners (background).
+  Future<void> loadInitial({bool force = false}) async {
+    final generation = ++_loadGeneration;
+    final hasShell = state.detail != null || state.fallbackName != null;
+
+    final cachedMenu = force
+        ? null
+        : _menuCache.read(state.seoUrl, _filterKey);
+
+    if (cachedMenu != null && cachedMenu.isNotEmpty) {
+      emit(
+        state.copyWith(
+          status: RestaurantDetailStatus.loaded,
+          menuCategories: cachedMenu,
+          displayCategories: _applySearch(cachedMenu, state.searchQuery),
+          isLoadingMenu: false,
+          clearError: true,
+        ),
+      );
+      unawaited(_refreshMenuInBackground(generation));
+      unawaited(_loadSecondaryContent(generation));
+      unawaited(_loadCartSummary());
+      return;
+    }
+
     emit(
       state.copyWith(
-        status: RestaurantDetailStatus.loading,
+        status: hasShell
+            ? RestaurantDetailStatus.loaded
+            : RestaurantDetailStatus.loading,
+        isLoadingMenu: true,
         clearError: true,
         clearCartConflict: true,
       ),
     );
 
-    final detailResult = await _repository.getRestaurantDetail(
-      seoUrl: state.seoUrl,
-    );
-    final bannersResult = await _repository.getStoreBanners(
-      seoUrl: state.seoUrl,
-    );
-    final menuResult = await _repository.getMenu(
-      seoUrl: state.seoUrl,
-      foodFilter: state.foodFilter,
-    );
-    final cartResult = await _repository.getCartSummary();
+    final menuResult = await _fetchMenuWithRetry();
+    if (isClosed || generation != _loadGeneration) return;
 
     if (menuResult.isFailure) {
-      emit(
-        state.copyWith(
-          status: RestaurantDetailStatus.failure,
-          errorMessage: menuResult.failure?.message,
-          detail: detailResult.data,
-          banners: bannersResult.data ?? [],
-        ),
-      );
+      if (state.menuCategories.isEmpty) {
+        emit(
+          state.copyWith(
+            status: RestaurantDetailStatus.failure,
+            isLoadingMenu: false,
+            errorMessage: menuResult.failure?.message,
+          ),
+        );
+      } else {
+        emit(
+          state.copyWith(
+            isLoadingMenu: false,
+            errorMessage: menuResult.failure?.message,
+          ),
+        );
+      }
+      unawaited(_loadSecondaryContent(generation));
       return;
     }
 
     final menu = menuResult.data ?? [];
+    _menuCache.save(state.seoUrl, _filterKey, menu);
+
     emit(
       state.copyWith(
         status: RestaurantDetailStatus.loaded,
-        detail: detailResult.data,
-        banners: bannersResult.data ?? [],
         menuCategories: menu,
         displayCategories: _applySearch(menu, state.searchQuery),
-        cartSummary: cartResult.data ?? const CartSummaryEntity(),
+        isLoadingMenu: false,
         clearError: true,
+      ),
+    );
+
+    unawaited(_loadSecondaryContent(generation));
+    unawaited(_loadCartSummary());
+  }
+
+  Future<void> _refreshMenuInBackground(int generation) async {
+    final menuResult = await _fetchMenuWithRetry();
+    if (isClosed || generation != _loadGeneration) return;
+    if (menuResult.isFailure) return;
+
+    final menu = menuResult.data ?? [];
+    if (menu.isEmpty) return;
+
+    _menuCache.save(state.seoUrl, _filterKey, menu);
+    emit(
+      state.copyWith(
+        menuCategories: menu,
+        displayCategories: _applySearch(menu, state.searchQuery),
       ),
     );
   }
 
-  Future<void> reloadMenu() async {
-    final menuResult = await _repository.getMenu(
-      seoUrl: state.seoUrl,
-      foodFilter: state.foodFilter,
+  Future<void> _loadSecondaryContent(int generation) async {
+    final results = await Future.wait([
+      _repository.getRestaurantDetail(seoUrl: state.seoUrl),
+      _repository.getStoreBanners(seoUrl: state.seoUrl),
+    ]);
+
+    if (isClosed || generation != _loadGeneration) return;
+
+    final detailResult = results[0] as Result<RestaurantDetailEntity>;
+    final bannersResult = results[1] as Result<List<StoreBannerEntity>>;
+
+    emit(
+      state.copyWith(
+        detail: detailResult.isSuccess ? detailResult.data : state.detail,
+        banners: bannersResult.isSuccess
+            ? (bannersResult.data ?? state.banners)
+            : state.banners,
+      ),
     );
+  }
+
+  Future<void> _loadCartSummary() async {
+    final cartResult = await _repository.getCartSummary();
+    if (isClosed) return;
+    if (cartResult.isSuccess) {
+      emit(
+        state.copyWith(
+          cartSummary: cartResult.data ?? const CartSummaryEntity(),
+        ),
+      );
+    }
+  }
+
+  Future<Result<List<MenuCategoryEntity>>> _fetchMenuWithRetry({
+    int maxAttempts = 2,
+  }) async {
+    Result<List<MenuCategoryEntity>>? last;
+    for (var attempt = 0; attempt < maxAttempts; attempt++) {
+      if (attempt > 0) {
+        await Future<void>.delayed(const Duration(milliseconds: 700));
+        if (isClosed) break;
+      }
+      last = await _repository.getMenu(
+        seoUrl: state.seoUrl,
+        foodFilter: state.foodFilter,
+      );
+      if (last.isSuccess) return last;
+    }
+    return last ?? Result.failure(const NetworkFailure());
+  }
+
+  Future<void> reloadMenu() async {
+    emit(state.copyWith(isLoadingMenu: true, clearError: true));
+
+    final menuResult = await _fetchMenuWithRetry();
 
     if (menuResult.isFailure) {
       emit(
         state.copyWith(
+          isLoadingMenu: false,
           errorMessage: menuResult.failure?.message,
         ),
       );
@@ -92,11 +203,14 @@ class RestaurantDetailCubit extends Cubit<RestaurantDetailState> {
     }
 
     final menu = menuResult.data ?? [];
+    _menuCache.save(state.seoUrl, _filterKey, menu);
+
     emit(
       state.copyWith(
         status: RestaurantDetailStatus.loaded,
         menuCategories: menu,
         displayCategories: _applySearch(menu, state.searchQuery),
+        isLoadingMenu: false,
         clearError: true,
       ),
     );
@@ -307,6 +421,7 @@ class RestaurantDetailCubit extends Cubit<RestaurantDetailState> {
       );
       return;
     }
+    _menuCache.invalidate(state.seoUrl);
     await reloadMenu();
     emit(
       state.copyWith(

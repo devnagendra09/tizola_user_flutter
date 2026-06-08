@@ -12,6 +12,8 @@ import '../../../../core/widgets/veg_filter_chip.dart';
 import '../../../../injection_container.dart';
 import '../../../catalog/domain/enums/restaurant_food_filter.dart';
 import '../../domain/entities/menu_entity.dart';
+import '../../domain/entities/restaurant_detail_entities.dart';
+import '../../domain/repositories/restaurant_repository.dart';
 import '../cubit/restaurant_detail_cubit.dart';
 import '../cubit/restaurant_detail_state.dart';
 import '../widgets/addons_selection_sheet.dart';
@@ -30,11 +32,15 @@ class RestaurantDetailPage extends StatelessWidget {
     super.key,
     required this.seoUrl,
     this.fallbackName,
+    this.initialDetail,
     this.sharedItemId,
   });
 
   final String seoUrl;
   final String? fallbackName;
+
+  /// From home/search list — show header instantly without `restaurant_data`.
+  final RestaurantDetailEntity? initialDetail;
 
   /// Item id from`https://tizola.in/share/{seoUrl}/{itemId}` (Android `SHARED_ITEM_ID`).
   final String? sharedItemId;
@@ -42,9 +48,12 @@ class RestaurantDetailPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => sl<RestaurantDetailCubit>(
-        param1: seoUrl,
-        param2: fallbackName,
+      create: (_) => RestaurantDetailCubit(
+        sl<RestaurantRepository>(),
+        sl(),
+        seoUrl: seoUrl,
+        fallbackName: fallbackName,
+        initialDetail: initialDetail,
       )..loadInitial(),
       child: _RestaurantDetailView(sharedItemId: sharedItemId),
     );
@@ -677,13 +686,19 @@ class _RestaurantDetailViewState extends State<_RestaurantDetailView>
   }
 
   Widget _buildBody(BuildContext context, RestaurantDetailState state) {
+    final hasShell =
+        state.detail != null ||
+        (state.fallbackName != null && state.fallbackName!.isNotEmpty);
+
     if (state.status == RestaurantDetailStatus.loading &&
-        state.displayCategories.isEmpty) {
+        state.displayCategories.isEmpty &&
+        !hasShell) {
       return const RestaurantDetailShimmer();
     }
 
     if (state.status == RestaurantDetailStatus.failure &&
-        state.displayCategories.isEmpty) {
+        state.displayCategories.isEmpty &&
+        !state.isLoadingMenu) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -700,8 +715,9 @@ class _RestaurantDetailViewState extends State<_RestaurantDetailView>
             ),
             const SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () =>
-                  context.read<RestaurantDetailCubit>().loadInitial(),
+              onPressed: () => context
+                  .read<RestaurantDetailCubit>()
+                  .loadInitial(force: true),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.brand,
                 foregroundColor: Colors.white,
@@ -835,7 +851,9 @@ class _RestaurantDetailViewState extends State<_RestaurantDetailView>
             ),
           ),
         Expanded(
-          child: state.displayCategories.isEmpty
+          child: state.isLoadingMenu && state.displayCategories.isEmpty
+              ? const RestaurantDetailShimmer()
+              : state.displayCategories.isEmpty
               ? const MobileApiEmptyView(
                   message: 'No menu items found',
                 )

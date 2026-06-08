@@ -50,6 +50,8 @@ class _MainViewState extends State<_MainView> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    // Sync after splash / nearby may have updated saved coordinates.
+    context.read<MainCubit>().loadDeliveryLocation();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         openPendingShareDeepLink(context);

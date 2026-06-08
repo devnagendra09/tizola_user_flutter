@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../injection_container.dart';
+import '../../../main/presentation/cubit/main_cubit.dart';
 import '../../../main/presentation/pages/main_page.dart';
 import '../cubit/nearby_location_cubit.dart';
 import '../cubit/nearby_location_state.dart';
@@ -62,6 +63,7 @@ class _NearbyLocationPageState
   }
 
   void _goMain(BuildContext context) {
+    sl<MainCubit>().loadDeliveryLocation();
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute<void>(
         builder: (_) => const MainPage(),

@@ -106,26 +106,19 @@ class LocationRepositoryImpl implements LocationRepository {
     required double longitude,
   }) async {
     try {
-      final place = await _places.reverseGeocode(
-        latitude: latitude,
-        longitude: longitude,
-      );
-      return Result.success(
-        place.copyWith(addressType: AppConstants.currentLocationLabel),
-      );
-    } catch (_) {
-      // Fallback when Geocoding API fails — device Geocoder like Android MapsFragment.
-      try {
-        return Result.success(
-          await _geocodeLatLng(latitude, longitude),
-        );
-      } on Failure catch (e) {
-        return Result.failure(e);
-      } catch (_) {
+      final place = await _resolveAddressFromCoordinates(latitude, longitude);
+      if (GeoUtils.isCoordinateOnlyAddress(place.address)) {
         return Result.failure(
           const ValidationFailure('Unable to find address for this point'),
         );
       }
+      return Result.success(place);
+    } on Failure catch (e) {
+      return Result.failure(e);
+    } catch (_) {
+      return Result.failure(
+        const ValidationFailure('Unable to find address for this point'),
+      );
     }
   }
 
@@ -223,13 +216,25 @@ class LocationRepositoryImpl implements LocationRepository {
   }
 
   Future<DeliveryLocationEntity> _geocodePosition(Position position) {
-    return _geocodeLatLng(position.latitude, position.longitude);
+    return _resolveAddressFromCoordinates(
+      position.latitude,
+      position.longitude,
+    );
   }
 
-  Future<DeliveryLocationEntity> _geocodeLatLng(
+  /// Google Geocoding first (Android `getLocationFromAPI`), then device Geocoder.
+  Future<DeliveryLocationEntity> _resolveAddressFromCoordinates(
     double latitude,
     double longitude,
   ) async {
+    try {
+      final google = await _places.reverseGeocode(
+        latitude: latitude,
+        longitude: longitude,
+      );
+      return google.copyWith(addressType: AppConstants.currentLocationLabel);
+    } catch (_) {}
+
     var line = '';
     var city = '';
     try {
@@ -238,17 +243,6 @@ class LocationRepositoryImpl implements LocationRepository {
       line = _formatAddress(place);
       city = _cityFrom(place);
     } catch (_) {}
-
-    if (line.isEmpty) {
-      try {
-        final google = await _places.reverseGeocode(
-          latitude: latitude,
-          longitude: longitude,
-        );
-        line = google.address;
-        city = google.city ?? '';
-      } catch (_) {}
-    }
 
     final address = line.isNotEmpty
         ? line
