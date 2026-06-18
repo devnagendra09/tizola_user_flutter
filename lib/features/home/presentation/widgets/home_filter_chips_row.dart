@@ -144,7 +144,7 @@ class _FilterPill extends StatelessWidget {
           label,
           textAlign: TextAlign.center,
           style: TextStyle(
-            fontSize: 13,
+            fontSize: 12,
             fontWeight: FontWeight.w600,
             color: selected ? Colors.white : Colors.black87,
           ),

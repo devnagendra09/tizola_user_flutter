@@ -18,7 +18,7 @@ class HomeTopHero extends StatelessWidget {
   final VoidCallback onLocationTap;
   final int cartItemCount;
 
-  static const double _heroHeight = 150;
+  static const double _heroHeight = 120;
 
   @override
   Widget build(BuildContext context) {

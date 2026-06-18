@@ -52,14 +52,14 @@ class HomeScreenHeader extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'Deliver to',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: secondary,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
+                          // Text(
+                          //   'Deliver to',
+                          //   style: TextStyle(
+                          //     fontSize: 12,
+                          //     color: secondary,
+                          //     fontWeight: FontWeight.w500,
+                          //   ),
+                          // ),
                           Row(
                             children: [
                               Flexible(
@@ -81,13 +81,13 @@ class HomeScreenHeader extends StatelessWidget {
                               ),
                             ],
                           ),
-                          if (subtitle.isNotEmpty)
-                            Text(
-                              subtitle,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(fontSize: 11, color: secondary),
-                            ),
+                          // if (subtitle.isNotEmpty)
+                          //   Text(
+                          //     subtitle,
+                          //     maxLines: 1,
+                          //     overflow: TextOverflow.ellipsis,
+                          //     style: TextStyle(fontSize: 11, color: secondary),
+                          //   ),
                         ],
                       ),
                     ),
@@ -157,7 +157,7 @@ class _HeaderActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(left: 8),
+      padding: const EdgeInsets.only(left: 3),
       child: Material(
         color: backgroundColor,
         shape: const CircleBorder(),
@@ -167,8 +167,10 @@ class _HeaderActionButton extends StatelessWidget {
           child: Tooltip(
             message: tooltip,
             child: Padding(
-              padding: const EdgeInsets.all(10),
-              child: Icon(icon, color: iconColor, size: 22),
+              padding: const EdgeInsets.all(8),
+              child: Icon(
+                  icon, color: iconColor, size: 17
+              ),
             ),
           ),
         ),

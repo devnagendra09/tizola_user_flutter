@@ -169,12 +169,12 @@ class _HomeViewState extends State<_HomeView> {
                         state.notificationMessage!.isNotEmpty)
                       SliverToBoxAdapter(
                         child: Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 2),
                           child: Material(
-                            color: AppColors.brandLite,
+                            color: AppColors.brand.withAlpha(80),
                             borderRadius: BorderRadius.circular(12),
                             child: Padding(
-                              padding: const EdgeInsets.all(12),
+                              padding: const EdgeInsets.all(9),
                               child: Row(
                                 children: [
                                   const Icon(
@@ -187,7 +187,7 @@ class _HomeViewState extends State<_HomeView> {
                                     child: Text(
                                       state.notificationMessage!,
                                       style: const TextStyle(
-                                        fontSize: 13,
+                                        fontSize: 12,
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
@@ -219,7 +219,7 @@ class _HomeViewState extends State<_HomeView> {
                                 child: Text(
                                   'Categories',
                                   style: TextStyle(
-                                    fontSize: 18,
+                                    fontSize: 16,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
@@ -259,13 +259,13 @@ class _HomeViewState extends State<_HomeView> {
                     ),
                     const SliverToBoxAdapter(
                       child: Padding(
-                        padding: EdgeInsets.only(top: 12, bottom: 8),
+                        padding: EdgeInsets.only(top: 5, bottom: 5),
                         child: HomeServiceHighlights(),
                       ),
                     ),
                     SliverToBoxAdapter(
                       child: Padding(
-                        padding: const EdgeInsets.only(bottom: 12,top: 10),
+                        padding: const EdgeInsets.only(bottom: 2,top: 2),
                         child: HomeFilterChipsRow(
                           foodFilter: state.foodFilter,
                           hasActiveFilters: state.hasRestaurantFilters,
@@ -302,11 +302,11 @@ class _HomeViewState extends State<_HomeView> {
                     ),
                     const SliverToBoxAdapter(
                       child: Padding(
-                        padding: EdgeInsets.fromLTRB(16, 4, 16, 10),
+                        padding: EdgeInsets.fromLTRB(16, 4, 16, 5),
                         child: Text(
                           'Recommended for you',
                           style: TextStyle(
-                            fontSize: 18,
+                            fontSize: 17,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -490,16 +490,16 @@ class _SupportFloatingButtonState extends State<_SupportFloatingButton>
         return Tooltip(
           message: widget.tooltip,
           child: SizedBox(
-            width: 72,
-            height: 72,
+            width: 40,
+            height: 40,
             child: Stack(
               alignment: Alignment.center,
               children: [
                 Transform.scale(
                   scale: pulseScale,
                   child: Container(
-                    width: 56,
-                    height: 56,
+                    width: 40,
+                    height: 40,
                     decoration: BoxDecoration(
                       color: widget.backgroundColor.withValues(alpha: 0.16),
                       shape: BoxShape.circle,
@@ -517,7 +517,7 @@ class _SupportFloatingButtonState extends State<_SupportFloatingButton>
                       onTap: widget.onTap,
                       customBorder: const CircleBorder(),
                       child: Padding(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(10),
                         child: Transform.translate(
                           offset: Offset(0, iconOffsetY),
                           child: Transform.rotate(
@@ -525,7 +525,7 @@ class _SupportFloatingButtonState extends State<_SupportFloatingButton>
                             child: Icon(
                               widget.icon,
                               color: Colors.white,
-                              size: 24,
+                              size: 15,
                             ),
                           ),
                         ),

@@ -56,7 +56,7 @@ class HomeSliderCarousel extends StatelessWidget {
     if (items.isEmpty) return const SizedBox.shrink();
 
     return _HomeImageCarousel(
-      height: 150,
+      height: 120,
       itemCount: items.length,
       imageUrl: (i) => items[i].image,
       onTap: (i) async {

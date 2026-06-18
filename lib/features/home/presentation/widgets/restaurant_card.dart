@@ -16,7 +16,7 @@ class RestaurantCard extends StatelessWidget {
   final RestaurantEntity restaurant;
   final VoidCallback? onTap;
 
-  static const double _imageSize = 88;
+  static const double _imageSize = 90;
   static const double _imageWidthSize = 120;
 
   @override
@@ -32,6 +32,8 @@ class RestaurantCard extends StatelessWidget {
     final offer = restaurant.offer;
     final hasOffer =
         offer != null && offer.isNotEmpty && offer.toLowerCase() != 'null';
+    final openTime = "open :${restaurant.formattedOpenTime.toString()}";
+    final closeTime = "close :${restaurant.formattedCloseTime.toString()}";
 
     final metaLine = <String>[
       if (restaurant.cuisineTypes != null &&
@@ -117,7 +119,7 @@ class RestaurantCard extends StatelessWidget {
                               Row(
                                 children: [
                                   Icon(
-                                    Icons.access_time,
+                                    Icons.delivery_dining,
                                     size: 14,
                                     color: Colors.grey.shade600,
                                   ),
@@ -148,6 +150,51 @@ class RestaurantCard extends StatelessWidget {
                                     distanceLine,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
+                                  )
+                                ],
+                              ),
+                            ],
+                            if (openTime.isNotEmpty) ...[
+                              const SizedBox(height: 2),
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.access_time_filled_rounded,
+                                    size: 14,
+                                    color: Colors.green.shade600,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    openTime,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.green.shade700,
+                                    ),
+                                  ),
+                                  SizedBox(width: 5,),
+                                  const SizedBox(width: 4,
+                                    child: Divider(height: 10,color: Colors.grey,),
+                                  ),
+                                  SizedBox(width: 5,),
+
+                                  Icon(
+                                    Icons.lock_clock,
+                                    size: 14,
+                                    color: Colors.red.shade600,
+                                  ),
+                                  const SizedBox(width: 2),
+                                  Text(
+                                    closeTime,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.red.shade700,
+                                    ),
                                   )
                                 ],
                               ),
@@ -255,7 +302,7 @@ class _RestaurantImage extends StatelessWidget {
         url: restaurant.imageUrl,
         width: RestaurantCard._imageWidthSize,
         height: RestaurantCard._imageSize,
-        fit: BoxFit.cover,
+        fit: BoxFit.fill,
       ),
     );
 
