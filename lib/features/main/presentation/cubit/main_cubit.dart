@@ -31,7 +31,7 @@ class MainCubit extends Cubit<MainState> {
   }
 
   Future<void> onTabSelected(int index) async {
-    if (index == 2 || index == 3) {
+    if (index == 2 || index == 3 || index == 4) {
       final session = await _authRepository.getSession();
       if (session.isSuccess && session.data!.isLoggedIn) {
         emit(state.copyWith(currentIndex: index, showLoginDialog: false));

@@ -35,6 +35,12 @@ class AccountCubit extends Cubit<AccountState> {
     );
   }
 
+  Future<void> refreshWalletBalance() async {
+    final walletResult = await _repository.fetchWalletBalance();
+    if (isClosed) return;
+    emit(state.copyWith(walletBalance: walletResult.data ?? '0/-'));
+  }
+
   Future<String> _loadAppVersion() async {
     try {
       final info = await PackageInfo.fromPlatform();

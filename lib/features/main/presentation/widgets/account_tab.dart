@@ -37,7 +37,7 @@ class _AccountTabState extends State<AccountTab>
     super.build(context);
     return BlocListener<MainCubit, MainState>(
       listenWhen: (prev, curr) =>
-          prev.currentIndex != curr.currentIndex && curr.currentIndex == 3,
+          prev.currentIndex != curr.currentIndex && curr.currentIndex == 4,
       listener: (context, _) {
         context.read<AccountCubit>().loadProfileIfNeeded();
       },
@@ -209,9 +209,17 @@ class _AccountView extends StatelessWidget {
                   ..._buildMenuItems(context, user, state),
                   Padding(
                     padding: const EdgeInsets.fromLTRB(10, 12, 10, 0),
-                    child: _WalletCard(
-                      balance: state.walletBalance,
-                      title: l10n.walletBalance,
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () =>
+                            context.read<MainCubit>().onTabSelected(3),
+                        borderRadius: BorderRadius.circular(10),
+                        child: _WalletCard(
+                          balance: state.walletBalance,
+                          title: l10n.walletBalance,
+                        ),
+                      ),
                     ),
                   ),
                   Padding(

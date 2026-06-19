@@ -10,6 +10,7 @@ import '../../domain/entities/pending_feedback_entity.dart';
 import '../../domain/entities/session_restore_result.dart';
 import '../../domain/entities/user_entity.dart';
 import '../../domain/entities/version_check_result.dart';
+import '../../domain/entities/wallet_add_result.dart';
 import '../../domain/repositories/auth_repository.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -340,6 +341,52 @@ class AuthRepositoryImpl implements AuthRepository {
       return Result.success(info);
     } catch (_) {
       return Result.success(const ReferInfoEntity());
+    }
+  }
+
+  @override
+  Future<Result<WalletAddResult>> addWallet({required String amount}) async {
+    try {
+      final token = _local.accessToken;
+      if (token == null || token.isEmpty) {
+        return Result.failure(const CacheFailure());
+      }
+      final result = await _remote.addWallet(
+        accessToken: token,
+        amount: amount,
+      );
+      return Result.success(result);
+    } on Failure catch (e) {
+      return Result.failure(e);
+    } catch (_) {
+      return Result.failure(const ServerFailure('Failed to add money'));
+    }
+  }
+
+  @override
+  Future<Result<String>> updateWalletStatus({
+    required String amount,
+    required String refId,
+    required String razorpayOrderId,
+    required String paymentGatewayId,
+  }) async {
+    try {
+      final token = _local.accessToken;
+      if (token == null || token.isEmpty) {
+        return Result.failure(const CacheFailure());
+      }
+      final message = await _remote.updateWalletStatus(
+        accessToken: token,
+        amount: amount,
+        refId: refId,
+        razorpayOrderId: razorpayOrderId,
+        paymentGatewayId: paymentGatewayId,
+      );
+      return Result.success(message);
+    } on Failure catch (e) {
+      return Result.failure(e);
+    } catch (_) {
+      return Result.failure(const ServerFailure('Failed to update wallet'));
     }
   }
 

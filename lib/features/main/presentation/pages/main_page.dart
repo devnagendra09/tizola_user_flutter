@@ -23,6 +23,7 @@ import '../../../orders/presentation/widgets/orders_tab.dart';
 import '../cubit/main_cubit.dart';
 import '../cubit/main_state.dart';
 import '../widgets/account_tab.dart';
+import '../widgets/wallet_tab.dart';
 import '../widgets/main_location_app_bar.dart';
 import '../widgets/order_status_track_bar.dart';
 
@@ -105,6 +106,7 @@ class _MainViewState extends State<_MainView> with WidgetsBindingObserver {
     HomeTab(),
     CategoriesTab(),
     OrdersTab(),
+    WalletTab(),
     AccountTab(),
   ];
 
@@ -248,6 +250,11 @@ class _MainViewState extends State<_MainView> with WidgetsBindingObserver {
                         icon: const Icon(Icons.receipt_long_outlined),
                         activeIcon: const Icon(Icons.receipt_long),
                         label: l10n.navOrders,
+                      ),
+                      BottomNavigationBarItem(
+                        icon: const Icon(Icons.account_balance_wallet_outlined),
+                        activeIcon: const Icon(Icons.account_balance_wallet),
+                        label: l10n.navWallet,
                       ),
                       BottomNavigationBarItem(
                         icon: const Icon(Icons.person_outline),

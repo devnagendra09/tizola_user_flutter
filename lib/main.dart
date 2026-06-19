@@ -21,6 +21,7 @@ import 'features/category/presentation/cubit/category_cubit.dart';
 import 'features/home/presentation/cubit/home_cubit.dart';
 import 'features/main/presentation/cubit/account/account_cubit.dart';
 import 'features/main/presentation/cubit/main_cubit.dart';
+import 'features/main/presentation/cubit/wallet/wallet_cubit.dart';
 import 'features/orders/presentation/cubit/orders_cubit.dart';
 import 'features/splash/presentation/pages/splash_page.dart';
 import 'injection_container.dart';
@@ -67,6 +68,7 @@ class _TizolaAppState extends State<TizolaApp> {
         BlocProvider<HomeCubit>.value(value: sl<HomeCubit>()),
         BlocProvider<OrdersCubit>.value(value: sl<OrdersCubit>()),
         BlocProvider<AccountCubit>.value(value: sl<AccountCubit>()),
+        BlocProvider<WalletCubit>.value(value: sl<WalletCubit>()),
         BlocProvider<CartCubit>.value(value: sl<CartCubit>()),
         BlocProvider<CategoryCubit>.value(value: sl<CategoryCubit>()),
       ],

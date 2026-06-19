@@ -148,6 +148,48 @@ class AppLocalizations {
     'hi': 'वॉलेट बैलेंस',
   });
 
+  String get navWallet => _t({
+    'en': 'Wallet',
+    'te': 'వాలెట్',
+    'hi': 'वॉलेट',
+  });
+
+  String get currentWalletBalance => _t({
+    'en': 'Current Wallet Balance',
+    'te': 'ప్రస్తుత వాలెట్ బ్యాలెన్స్',
+    'hi': 'वर्तमान वॉलेट बैलेंस',
+  });
+
+  String get addMoney => _t({
+    'en': 'Add money',
+    'te': 'డబ్బు జోడించండి',
+    'hi': 'पैसे जोड़ें',
+  });
+
+  String get enterAmount => _t({
+    'en': 'Enter amount',
+    'te': 'మొత్తం నమోదు చేయండి',
+    'hi': 'राशि दर्ज करें',
+  });
+
+  String get walletInvalidAmount => _t({
+    'en': 'Please enter a valid amount',
+    'te': 'దయచేసి సరైన మొత్తాన్ని నమోదు చేయండి',
+    'hi': 'कृपया वैध राशि दर्ज करें',
+  });
+
+  String get walletPaymentFailed => _t({
+    'en': 'Payment failed. Please try again.',
+    'te': 'చెల్లింపు విఫలమైంది. దయచేసి మళ్లీ ప్రయత్నించండి.',
+    'hi': 'भुगतान विफल। कृपया पुनः प्रयास करें।',
+  });
+
+  String get loading => _t({
+    'en': 'Loading...',
+    'te': 'లోడ్ అవుతోంది...',
+    'hi': 'लोड हो रहा है...',
+  });
+
   String get menuTab => _t({
     'en': 'Menu',
     'te': 'మెనూ',

@@ -322,8 +322,10 @@ class _HomeViewState extends State<_HomeView> {
                         child: MobileApiEmptyView(
                           assetPath: AppAssets.noRestaurantFound,
                           imageType: 'png',
-                          message: state.emptyMessage?.trim().isNotEmpty == true
-                              ? state.emptyMessage!.trim()
+                          message:
+                          state.emptyMessage?.trim().isNotEmpty == true
+                              ?
+                          state.emptyMessage!.trim()
                               : 'No restaurants found in your area ',
                         ),
                       )
@@ -614,7 +616,7 @@ class _CuisineChip extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
                 fontSize: 10,
-                fontWeight: FontWeight.w900,
+                fontWeight: FontWeight.w600,
                 color: Colors.black87,
                 height: 1.2,
               ),

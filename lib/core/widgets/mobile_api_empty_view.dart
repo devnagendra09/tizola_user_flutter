@@ -33,7 +33,7 @@ class MobileApiEmptyView extends StatelessWidget {
             height: 190,
             fit: BoxFit.contain,
           ):Image.asset(assetPath ?? AppAssets.noRestaurantFound,),
-          const SizedBox(height: 20),
+          const SizedBox(height: 10),
           Text(
             message,
             textAlign: TextAlign.center,

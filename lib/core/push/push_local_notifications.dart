@@ -1,7 +1,15 @@
+import 'dart:ui';
+
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import 'push_message_parser.dart';
 import 'push_notification_constants.dart';
+
+/// Android small icon — same as native `R.drawable.main_logo`.
+const _androidNotificationIcon = '@drawable/main_logo';
+
+/// Brand accent for notification icon tint (Android `colorAccent`).
+const _androidNotificationColor = Color(0xFF0349A9);
 
 final FlutterLocalNotificationsPlugin pushLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
@@ -9,7 +17,7 @@ final FlutterLocalNotificationsPlugin pushLocalNotificationsPlugin =
 Future<void> ensurePushNotificationChannel({
   DidReceiveNotificationResponseCallback? onNotificationTap,
 }) async {
-  const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
+  const androidInit = AndroidInitializationSettings(_androidNotificationIcon);
   const iosInit = DarwinInitializationSettings();
   await pushLocalNotificationsPlugin.initialize(
     const InitializationSettings(android: androidInit, iOS: iosInit),
@@ -38,6 +46,8 @@ Future<void> showPushLocalNotification(PushPayload payload) async {
     channelDescription: PushNotificationConstants.channelDescription,
     importance: Importance.high,
     priority: Priority.high,
+    icon: _androidNotificationIcon,
+    color: _androidNotificationColor,
     styleInformation: payload.message.length > 80
         ? BigTextStyleInformation(payload.message)
         : null,

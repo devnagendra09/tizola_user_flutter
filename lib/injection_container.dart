@@ -44,6 +44,7 @@ import 'features/location/presentation/cubit/location_onboarding_cubit.dart';
 import 'features/location/presentation/cubit/nearby_location_cubit.dart';
 import 'features/main/presentation/cubit/account/account_cubit.dart';
 import 'features/main/presentation/cubit/main_cubit.dart';
+import 'features/main/presentation/cubit/wallet/wallet_cubit.dart';
 import 'features/orders/data/datasources/orders_remote_data_source.dart';
 import 'features/orders/data/repositories/orders_repository_impl.dart';
 import 'features/orders/domain/repositories/orders_repository.dart';
@@ -169,6 +170,7 @@ Future<void> initDependencies() async {
   );
   sl.registerLazySingleton(() => OrdersCubit(sl(), sl()));
   sl.registerLazySingleton(() => AccountCubit(sl(), sl()));
+  sl.registerLazySingleton(() => WalletCubit(sl()));
   sl.registerLazySingleton(() => CartCubit(sl(), sl(), sl()));
   sl.registerFactory(() => SearchCubit(sl()));
   sl.registerLazySingleton(() => CategoryCubit(sl(), sl()));

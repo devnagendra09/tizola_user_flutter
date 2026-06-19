@@ -4,8 +4,10 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../location/domain/entities/delivery_location_entity.dart';
+import '../../../cart/domain/entities/cart_entity.dart';
 import '../../../main/domain/entities/faq_entity.dart';
 import '../../../main/domain/entities/refer_info_entity.dart';
+import '../../domain/entities/wallet_add_result.dart';
 import '../../domain/entities/country_entity.dart';
 import '../../domain/entities/pending_feedback_entity.dart';
 import '../../domain/entities/session_restore_result.dart';
@@ -51,6 +53,19 @@ abstract class AuthRemoteDataSource {
   Future<String> fetchWalletBalance({required String accessToken});
 
   Future<ReferInfoEntity> fetchReferInfo({required String accessToken});
+
+  Future<WalletAddResult> addWallet({
+    required String accessToken,
+    required String amount,
+  });
+
+  Future<String> updateWalletStatus({
+    required String accessToken,
+    required String amount,
+    required String refId,
+    required String razorpayOrderId,
+    required String paymentGatewayId,
+  });
 
   Future<String> updateProfile({
     required String accessToken,
@@ -215,6 +230,83 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     } catch (_) {
       return const ReferInfoEntity();
     }
+  }
+
+  @override
+  Future<WalletAddResult> addWallet({
+    required String accessToken,
+    required String amount,
+  }) async {
+    final response = await _apiClient.post('customer/profile/add_wallet', {
+      'access_token': accessToken,
+      'amount': amount,
+    });
+    final json = _decode(response.body);
+    if (json['err_code']?.toString().toLowerCase() != 'valid') {
+      throw ServerFailure(
+        json['message']?.toString() ?? 'Failed to add money to wallet',
+      );
+    }
+
+    final data = json['data'] as Map<String, dynamic>? ?? {};
+    final key = data['payment_gateway_access_key']?.toString() ?? '';
+    if (key.isEmpty) {
+      throw ServerFailure('Payment gateway not available');
+    }
+
+    final amountStr = data['amount']?.toString() ?? amount;
+    final amountInPaise =
+        ((double.tryParse(amountStr) ?? double.tryParse(amount) ?? 0) * 100)
+            .round();
+
+    final prefill = <String, dynamic>{};
+    if (data.containsKey('customer_email')) {
+      prefill['email'] = data['customer_email']?.toString() ?? '';
+    }
+    if (data.containsKey('customer_mobile')) {
+      prefill['contact'] = data['customer_mobile']?.toString() ?? '';
+    }
+
+    final metaInfo = <String, dynamic>{
+      'name': 'Tizola',
+      'description': 'My Wallet',
+      'order_id': data['razorpay_order_id']?.toString() ?? '',
+      'currency': 'INR',
+      'amount': amountInPaise,
+      if (prefill.isNotEmpty) 'prefill': prefill,
+    };
+
+    return WalletAddResult(
+      refId: data['ref_id']?.toString() ?? '',
+      razorpayOrderId: data['razorpay_order_id']?.toString() ?? '',
+      amount: amountStr,
+      checkoutInfo: RazorpayCheckoutInfo(key: key, metaInfo: metaInfo),
+    );
+  }
+
+  @override
+  Future<String> updateWalletStatus({
+    required String accessToken,
+    required String amount,
+    required String refId,
+    required String razorpayOrderId,
+    required String paymentGatewayId,
+  }) async {
+    final response =
+        await _apiClient.post('customer/profile/add_wallet_status_update', {
+      'access_token': accessToken,
+      'amount': amount,
+      'ref_id': refId,
+      'razorpay_order_id': razorpayOrderId,
+      'payment_gateway_id': paymentGatewayId,
+    });
+    final json = _decode(response.body);
+    if (json['err_code']?.toString().toLowerCase() != 'valid') {
+      throw ServerFailure(
+        json['message']?.toString() ?? 'Failed to update wallet',
+      );
+    }
+    return json['message']?.toString() ?? 'Money added to wallet successfully';
   }
 
   @override

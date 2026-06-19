@@ -16,8 +16,8 @@ class RestaurantCard extends StatelessWidget {
   final RestaurantEntity restaurant;
   final VoidCallback? onTap;
 
-  static const double _imageSize = 90;
-  static const double _imageWidthSize = 120;
+  static const double _imageSize = 110;
+  static const double _imageWidthSize = 110;
 
   @override
   Widget build(BuildContext context) {
@@ -52,11 +52,11 @@ class RestaurantCard extends StatelessWidget {
     ].join(' • ');
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Material(
         color: Colors.white,
-        elevation: 1,
-        shadowColor: Colors.blueAccent.withValues(alpha: 0.09),
+        elevation: 3,
+        shadowColor: Colors.black.withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(14),
         child: InkWell(
           onTap: onTap ?? () => openRestaurantDetail(context, restaurant),
@@ -297,6 +297,7 @@ class _RestaurantImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Widget image = ClipRRect(
+
       borderRadius: BorderRadius.only(topLeft:Radius.circular( 10),bottomLeft: Radius.circular(10)),
       child: NetworkImageBox(
         url: restaurant.imageUrl,
