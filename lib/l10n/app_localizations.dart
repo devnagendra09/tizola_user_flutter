@@ -190,6 +190,36 @@ class AppLocalizations {
     'hi': 'लोड हो रहा है...',
   });
 
+  String get walletTransactions => _t({
+    'en': 'Transaction history',
+    'te': 'లావాదేవీ చరిత్ర',
+    'hi': 'लेन-देन इतिहास',
+  });
+
+  String get noWalletTransactions => _t({
+    'en': 'No wallet transactions yet',
+    'te': 'వాలెట్ లావాదేవీలు లేవు',
+    'hi': 'अभी कोई वॉलेट लेन-देन नहीं',
+  });
+
+  String get transactionId => _t({
+    'en': 'Transaction ID',
+    'te': 'లావాదేవీ ID',
+    'hi': 'लेन-देन ID',
+  });
+
+  String get credit => _t({
+    'en': 'Credit',
+    'te': 'క్రెడిట్',
+    'hi': 'क्रेडिट',
+  });
+
+  String get debit => _t({
+    'en': 'Debit',
+    'te': 'డెబిట్',
+    'hi': 'डेबिट',
+  });
+
   String get menuTab => _t({
     'en': 'Menu',
     'te': 'మెనూ',

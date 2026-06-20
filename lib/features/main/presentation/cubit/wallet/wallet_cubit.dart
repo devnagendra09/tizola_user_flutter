@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../auth/domain/entities/wallet_add_result.dart';
+import '../../../../auth/domain/entities/wallet_transaction_entity.dart';
 import '../../../../auth/domain/repositories/auth_repository.dart';
 
 enum WalletStatus { initial, loading, loaded, processing }
@@ -10,6 +11,11 @@ class WalletState extends Equatable {
   const WalletState({
     this.status = WalletStatus.initial,
     this.balance = '0/-',
+    this.transactions = const [],
+    this.transactionsPage = 1,
+    this.transactionsTotalPages = 1,
+    this.transactionsEmptyMessage = '',
+    this.isLoadingMoreTransactions = false,
     this.pendingCheckout,
     this.isBusy = false,
     this.errorMessage,
@@ -18,14 +24,26 @@ class WalletState extends Equatable {
 
   final WalletStatus status;
   final String balance;
+  final List<WalletTransactionEntity> transactions;
+  final int transactionsPage;
+  final int transactionsTotalPages;
+  final String transactionsEmptyMessage;
+  final bool isLoadingMoreTransactions;
   final WalletAddResult? pendingCheckout;
   final bool isBusy;
   final String? errorMessage;
   final String? successMessage;
 
+  bool get hasMoreTransactions => transactionsPage < transactionsTotalPages;
+
   WalletState copyWith({
     WalletStatus? status,
     String? balance,
+    List<WalletTransactionEntity>? transactions,
+    int? transactionsPage,
+    int? transactionsTotalPages,
+    String? transactionsEmptyMessage,
+    bool? isLoadingMoreTransactions,
     WalletAddResult? pendingCheckout,
     bool clearPendingCheckout = false,
     bool? isBusy,
@@ -37,6 +55,14 @@ class WalletState extends Equatable {
     return WalletState(
       status: status ?? this.status,
       balance: balance ?? this.balance,
+      transactions: transactions ?? this.transactions,
+      transactionsPage: transactionsPage ?? this.transactionsPage,
+      transactionsTotalPages:
+          transactionsTotalPages ?? this.transactionsTotalPages,
+      transactionsEmptyMessage:
+          transactionsEmptyMessage ?? this.transactionsEmptyMessage,
+      isLoadingMoreTransactions:
+          isLoadingMoreTransactions ?? this.isLoadingMoreTransactions,
       pendingCheckout: clearPendingCheckout
           ? null
           : (pendingCheckout ?? this.pendingCheckout),
@@ -51,6 +77,11 @@ class WalletState extends Equatable {
   List<Object?> get props => [
         status,
         balance,
+        transactions,
+        transactionsPage,
+        transactionsTotalPages,
+        transactionsEmptyMessage,
+        isLoadingMoreTransactions,
         pendingCheckout,
         isBusy,
         errorMessage,
@@ -63,8 +94,8 @@ class WalletCubit extends Cubit<WalletState> {
 
   final AuthRepository _repository;
 
-  Future<void> loadBalance() async {
-    final showLoader = state.status != WalletStatus.loaded;
+  Future<void> loadWallet({bool force = false}) async {
+    final showLoader = force || state.status != WalletStatus.loaded;
     if (showLoader) {
       emit(
         state.copyWith(
@@ -75,14 +106,61 @@ class WalletCubit extends Cubit<WalletState> {
       );
     }
 
-    final result = await _repository.fetchWalletBalance();
+    final result = await _repository.fetchWalletTransactions(page: 1);
     if (isClosed) return;
 
+    if (result.isFailure) {
+      if (showLoader) {
+        emit(
+          state.copyWith(
+            status: WalletStatus.loaded,
+            errorMessage: result.failure?.message,
+          ),
+        );
+      }
+      return;
+    }
+
+    final data = result.data!;
     emit(
       state.copyWith(
         status: WalletStatus.loaded,
-        balance: result.data ?? '0/-',
+        balance: data.walletDisplay,
+        transactions: data.transactions,
+        transactionsPage: 1,
+        transactionsTotalPages: data.totalPages,
+        transactionsEmptyMessage: data.emptyMessage,
         clearError: true,
+      ),
+    );
+  }
+
+  Future<void> loadMoreTransactions() async {
+    if (state.isLoadingMoreTransactions || !state.hasMoreTransactions) return;
+
+    emit(state.copyWith(isLoadingMoreTransactions: true));
+    final nextPage = state.transactionsPage + 1;
+
+    final result = await _repository.fetchWalletTransactions(page: nextPage);
+    if (isClosed) return;
+
+    if (result.isFailure) {
+      emit(
+        state.copyWith(
+          isLoadingMoreTransactions: false,
+          errorMessage: result.failure?.message,
+        ),
+      );
+      return;
+    }
+
+    final data = result.data!;
+    emit(
+      state.copyWith(
+        transactions: [...state.transactions, ...data.transactions],
+        transactionsPage: nextPage,
+        transactionsTotalPages: data.totalPages,
+        isLoadingMoreTransactions: false,
       ),
     );
   }
@@ -153,14 +231,12 @@ class WalletCubit extends Cubit<WalletState> {
       return;
     }
 
-    final balanceResult = await _repository.fetchWalletBalance();
+    await loadWallet(force: false);
     if (isClosed) return;
 
     emit(
       state.copyWith(
-        status: WalletStatus.loaded,
         isBusy: false,
-        balance: balanceResult.data ?? state.balance,
         successMessage: result.data,
       ),
     );

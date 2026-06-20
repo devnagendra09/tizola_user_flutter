@@ -8,6 +8,7 @@ import '../../../cart/domain/entities/cart_entity.dart';
 import '../../../main/domain/entities/faq_entity.dart';
 import '../../../main/domain/entities/refer_info_entity.dart';
 import '../../domain/entities/wallet_add_result.dart';
+import '../../domain/entities/wallet_transaction_entity.dart';
 import '../../domain/entities/country_entity.dart';
 import '../../domain/entities/pending_feedback_entity.dart';
 import '../../domain/entities/session_restore_result.dart';
@@ -65,6 +66,11 @@ abstract class AuthRemoteDataSource {
     required String refId,
     required String razorpayOrderId,
     required String paymentGatewayId,
+  });
+
+  Future<WalletTransactionsResult> fetchWalletTransactions({
+    required String accessToken,
+    required int page,
   });
 
   Future<String> updateProfile({
@@ -307,6 +313,77 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       );
     }
     return json['message']?.toString() ?? 'Money added to wallet successfully';
+  }
+
+  @override
+  Future<WalletTransactionsResult> fetchWalletTransactions({
+    required String accessToken,
+    required int page,
+  }) async {
+    final response =
+        await _apiClient.post('customer/profile/wallet_tranctions_list', {
+      'access_token': accessToken,
+      'page': page.toString(),
+    });
+    final json = _decode(response.body);
+    if (json['err_code']?.toString().toLowerCase() != 'valid') {
+      throw ServerFailure(
+        json['message']?.toString() ?? 'Failed to load wallet transactions',
+      );
+    }
+    return _parseWalletTransactions(json);
+  }
+
+  WalletTransactionsResult _parseWalletTransactions(Map<String, dynamic> json) {
+    final data = json['data'];
+    var walletAmount = json['wallet_amount']?.toString() ?? '';
+    var totalPages = 1;
+    final items = <WalletTransactionEntity>[];
+
+    if (data is List) {
+      for (final item in data) {
+        if (item is Map<String, dynamic>) {
+          items.add(WalletTransactionEntity.fromJson(item));
+        } else if (item is Map) {
+          items.add(
+            WalletTransactionEntity.fromJson(
+              Map<String, dynamic>.from(item),
+            ),
+          );
+        }
+      }
+    } else if (data is Map) {
+      final map = Map<String, dynamic>.from(data);
+      walletAmount = walletAmount.isNotEmpty
+          ? walletAmount
+          : (map['value']?.toString() ?? map['wallet_amount']?.toString() ?? '');
+      totalPages = int.tryParse(map['total_pages']?.toString() ?? '1') ?? 1;
+      final results = map['results'];
+      if (results is List) {
+        for (final item in results) {
+          if (item is Map<String, dynamic>) {
+            items.add(WalletTransactionEntity.fromJson(item));
+          } else if (item is Map) {
+            items.add(
+              WalletTransactionEntity.fromJson(
+                Map<String, dynamic>.from(item),
+              ),
+            );
+          }
+        }
+      }
+    }
+
+    if (walletAmount.isEmpty) {
+      walletAmount = '0';
+    }
+
+    return WalletTransactionsResult(
+      transactions: items,
+      walletAmount: walletAmount,
+      totalPages: totalPages,
+      emptyMessage: json['message']?.toString() ?? '',
+    );
   }
 
   @override

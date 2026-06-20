@@ -11,6 +11,7 @@ import '../../domain/entities/session_restore_result.dart';
 import '../../domain/entities/user_entity.dart';
 import '../../domain/entities/version_check_result.dart';
 import '../../domain/entities/wallet_add_result.dart';
+import '../../domain/entities/wallet_transaction_entity.dart';
 import '../../domain/repositories/auth_repository.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -387,6 +388,29 @@ class AuthRepositoryImpl implements AuthRepository {
       return Result.failure(e);
     } catch (_) {
       return Result.failure(const ServerFailure('Failed to update wallet'));
+    }
+  }
+
+  @override
+  Future<Result<WalletTransactionsResult>> fetchWalletTransactions({
+    int page = 1,
+  }) async {
+    try {
+      final token = _local.accessToken;
+      if (token == null || token.isEmpty) {
+        return Result.failure(const CacheFailure());
+      }
+      final result = await _remote.fetchWalletTransactions(
+        accessToken: token,
+        page: page,
+      );
+      return Result.success(result);
+    } on Failure catch (e) {
+      return Result.failure(e);
+    } catch (_) {
+      return Result.failure(
+        const ServerFailure('Failed to load wallet transactions'),
+      );
     }
   }
 

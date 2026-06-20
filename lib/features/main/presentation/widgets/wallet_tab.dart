@@ -5,8 +5,10 @@ import 'package:razorpay_flutter/razorpay_flutter.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_shimmer.dart';
+import '../../../../core/widgets/mobile_api_empty_view.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../auth/domain/entities/wallet_add_result.dart';
+import '../../../auth/domain/entities/wallet_transaction_entity.dart';
 import '../../../cart/data/services/razorpay_checkout_service.dart';
 import '../cubit/account/account_cubit.dart';
 import '../cubit/main_cubit.dart';
@@ -22,6 +24,7 @@ class WalletTab extends StatefulWidget {
 
 class _WalletTabState extends State<WalletTab> with AutomaticKeepAliveClientMixin {
   final _amountController = TextEditingController();
+  final _scrollController = ScrollController();
   final _razorpayCheckout = RazorpayCheckoutService();
   WalletAddResult? _activeCheckout;
 
@@ -31,15 +34,25 @@ class _WalletTabState extends State<WalletTab> with AutomaticKeepAliveClientMixi
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_onScroll);
     _razorpayCheckout.attach(
       onSuccess: _onPaymentSuccess,
       onError: _onPaymentError,
     );
   }
 
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final position = _scrollController.position;
+    if (position.pixels >= position.maxScrollExtent - 120) {
+      context.read<WalletCubit>().loadMoreTransactions();
+    }
+  }
+
   @override
   void dispose() {
     _amountController.dispose();
+    _scrollController.dispose();
     _razorpayCheckout.dispose();
     super.dispose();
   }
@@ -106,7 +119,7 @@ class _WalletTabState extends State<WalletTab> with AutomaticKeepAliveClientMixi
       listenWhen: (prev, curr) =>
           prev.currentIndex != curr.currentIndex && curr.currentIndex == 3,
       listener: (context, _) {
-        context.read<WalletCubit>().loadBalance();
+        context.read<WalletCubit>().loadWallet(force: true);
       },
       child: BlocConsumer<WalletCubit, WalletState>(
         listenWhen: (prev, curr) =>
@@ -138,9 +151,15 @@ class _WalletTabState extends State<WalletTab> with AutomaticKeepAliveClientMixi
 
           return Stack(
             children: [
-              ListView(
-                padding: const EdgeInsets.all(10),
-                children: [
+              RefreshIndicator(
+                color: AppColors.brand,
+                onRefresh: () =>
+                    context.read<WalletCubit>().loadWallet(force: true),
+                child: ListView(
+                  controller: _scrollController,
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.all(10),
+                  children: [
                   Card(
                     elevation: 10,
                     shape: RoundedRectangleBorder(
@@ -270,8 +289,47 @@ class _WalletTabState extends State<WalletTab> with AutomaticKeepAliveClientMixi
                       ),
                     ),
                   ),
+                  const SizedBox(height: 28),
+                  Text(
+                    l10n.walletTransactions,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  if (state.transactions.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 25),
+                      child: Column(
+                        children: [
+                          SizedBox(
+                            height: 250,
+                              width: 300,
+                              child: Image.asset("assets/images/no_transtion.png")),
+                          SizedBox(height: 10,),
+                          Text(state.transactionsEmptyMessage,style: TextStyle(fontWeight: FontWeight.bold),)
+                        ],
+                      )
+                    )
+                  else
+                    ...state.transactions.map(
+                      (tx) => _WalletTransactionTile(
+                        transaction: tx,
+                        l10n: l10n,
+                      ),
+                    ),
+                  if (state.isLoadingMoreTransactions)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                      child: Center(
+                        child: CircularProgressIndicator(color: AppColors.brand),
+                      ),
+                    ),
+                  const SizedBox(height: 24),
                 ],
               ),
+            ),
               if (state.isBusy)
                 ColoredBox(
                   color: Colors.black.withValues(alpha: 0.25),
@@ -292,6 +350,111 @@ class _WalletTabState extends State<WalletTab> with AutomaticKeepAliveClientMixi
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+class _WalletTransactionTile extends StatelessWidget {
+  const _WalletTransactionTile({
+    required this.transaction,
+    required this.l10n,
+  });
+
+  final WalletTransactionEntity transaction;
+  final AppLocalizations l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    final isCredit = transaction.isCredit;
+    final amountColor = isCredit
+        ? const Color(0xFF73AF33)
+        : const Color(0xFFFF6433);
+    final typeLabel = isCredit
+        ? l10n.credit
+        : transaction.isDebit
+            ? l10n.debit
+            : transaction.type;
+
+    return Card(
+      elevation: 4,
+      margin: const EdgeInsets.only(bottom: 10),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            CircleAvatar(
+              radius: 22,
+              backgroundColor: amountColor.withValues(alpha: 0.12),
+              child: Icon(
+                isCredit ? Icons.add : Icons.remove,
+                color: amountColor,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (transaction.transactionId.isNotEmpty)
+                    Text(
+                      '#${transaction.transactionId}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                      ),
+                    ),
+                  if (transaction.comment.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      transaction.comment,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade700,
+                      ),
+                    ),
+                  ],
+                  if (typeLabel.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      typeLabel,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: amountColor,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  '₹${transaction.amount}',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: amountColor,
+                  ),
+                ),
+                if (transaction.createdAt.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    transaction.createdAt,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

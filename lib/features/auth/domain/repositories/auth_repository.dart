@@ -8,6 +8,7 @@ import '../entities/session_restore_result.dart';
 import '../entities/user_entity.dart';
 import '../entities/version_check_result.dart';
 import '../entities/wallet_add_result.dart';
+import '../entities/wallet_transaction_entity.dart';
 
 abstract class AuthRepository {
   Future<Result<void>> sendOtp({required String mobile});
@@ -41,6 +42,10 @@ abstract class AuthRepository {
     required String refId,
     required String razorpayOrderId,
     required String paymentGatewayId,
+  });
+
+  Future<Result<WalletTransactionsResult>> fetchWalletTransactions({
+    int page = 1,
   });
 
   Future<Result<String>> updateProfile({
