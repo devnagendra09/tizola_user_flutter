@@ -156,8 +156,10 @@ class RestaurantCard extends StatelessWidget {
                             ],
                             if (openTime.isNotEmpty) ...[
                               const SizedBox(height: 2),
-                              Row(
+                              Column(
                                 children: [
+                                  Row(
+                              children: [
                                   Icon(
                                     Icons.access_time_filled_rounded,
                                     size: 14,
@@ -174,12 +176,11 @@ class RestaurantCard extends StatelessWidget {
                                       color: Colors.green.shade700,
                                     ),
                                   ),
-                                  SizedBox(width: 5,),
-                                  const SizedBox(width: 4,
-                                    child: Divider(height: 10,color: Colors.grey,),
+          ]
                                   ),
                                   SizedBox(width: 5,),
-
+                                  Row(
+                                    children: [
                                   Icon(
                                     Icons.lock_clock,
                                     size: 14,
@@ -195,7 +196,10 @@ class RestaurantCard extends StatelessWidget {
                                       fontWeight: FontWeight.w500,
                                       color: Colors.red.shade700,
                                     ),
-                                  )
+                                  ),
+    ]
+                                  ),
+
                                 ],
                               ),
                             ],

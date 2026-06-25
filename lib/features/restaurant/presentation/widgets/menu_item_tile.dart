@@ -270,7 +270,7 @@ class MenuItemTile extends StatelessWidget {
                       ),
                       const SizedBox(height: 6),
                       // Customizable badge
-                      if (!item.hasCustomizations)
+                      if (item.hasCustomizations)
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 6,
@@ -477,8 +477,8 @@ class _QuantityControl extends StatelessWidget {
         child: ElevatedButton(
           onPressed: _actionsLocked ? null : onAdd,
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.white,
-            foregroundColor: AppColors.brand,
+            backgroundColor: AppColors.brand,
+            foregroundColor: AppColors.white,
             elevation: 1,
             padding: const EdgeInsets.symmetric(
               horizontal: 10,

@@ -198,9 +198,10 @@ class _HomeViewState extends State<_HomeView> {
                           ),
                         ),
                       ),
+
                     SliverToBoxAdapter(
                       child: Transform.translate(
-                        offset: const Offset(0, -12),
+                        offset: const Offset(0, 2),
                         child: Padding(
                           padding: const EdgeInsets.symmetric(vertical: 8.0),
                           child: HomeCouponBannerCarousel(
@@ -413,13 +414,20 @@ class HomeSupportFloatingButtons extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         if (whatsApp?.trim().isNotEmpty == true)
-          _SupportFloatingButton(
-            animationStyle: _SupportAnimationStyle.chat,
-            icon: Icons.chat,
-            backgroundColor: const Color(0xFF25D366),
-            tooltip: 'Chat support',
-            onTap: () => _launchWhatsApp(context),
+          InkWell(
+            onTap: () =>  _launchWhatsApp(context),
+            child: Image.asset("assets/images/whats_app.png",
+              height: 35,
+              width: 35,
+            ),
           ),
+        //   _SupportFloatingButton(
+        //     animationStyle: _SupportAnimationStyle.chat,
+        //     icon: Icons.chat,
+        //     backgroundColor: const Color(0xFF25D366),
+        //     tooltip: 'Chat support',
+        //     onTap: () => _launchWhatsApp(context),
+        //   ),
         if (whatsApp?.trim().isNotEmpty == true && phone?.trim().isNotEmpty == true)
           const SizedBox(height: 12),
         if (phone?.trim().isNotEmpty == true)

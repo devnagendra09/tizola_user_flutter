@@ -57,13 +57,26 @@ class CartSummaryBar extends StatelessWidget {
                       ),
                     ),
                   const Spacer(),
-                  Text(
-                    '₹ ${summary.subTotal ?? '0'}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
+
+                  Row(
+                    children: [
+                      Text("View Cart",
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),),
+                   //   Icon(Icons.arrow_forward),
+                      SizedBox(width: 20,),
+                      Text(
+                        '₹ ${summary.subTotal ?? '0'}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(width: 8),
                   const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 14),

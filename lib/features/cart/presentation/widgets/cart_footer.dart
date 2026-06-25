@@ -143,10 +143,17 @@ class CartFooter extends StatelessWidget {
                       ),
                     )
                   else
-                    const Icon(
-                      Icons.shopping_cart_outlined,
-                      color: Colors.white,
-                      size: 28,
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.shopping_cart_outlined,
+                          color: Colors.white,
+                          size: 28,
+                        ),
+                        SizedBox(width: 15,),
+                        Icon(Icons.arrow_forward_sharp,color: AppColors.white,size: 25,),
+
+                      ],
                     ),
                 ],
               ),

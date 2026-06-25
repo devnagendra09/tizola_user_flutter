@@ -276,7 +276,8 @@ class _DeviceLocationSetupPageState extends State<DeviceLocationSetupPage> {
                           ),
                           const SizedBox(height: 8),
                           OutlinedButton.icon(
-                            onPressed: _bootstrap,
+                            onPressed:_openMapPicker,
+                            //_bootstrap,
                             icon: const Icon(Icons.my_location),
                             label: const Text('Use current location'),
                           ),
