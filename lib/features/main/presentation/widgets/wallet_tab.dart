@@ -304,11 +304,11 @@ class _WalletTabState extends State<WalletTab> with AutomaticKeepAliveClientMixi
                       child: Column(
                         children: [
                           SizedBox(
-                            height: 250,
+                            height: 200,
                               width: 300,
                               child: Image.asset("assets/images/no_transtion.png")),
                           SizedBox(height: 10,),
-                          Text(state.transactionsEmptyMessage,style: TextStyle(fontWeight: FontWeight.bold),)
+                          Text("You don't have any transactions yet.",style: TextStyle(fontWeight: FontWeight.bold),)
                         ],
                       )
                     )

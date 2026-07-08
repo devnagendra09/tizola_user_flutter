@@ -63,10 +63,9 @@ class RestaurantCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(14),
           child: Stack(
             children: [
-              Padding(
-                padding: const EdgeInsets.all(0),
+              IntrinsicHeight(
                 child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     _RestaurantImage(
                       restaurant: restaurant,
@@ -134,12 +133,12 @@ class RestaurantCard extends StatelessWidget {
                                       color: Colors.grey.shade700,
                                     ),
                                   ),
-                                  SizedBox(width: 5,),
-                                  const SizedBox(width: 4,
-                                  child: Divider(height: 10,color: Colors.grey,),
+                                  const SizedBox(width: 5),
+                                  const SizedBox(
+                                    width: 4,
+                                    child: Divider(height: 10, color: Colors.grey),
                                   ),
-                                  SizedBox(width: 5,),
-
+                                  const SizedBox(width: 5),
                                   Icon(
                                     Icons.location_on,
                                     size: 14,
@@ -158,48 +157,43 @@ class RestaurantCard extends StatelessWidget {
                               const SizedBox(height: 2),
                               Column(
                                 children: [
-                                  Row(
-                              children: [
-                                  Icon(
-                                    Icons.access_time_filled_rounded,
-                                    size: 14,
-                                    color: Colors.green.shade600,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    openTime,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w500,
-                                      color: Colors.green.shade700,
+                                  Row(children: [
+                                    Icon(
+                                      Icons.access_time_filled_rounded,
+                                      size: 14,
+                                      color: Colors.green.shade600,
                                     ),
-                                  ),
-          ]
-                                  ),
-                                  SizedBox(width: 5,),
-                                  Row(
-                                    children: [
-                                  Icon(
-                                    Icons.lock_clock,
-                                    size: 14,
-                                    color: Colors.red.shade600,
-                                  ),
-                                  const SizedBox(width: 2),
-                                  Text(
-                                    closeTime,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w500,
-                                      color: Colors.red.shade700,
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      openTime,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.green.shade700,
+                                      ),
                                     ),
-                                  ),
-    ]
-                                  ),
-
+                                  ]),
+                                  const SizedBox(height: 2),
+                                  Row(children: [
+                                    Icon(
+                                      Icons.lock_clock,
+                                      size: 14,
+                                      color: Colors.red.shade600,
+                                    ),
+                                    const SizedBox(width: 2),
+                                    Text(
+                                      closeTime,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.red.shade700,
+                                      ),
+                                    ),
+                                  ]),
                                 ],
                               ),
                             ],
@@ -301,13 +295,14 @@ class _RestaurantImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Widget image = ClipRRect(
-
-      borderRadius: BorderRadius.only(topLeft:Radius.circular( 10),bottomLeft: Radius.circular(10)),
+      borderRadius: const BorderRadius.only(
+        topLeft: Radius.circular(14),
+        bottomLeft: Radius.circular(14),
+      ),
       child: NetworkImageBox(
         url: restaurant.imageUrl,
         width: RestaurantCard._imageWidthSize,
-        height: RestaurantCard._imageSize,
-        fit: BoxFit.fill,
+        fit: BoxFit.cover,
       ),
     );
 
@@ -325,8 +320,8 @@ class _RestaurantImage extends StatelessWidget {
 
     return SizedBox(
       width: RestaurantCard._imageWidthSize,
-      height: RestaurantCard._imageSize,
       child: Stack(
+        fit: StackFit.expand,
         clipBehavior: Clip.none,
         children: [
           image,

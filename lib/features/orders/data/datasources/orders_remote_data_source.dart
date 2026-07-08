@@ -59,7 +59,7 @@ class OrdersRemoteDataSourceImpl implements OrdersRemoteDataSource {
       final item = entry as Map<String, dynamic>;
       return ServiceOrderCartItem(
         name: item['item_name']?.toString() ??
-            item['name']?.toString() ??
+            item['restaurant_food_items_name']?.toString() ??
             '',
         quantity: item['qty']?.toString() ?? item['quantity']?.toString(),
         price: item['applicable_price']?.toString() ?? item['price']?.toString(),

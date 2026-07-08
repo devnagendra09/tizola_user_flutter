@@ -108,17 +108,17 @@ class HomeScreenHeader extends StatelessWidget {
               ),
               if (cartItemCount > 0)
                 Positioned(
-                  right: 2,
-                  top: 2,
+                  right: -4,
+                  top: -2,
                   child: Container(
-                    padding: const EdgeInsets.all(4),
+                    padding: const EdgeInsets.all(2),
                     decoration: const BoxDecoration(
                       color: Colors.red,
                       shape: BoxShape.circle,
                     ),
                     constraints: const BoxConstraints(
-                      minWidth: 16,
-                      minHeight: 16,
+                      minWidth: 13,
+                      minHeight: 13,
                     ),
                     child: Text(
                       cartItemCount > 9 ? '9+' : '$cartItemCount',

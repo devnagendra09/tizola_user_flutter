@@ -922,98 +922,101 @@ class _RestaurantMenuSearchBarState extends State<_RestaurantMenuSearchBar> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(_focused ? 20 : 28),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 250),
-          curve: Curves.easeInOutCubic,
-          clipBehavior: Clip.antiAlias,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(_focused ? 20 : 28),
-            boxShadow: [
-              BoxShadow(
+    return Padding(
+      padding: const EdgeInsets.all(12),
+      child: Container(
+        height: 40,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(_focused ? 20 : 28),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeInOutCubic,
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(_focused ? 20 : 28),
+              boxShadow: [
+                BoxShadow(
+                  color: _focused
+                      ? AppColors.brand.withValues(alpha: 0.15)
+                      : Colors.black.withValues(alpha: 0.06),
+                  blurRadius: _focused ? 16 : 8,
+                  offset: Offset(0, _focused ? 4 : 2),
+                ),
+              ],
+              border: Border.all(
                 color: _focused
-                    ? AppColors.brand.withValues(alpha: 0.15)
-                    : Colors.black.withValues(alpha: 0.06),
-                blurRadius: _focused ? 16 : 8,
-                offset: Offset(0, _focused ? 4 : 2),
+                    ? AppColors.brand.withValues(alpha: 0.25)
+                    : Colors.grey.shade200,
+                width: _focused ? 1.4 : 1,
               ),
-            ],
-            border: Border.all(
-              color: _focused
-                  ? AppColors.brand.withValues(alpha: 0.25)
-                  : Colors.grey.shade200,
-              width: _focused ? 1.4 : 1,
             ),
-          ),
-          child: Material(
-            color: Colors.transparent,
-            child: TextField(
-              controller: _controller,
-              focusNode: _focusNode,
-              onTapOutside: (_) => _focusNode.unfocus(),
-              style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w500,
-              ),
-              decoration: InputDecoration(
-                hintText: 'Search menu...',
-                hintStyle: TextStyle(
-                  color: Colors.grey.shade400,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w400,
+            child: Material(
+              color: Colors.transparent,
+              child: TextField(
+                controller: _controller,
+                focusNode: _focusNode,
+                onTapOutside: (_) => _focusNode.unfocus(),
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
                 ),
-                prefixIcon: Icon(
-                  Icons.search_rounded,
-                  color: _focused ? AppColors.brand : Colors.grey.shade500,
-                  size: 20,
-                ),
-                suffixIcon: _controller.text.isNotEmpty
-                    ? GestureDetector(
-                        onTap: () {
-                          _debounce?.cancel();
-                          _controller.clear();
-                          _applySearch('');
-                          _focusNode.unfocus();
-                        },
-                        child: Container(
-                          margin: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade200,
-                            shape: BoxShape.circle,
+                decoration: InputDecoration(
+                  hintText: 'Search menu...',
+                  hintStyle: TextStyle(
+                    color: Colors.grey.shade400,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
+                  ),
+                  prefixIcon: Icon(
+                    Icons.search_rounded,
+                    color: _focused ? AppColors.brand : Colors.grey.shade500,
+                    size: 15,
+                  ),
+                  suffixIcon: _controller.text.isNotEmpty
+                      ? GestureDetector(
+                          onTap: () {
+                            _debounce?.cancel();
+                            _controller.clear();
+                            _applySearch('');
+                            _focusNode.unfocus();
+                          },
+                          child: Container(
+                            margin: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade200,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.close,
+                              size: 16,
+                              color: Colors.grey,
+                            ),
                           ),
-                          child: const Icon(
-                            Icons.close,
-                            size: 16,
-                            color: Colors.grey,
-                          ),
-                        ),
-                      )
-                    : null,
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14,
+                        )
+                      : null,
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
+                  isDense: true,
                 ),
-                isDense: true,
+                onChanged: (value) {
+                  _debounce?.cancel();
+                  if (value.isEmpty) {
+                    _applySearch('');
+                    _focusNode.unfocus();
+                    return;
+                  }
+                  _debounce = Timer(
+                    const Duration(milliseconds: 400),
+                    () => _applySearch(value),
+                  );
+                },
               ),
-              onChanged: (value) {
-                _debounce?.cancel();
-                if (value.isEmpty) {
-                  _applySearch('');
-                  _focusNode.unfocus();
-                  return;
-                }
-                _debounce = Timer(
-                  const Duration(milliseconds: 400),
-                  () => _applySearch(value),
-                );
-              },
             ),
           ),
         ),
