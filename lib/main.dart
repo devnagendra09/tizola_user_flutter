@@ -55,7 +55,7 @@ void main() async {
   await sl<DeepLinkService>().initialize();
   print("9. Deep links initialized");
 
-  //await sl<PushNotificationService>().initialize();
+  await sl<PushNotificationService>().initialize();
   print("10. Push notifications initialized");
 
   SystemChrome.setSystemUIOverlayStyle(AppSystemUi.lightScreen);

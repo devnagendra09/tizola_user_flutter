@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CLIENT_ID</key>
+	<string>89742411943-mfh9tkapj25rdcvs8hfstk74s96k5eqp.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.89742411943-mfh9tkapj25rdcvs8hfstk74s96k5eqp</string>
 	<key>API_KEY</key>
 	<string>AIzaSyDV7Q1RpbQLQ1GMlBa9MJEc8mzt-ZbcP5g</string>
 	<key>GCM_SENDER_ID</key>
@@ -9,7 +13,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.tizola.tizolaUser</string>
+	<string>com.tizola-user</string>
 	<key>PROJECT_ID</key>
 	<string>tizola-cmoon</string>
 	<key>STORAGE_BUCKET</key>
@@ -25,7 +29,7 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:89742411943:ios:94566a85425f6d898ab382</string>
+	<string>1:89742411943:ios:d1d623f30379e1448ab382</string>
 	<key>DATABASE_URL</key>
 	<string>https://tizola-cmoon-default-rtdb.firebaseio.com</string>
 </dict>

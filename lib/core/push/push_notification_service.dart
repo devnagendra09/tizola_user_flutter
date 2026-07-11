@@ -33,26 +33,44 @@ class PushNotificationService {
   Future<void> initialize() async {
     if (_initialized) return;
 
-    await ensurePushNotificationChannel(
-      onNotificationTap: _onLocalNotificationTap,
-    );
+    try {
+      await ensurePushNotificationChannel(
+        onNotificationTap: _onLocalNotificationTap,
+      );
 
-    await _requestPermissions();
+      await _requestPermissions();
 
-    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+      FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
-    FirebaseMessaging.onMessage.listen(_onForegroundMessage);
-    FirebaseMessaging.onMessageOpenedApp.listen(_onMessageOpenedApp);
+      FirebaseMessaging.onMessage.listen(_onForegroundMessage);
+      FirebaseMessaging.onMessageOpenedApp.listen(_onMessageOpenedApp);
 
-    _messaging.onTokenRefresh.listen((_) => syncTokenWithServer());
+      _messaging.onTokenRefresh.listen((_) => syncTokenWithServer());
 
-    final initial = await _messaging.getInitialMessage();
-    if (initial != null) {
-      _storePendingFromMessage(initial);
+      // Don't await these indefinitely as they can hang on iOS if APNS is not configured
+      _setupInitialMessageAndToken();
+
+      _initialized = true;
+    } catch (e) {
+      debugPrint('PushNotificationService initialization failed: $e');
     }
+  }
 
-    _initialized = true;
-    await syncTokenWithServer();
+  Future<void> _setupInitialMessageAndToken() async {
+    try {
+      // Use a timeout to prevent blocking the app startup
+      final initial = await _messaging.getInitialMessage().timeout(
+            const Duration(seconds: 3),
+            onTimeout: () => null,
+          );
+      if (initial != null) {
+        _storePendingFromMessage(initial);
+      }
+
+      await syncTokenWithServer();
+    } catch (e) {
+      debugPrint('Error fetching initial message or token: $e');
+    }
   }
 
   Future<void> _requestPermissions() async {
@@ -71,7 +89,10 @@ class PushNotificationService {
         return;
       }
 
-      final token = await _messaging.getToken();
+      final token = await _messaging.getToken().timeout(
+        const Duration(seconds: 5),
+        onTimeout: () => null,
+      );
       if (token == null || token.isEmpty) return;
 
       await _remote.updatePushNotificationToken(token);
