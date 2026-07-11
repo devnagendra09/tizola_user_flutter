@@ -29,19 +29,42 @@ import 'l10n/app_localizations.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  print("1. Widgets initialized");
+
   await initDependencies();
+  print("2. Dependencies initialized");
+
   await sl<HiveLocalCache>().init();
+  print("3. Hive initialized");
+
   await FirebaseBootstrap.ensureInitialized();
+  print("4. Firebase initialized");
+
   await GoogleMapsBootstrap.ensureInitialized();
+  print("5. Google Maps initialized");
+
   await sl<AppLocalDataSource>().ensureDeviceId();
+  print("6. Device ID initialized");
+
   await sl<AuthRepository>().initDefaults();
+  print("7. Auth defaults initialized");
+
   sl<AppLocaleNotifier>().syncFromStorage();
+  print("8. Locale synced");
+
   await sl<DeepLinkService>().initialize();
-  await sl<PushNotificationService>().initialize();
+  print("9. Deep links initialized");
+
+  //await sl<PushNotificationService>().initialize();
+  print("10. Push notifications initialized");
 
   SystemChrome.setSystemUIOverlayStyle(AppSystemUi.lightScreen);
 
+  print("11. Calling runApp");
+
   runApp(const TizolaApp());
+
+  print("12. runApp completed");
 }
 
 class TizolaApp extends StatefulWidget {
