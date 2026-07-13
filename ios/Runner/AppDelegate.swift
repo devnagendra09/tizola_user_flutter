@@ -4,7 +4,7 @@ import GoogleMaps
 import FirebaseCore
 
 @main
-@objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
+@objc class AppDelegate: FlutterAppDelegate {
 
   override func application(
     _ application: UIApplication,
@@ -28,7 +28,7 @@ import FirebaseCore
     )
   }
 
-  func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
-    GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
-  }
+//  func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
+//    GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
+//  }
 }
