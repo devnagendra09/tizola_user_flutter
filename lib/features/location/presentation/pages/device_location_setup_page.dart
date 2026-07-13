@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -52,7 +54,56 @@ class _DeviceLocationSetupPageState extends State<DeviceLocationSetupPage> {
     super.dispose();
   }
 
+  Future<bool> _checkLocationService() async {
+    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+
+    if (serviceEnabled) return true;
+
+    if (!mounted) return false;
+
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        title: const Text("Location Service Disabled"),
+        content: const Text(
+          "GPS is turned off. Please enable Location Services to continue.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              if (Platform.isAndroid) {
+                await Geolocator.openLocationSettings();
+              } else if (Platform.isIOS) {
+                await openAppSettings();
+              }
+            },
+            child: Padding(
+              padding: const EdgeInsets.only(left: 10,right: 10),
+              child: const Text("Open Settings"),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    return false;
+  }
+
   Future<void> _bootstrap() async {
+    final gpsEnabled = await _checkLocationService();
+    if (!gpsEnabled) {
+      setState(() {
+        _loading = false;
+        _error = "Location service is disabled.";
+      });
+      return;
+    }
     setState(() {
       _loading = true;
       _error = null;
@@ -276,8 +327,8 @@ class _DeviceLocationSetupPageState extends State<DeviceLocationSetupPage> {
                           ),
                           const SizedBox(height: 8),
                           OutlinedButton.icon(
-                            onPressed:_openMapPicker,
-                            //_bootstrap,
+                            onPressed://_openMapPicker,
+                            _bootstrap,
                             icon: const Icon(Icons.my_location),
                             label: const Text('Use current location'),
                           ),

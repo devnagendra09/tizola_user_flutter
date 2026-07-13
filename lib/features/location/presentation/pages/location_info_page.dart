@@ -1,5 +1,9 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../injection_container.dart';
@@ -81,16 +85,72 @@ class _LocationInfoPageState extends State<LocationInfoPage> {
     );
     if (place != null && context.mounted) {
       context.read<LocationInfoCubit>().applyDraft(
-            place.copyWith(
-              id: context.read<LocationInfoCubit>().state.draft?.id,
-              addressType: context.read<LocationInfoCubit>().state.addressType,
-            ),
-          );
+        place.copyWith(
+          id: context.read<LocationInfoCubit>().state.draft?.id,
+          addressType: context.read<LocationInfoCubit>().state.addressType,
+        ),
+      );
       _lastDraftKey = null;
     }
   }
 
+  Future<bool> _checkLocationPermission(BuildContext context) async {
+    LocationPermission permission = await Geolocator.checkPermission();
+
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+
+    if (permission == LocationPermission.denied) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Location permission is required.")),
+        );
+      }
+      return false;
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      if (!context.mounted) return false;
+
+      await showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text("Permission Required"),
+          content: const Text(
+            "Location permission has been permanently denied. "
+            "Please enable it from Settings.",
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancel"),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.pop(context);
+                await openAppSettings();
+              },
+              child: Padding(
+                padding: const EdgeInsets.only(left: 10, right: 10),
+                child: const Text("Open Settings"),
+              ),
+            ),
+          ],
+        ),
+      );
+
+      return false;
+    }
+
+    return true;
+  }
+
   Future<void> _useCurrentLocationWithMap(BuildContext context) async {
+    final enabled = await _checkLocationService(context);
+    if (!enabled) return;
+    final permissionGranted = await _checkLocationPermission(context);
+    if (!permissionGranted) return;
     final cubit = context.read<LocationInfoCubit>();
     final repo = sl<LocationRepository>();
     final result = await repo.resolveCurrentLocation();
@@ -116,6 +176,51 @@ class _LocationInfoPageState extends State<LocationInfoPage> {
     );
   }
 
+  Future<bool> _checkLocationService(BuildContext context) async {
+    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    print("Location enabled $serviceEnabled");
+    if (serviceEnabled) {
+      return true;
+    }
+
+    if (!context.mounted) return false;
+
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        title: const Text("Location Service Disabled"),
+        content: const Text(
+          "GPS is turned off. Please enable Location Services to continue.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              if (Platform.isAndroid) {
+                await Geolocator.openLocationSettings();
+              } else if (Platform.isIOS) {
+                await openAppSettings();
+              }
+            },
+            child: Padding(
+              padding: const EdgeInsets.only(left: 10, right: 10),
+              child: const Text("Open Settings"),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    return false;
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
@@ -123,20 +228,19 @@ class _LocationInfoPageState extends State<LocationInfoPage> {
       child: BlocConsumer<LocationInfoCubit, LocationInfoState>(
         listener: (context, state) {
           if (state.message != null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message!)),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(state.message!)));
           }
           _syncFields(state.draft);
         },
         builder: (context, state) {
-          final loading = state.status == LocationInfoStatus.loading ||
+          final loading =
+              state.status == LocationInfoStatus.loading ||
               state.status == LocationInfoStatus.saving;
 
           return Scaffold(
-            appBar: AppBar(
-              title: const Text('Edit Location'),
-            ),
+            appBar: AppBar(title: const Text('Edit Location')),
             body: Stack(
               children: [
                 SingleChildScrollView(
@@ -296,24 +400,15 @@ class _LocationInfoPageState extends State<LocationInfoPage> {
                         padding: const EdgeInsets.symmetric(horizontal: 12),
                         child: SegmentedButton<String>(
                           segments: const [
-                            ButtonSegment(
-                              value: 'Home',
-                              label: Text('Home'),
-                            ),
-                            ButtonSegment(
-                              value: 'Work',
-                              label: Text('Work'),
-                            ),
-                            ButtonSegment(
-                              value: 'Other',
-                              label: Text('Other'),
-                            ),
+                            ButtonSegment(value: 'Home', label: Text('Home')),
+                            ButtonSegment(value: 'Work', label: Text('Work')),
+                            ButtonSegment(value: 'Other', label: Text('Other')),
                           ],
                           selected: {state.addressType},
                           onSelectionChanged: (s) {
-                            context
-                                .read<LocationInfoCubit>()
-                                .setAddressType(s.first);
+                            context.read<LocationInfoCubit>().setAddressType(
+                              s.first,
+                            );
                           },
                         ),
                       ),
@@ -345,13 +440,14 @@ class _LocationInfoPageState extends State<LocationInfoPage> {
                                               .saveAddress(
                                                 doorNo: _doorNo.text.trim(),
                                                 landmark: _landmark.text.trim(),
-                                                addressDescription:
-                                                    _description.text.trim(),
+                                                addressDescription: _description
+                                                    .text
+                                                    .trim(),
                                                 addressType: state.addressType,
                                                 addressTypeText:
                                                     state.addressType == 'Other'
-                                                        ? _otherLabel.text.trim()
-                                                        : null,
+                                                    ? _otherLabel.text.trim()
+                                                    : null,
                                               );
                                           if (ok && context.mounted) {
                                             Navigator.of(context).pop(true);
@@ -377,13 +473,14 @@ class _LocationInfoPageState extends State<LocationInfoPage> {
                                             .saveAddress(
                                               doorNo: _doorNo.text.trim(),
                                               landmark: _landmark.text.trim(),
-                                              addressDescription:
-                                                  _description.text.trim(),
+                                              addressDescription: _description
+                                                  .text
+                                                  .trim(),
                                               addressType: state.addressType,
                                               addressTypeText:
                                                   state.addressType == 'Other'
-                                                      ? _otherLabel.text.trim()
-                                                      : null,
+                                                  ? _otherLabel.text.trim()
+                                                  : null,
                                               isNew: true,
                                             );
                                         if (ok && context.mounted) {
@@ -432,8 +529,8 @@ class _LocationInfoPageState extends State<LocationInfoPage> {
                           onDelete: addr.id == null
                               ? null
                               : () {
-                            _confirmDeleteAddress(context, addr);
-                          },
+                                  _confirmDeleteAddress(context, addr);
+                                },
                         ),
                       ),
                     ],
@@ -517,10 +614,7 @@ class _SavedAddressTile extends StatelessWidget {
                     ),
                   ),
                 ),
-                TextButton(
-                  onPressed: onEdit,
-                  child: const Text('Edit'),
-                ),
+                TextButton(onPressed: onEdit, child: const Text('Edit')),
                 if (onDelete != null)
                   TextButton(
                     onPressed: onDelete,
