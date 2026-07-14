@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -125,26 +126,41 @@ class LocationRepositoryImpl implements LocationRepository {
   @override
   Future<Result<DeliveryLocationEntity>> resolveCurrentLocation() async {
     try {
-      final permission = await Permission.location.request();
-      if (!permission.isGranted) {
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          return Result.failure(
+            const ValidationFailure('Location permission is required'),
+          );
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
         return Result.failure(
-          const ValidationFailure('Location permission is required'),
+          const ValidationFailure(
+            'Location permissions are permanently denied, we cannot request permissions.',
+          ),
         );
       }
+
       if (!await Geolocator.isLocationServiceEnabled()) {
         return Result.failure(
           const ValidationFailure('Please turn on GPS'),
         );
       }
+
       final position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
           accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 15),
         ),
       );
       return Result.success(await _geocodePosition(position));
     } on Failure catch (e) {
       return Result.failure(e);
-    } catch (_) {
+    } catch (e) {
+      debugPrint('resolveCurrentLocation Error: $e');
       return Result.failure(const NetworkFailure());
     }
   }
@@ -160,10 +176,19 @@ class LocationRepositoryImpl implements LocationRepository {
   @override
   Future<Result<DeliveryLocationEntity>> resolveNearbyDeliveryLocation() async {
     try {
-      final permission = await Permission.location.request();
-      if (!permission.isGranted) {
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          return Result.failure(
+            const ValidationFailure('Location permission is required'),
+          );
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
         return Result.failure(
-          const ValidationFailure('Location permission is required'),
+          const ValidationFailure('Location permissions are permanently denied'),
         );
       }
 
@@ -176,6 +201,7 @@ class LocationRepositoryImpl implements LocationRepository {
       final position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
           accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 15),
         ),
       );
 
