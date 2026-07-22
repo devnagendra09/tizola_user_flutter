@@ -18,11 +18,7 @@ class ServiceOrderStatusLog extends Equatable {
 }
 
 class ServiceOrderCartItem extends Equatable {
-  const ServiceOrderCartItem({
-    required this.name,
-    this.quantity,
-    this.price,
-  });
+  const ServiceOrderCartItem({required this.name, this.quantity, this.price});
 
   final String name;
   final String? quantity;
@@ -50,8 +46,14 @@ class ServiceOrderRestaurant extends Equatable {
   final String? longitude;
 
   @override
-  List<Object?> get props =>
-      [name, displayAddress, mobile, imageUrl, latitude, longitude];
+  List<Object?> get props => [
+    name,
+    displayAddress,
+    mobile,
+    imageUrl,
+    latitude,
+    longitude,
+  ];
 }
 
 /// `customer/service_order_view` — Android `OrderSummaryFragment` / `OrderTrackerActivity`.
@@ -80,6 +82,7 @@ class ServiceOrderEntity extends Equatable {
     this.deliveryLongitude,
     this.hasLiveTrackingPermission = false,
     this.tipAmount,
+    this.rejectedReason,
   });
 
   final String refId;
@@ -105,6 +108,7 @@ class ServiceOrderEntity extends Equatable {
   final double? deliveryLongitude;
   final bool hasLiveTrackingPermission;
   final String? tipAmount;
+  final String? rejectedReason;
 
   String get descriptionLine =>
       '$serviceStatus | ${cartItems.length} Items, Rs $grandTotal';
@@ -139,28 +143,29 @@ class ServiceOrderEntity extends Equatable {
 
   @override
   List<Object?> get props => [
-        refId,
-        serviceStatus,
-        grandTotal,
-        restaurant,
-        statusLog,
-        cartItems,
-        deliveryOtp,
-        addressType,
-        deliveryAddress,
-        customerCareNumber,
-        customerCareWhatsApp,
-        selfPickAccepted,
-        remainingSeconds,
-        subTotal,
-        deliveryCharges,
-        discount,
-        taxes,
-        paidAmount,
-        paymentStatus,
-        deliveryLatitude,
-        deliveryLongitude,
-        hasLiveTrackingPermission,
-        tipAmount,
-      ];
+    refId,
+    serviceStatus,
+    grandTotal,
+    restaurant,
+    statusLog,
+    cartItems,
+    deliveryOtp,
+    addressType,
+    deliveryAddress,
+    customerCareNumber,
+    customerCareWhatsApp,
+    selfPickAccepted,
+    remainingSeconds,
+    subTotal,
+    deliveryCharges,
+    discount,
+    taxes,
+    paidAmount,
+    paymentStatus,
+    deliveryLatitude,
+    deliveryLongitude,
+    hasLiveTrackingPermission,
+    tipAmount,
+    rejectedReason,
+  ];
 }

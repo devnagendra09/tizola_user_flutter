@@ -113,7 +113,7 @@ class CartFooter extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          'PROCEED TO CHECKOUT',
+                          'PROCEED TO PAYMENT',
                           style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w600,
@@ -145,13 +145,16 @@ class CartFooter extends StatelessWidget {
                   else
                     Row(
                       children: [
-                        const Icon(
-                          Icons.shopping_cart_outlined,
-                          color: Colors.white,
-                          size: 28,
+                        Icon(Icons.arrow_forward_sharp,color: AppColors.white,size: 30,),
+                      //  SizedBox(width: 15,),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 18.0),
+                          child: const Icon(
+                            Icons.shopping_cart_outlined,
+                            color: Colors.white,
+                            size: 28,
+                          ),
                         ),
-                        SizedBox(width: 15,),
-                        Icon(Icons.arrow_forward_sharp,color: AppColors.white,size: 25,),
 
                       ],
                     ),

@@ -84,15 +84,15 @@ class _GradientBackground extends StatelessWidget {
           colors: [
             Color(0xFF023A85),
             AppColors.brand,
-            AppColors.secondaryBrand,
-            AppColors.secondaryBrand,
+           // AppColors.secondaryBrand,
+          //  AppColors.secondaryBrand,
             //   Color(0xFF9BB8EB),
             AppColors.brand,
             AppColors.brand,
 
             // Color(0xFF9BB8EB),
           ],
-          stops: [0.0, 0.22, 0.45, 0.65, 1.0, 1.0],
+         // stops: [0.0, 0.22, 0.45, 0.65, 1.0, 1.0],
         ),
       ),
     );

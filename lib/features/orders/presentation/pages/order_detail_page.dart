@@ -69,7 +69,7 @@ class _OrderDetailView extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFA),
       appBar: AppBar(
-        title: Text('#$refId'),
+        title: const Text('Order Summary'),
         backgroundColor: AppColors.brand,
         foregroundColor: Colors.white,
         actions: [

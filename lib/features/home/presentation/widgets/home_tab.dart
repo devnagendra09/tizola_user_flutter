@@ -1,3 +1,5 @@
+import 'dart:ffi';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -243,8 +245,10 @@ class _HomeViewState extends State<_HomeView> {
                       SliverToBoxAdapter(
                         child: SizedBox(
                           height: 108,
+                          width:double.infinity ,
                           child: ListView.builder(
                             scrollDirection: Axis.horizontal,
+
                             padding: const EdgeInsets.only(left: 16, right: 8),
                             itemCount: state.cuisines.length,
                             itemBuilder: (_, i) => _CuisineChip(
@@ -258,12 +262,12 @@ class _HomeViewState extends State<_HomeView> {
                     SliverToBoxAdapter(
                       child: HomeSliderCarousel(sliders: state.sliders),
                     ),
-                    const SliverToBoxAdapter(
-                      child: Padding(
-                        padding: EdgeInsets.only(top: 5, bottom: 5),
-                        child: HomeServiceHighlights(),
-                      ),
-                    ),
+                    // const SliverToBoxAdapter(
+                    //   child: Padding(
+                    //     padding: EdgeInsets.only(top: 5, bottom: 5),
+                    //     child: HomeServiceHighlights(),
+                    //   ),
+                    // ),
                     SliverToBoxAdapter(
                       child: Padding(
                         padding: const EdgeInsets.only(bottom: 2,top: 2),

@@ -204,11 +204,23 @@ class _WalletTabState extends State<WalletTab> with AutomaticKeepAliveClientMixi
                               ],
                             ),
                           ),
-                          Icon(
-                            Icons.account_balance_wallet_outlined,
-                            size: 48,
-                            color: AppColors.brand.withValues(alpha: 0.35),
+                          Container(
+                            padding:  EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: AppColors.brand.withOpacity(0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.account_balance_wallet_rounded,
+                              color: AppColors.brand,
+                              size: 28,
+                            ),
                           ),
+                          // Icon(
+                          //   Icons.account_balance_wallet_outlined,
+                          //   size: 48,
+                          //   color: AppColors.brand.withValues(alpha: 0.35),
+                          // ),
                         ],
                       ),
                     ),

@@ -266,7 +266,7 @@ class _LocationInfoPageState extends State<LocationInfoPage> {
                                   const SizedBox(width: 10),
                                   Expanded(
                                     child: Text(
-                                      'Search for location',
+                                      'Enter your current city',
                                       style: TextStyle(
                                         fontWeight: FontWeight.w600,
                                         color: Colors.grey.shade800,
@@ -323,10 +323,20 @@ class _LocationInfoPageState extends State<LocationInfoPage> {
                                 padding: const EdgeInsets.all(12),
                                 child: Row(
                                   children: [
-                                    const Icon(
-                                      Icons.map,
-                                      color: AppColors.brand,
-                                      size: 22,
+                                    // const Icon(
+                                    //   Icons.map,
+                                    //   color: AppColors.brand,
+                                    //   size: 22,
+                                    // ),
+                                    Image.asset(
+                                      "assets/images/google_maps.png",
+                                      height: 30,
+                                      width: 30,
+                                      errorBuilder: (_, __, ___) => const Icon(
+                                        Icons.location_searching,
+                                        size: 100,
+                                        color: Colors.grey,
+                                      ),
                                     ),
                                     const SizedBox(width: 8),
                                     Expanded(

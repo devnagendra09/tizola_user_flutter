@@ -119,7 +119,7 @@ class _ReferView extends StatelessWidget {
                                 shape: BoxShape.circle,
                               ),
                               child: const Icon(
-                                Icons.account_balance_wallet_outlined,
+                                Icons.account_balance_wallet_rounded,
                                 color: accentColor,
                                 size: 28,
                               ),

@@ -109,16 +109,18 @@ class _SplashView extends StatelessWidget {
       child: AnnotatedRegion<SystemUiOverlayStyle>(
         value: AppSystemUi.lightScreen,
         child: Scaffold(
-          backgroundColor: AppColors.brand,
+          backgroundColor: AppColors.white,
           body: Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Color(0xFF89B8FF),
-                  Color(0xFF89B8FF),
-                  Color(0xFF4A90FF),
+                //  Color(0xFF89B8FF),
+                  //Color(0xFF89B8FF),
+                  //Color(0xFF4A90FF),
+                  Color(0xFFFFFFFF),
+                  Color(0xFFFFFFFF),
 
                 ],
               ),
@@ -132,9 +134,11 @@ class _SplashView extends StatelessWidget {
                     height: 150,
                     fit: BoxFit.contain,
                   ),
-                  const Spacer(),
+                 // const Spacer(),
+                  const SizedBox(height: 50),
+
                   Image.asset(
-                    AppAssets.logoWhite,
+                    AppAssets.logo,
                     height: 220,
                     fit: BoxFit.contain,
                   ),

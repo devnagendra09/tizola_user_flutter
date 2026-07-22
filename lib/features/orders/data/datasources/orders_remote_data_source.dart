@@ -125,6 +125,7 @@ class OrdersRemoteDataSourceImpl implements OrdersRemoteDataSource {
       deliveryLongitude: double.tryParse(data['delivery_lng']?.toString() ?? ''),
       hasLiveTrackingPermission: _isTruthy(data['has_live_tracking_permission']),
       tipAmount: data['tip_amount']?.toString(),
+      rejectedReason:data['rejected_reason']?.toString()
     );
   }
 

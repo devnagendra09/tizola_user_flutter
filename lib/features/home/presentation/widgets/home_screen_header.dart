@@ -34,9 +34,11 @@ class HomeScreenHeader extends StatelessWidget {
         : Colors.grey.shade100;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 8, 4),
+      padding: const EdgeInsets.fromLTRB(16, 4, 8, 4),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.center,
+
         children: [
           Expanded(
             child: InkWell(
@@ -45,21 +47,27 @@ class HomeScreenHeader extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 4),
                 child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.location_on_outlined, color: pinColor, size: 22),
-                    const SizedBox(width: 8),
+                  //  Icon(Icons.location_on_outlined, color: pinColor, size: 22),
+                    const SizedBox(width: 4),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Text(
-                          //   'Deliver to',
-                          //   style: TextStyle(
-                          //     fontSize: 12,
-                          //     color: secondary,
-                          //     fontWeight: FontWeight.w500,
-                          //   ),
-                          // ),
+                          Row(
+                            children: [
+                              Icon(Icons.location_on_outlined, color: pinColor, size: 15),
+                              Text(
+                                'Your Location',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: secondary,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
                           Row(
                             children: [
                               Flexible(
@@ -68,26 +76,14 @@ class HomeScreenHeader extends StatelessWidget {
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
                                     color: primary,
                                   ),
                                 ),
                               ),
-                              Icon(
-                                Icons.keyboard_arrow_down,
-                                color: secondary,
-                                size: 22,
-                              ),
                             ],
                           ),
-                          // if (subtitle.isNotEmpty)
-                          //   Text(
-                          //     subtitle,
-                          //     maxLines: 1,
-                          //     overflow: TextOverflow.ellipsis,
-                          //     style: TextStyle(fontSize: 11, color: secondary),
-                          //   ),
                         ],
                       ),
                     ),

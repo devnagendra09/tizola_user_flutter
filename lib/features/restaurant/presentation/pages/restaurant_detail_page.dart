@@ -765,7 +765,7 @@ class _RestaurantDetailViewState extends State<_RestaurantDetailView>
             tabs: [
               Tab(text: AppLocalizations.of(context).menuTab),
               Tab(text: AppLocalizations.of(context).aboutTab),
-              Tab(text: AppLocalizations.of(context).reviewsTab),
+              //Tab(text: AppLocalizations.of(context).reviewsTab),
             ],
           ),
         ),

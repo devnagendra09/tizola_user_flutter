@@ -87,10 +87,10 @@ class RestaurantCard extends StatelessWidget {
                                     restaurant.name,
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
+                                    style:  TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
-                                      color: Colors.black87,
+                                      color: AppColors.brand,
                                       letterSpacing: -0.2,
                                       height: 1.2,
                                     ),

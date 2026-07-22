@@ -110,12 +110,29 @@ class ServiceOrderContent extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 4),
+               const SizedBox(height: 4),
+
         Text(
           order.descriptionLine,
           style: TextStyle(color: Colors.grey.shade700),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 4),
+        if(order.serviceStatus =="Rejected" ||order.rejectedReason!.isNotEmpty)
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.brand.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(4),
+
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Text(order.rejectedReason ?? "",
+              style: TextStyle(color: Colors.red),
+
+            ),
+          ),
+        ),
+        const SizedBox(height: 14),
 
         _sectionTitle('Restaurant'),
         Container(

@@ -25,7 +25,7 @@ class DeliveryLocationEntity extends Equatable {
   final String? addressTypeText;
   final String? city;
 
-  String get locationTitle => '$addressType : $address';
+  String get locationTitle => '$addressType : $address' ;
 
   String get locationSubtitle {
     final parts = [
