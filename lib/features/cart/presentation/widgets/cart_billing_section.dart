@@ -9,10 +9,14 @@ class CartBillingSection extends StatefulWidget {
     super.key,
     required this.cart,
     this.displayTipAmount,
+    this.usedWalletAmount = 0,
+    this.isWalletUsed = false,
   });
 
   final CartEntity cart;
   final String? displayTipAmount;
+  final double usedWalletAmount;
+  final bool isWalletUsed;
 
   @override
   State<CartBillingSection> createState() => _CartBillingSectionState();
@@ -26,6 +30,9 @@ class _CartBillingSectionState extends State<CartBillingSection> {
   Widget build(BuildContext context) {
     final cart = widget.cart;
     final displayTip = widget.displayTipAmount;
+
+    final originalTotal = double.tryParse(cart.grandTotal ?? cart.subTotal ?? '0') ?? 0;
+    final finalPayable = (originalTotal - widget.usedWalletAmount).clamp(0, double.infinity);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -130,6 +137,13 @@ class _CartBillingSectionState extends State<CartBillingSection> {
                 ],
               ),
           ],
+          if (widget.isWalletUsed && widget.usedWalletAmount > 0)
+            _BillRow(
+              label: 'Wallet Balance',
+              value: widget.usedWalletAmount.toStringAsFixed(2),
+              prefixMinus: true,
+              valueColor: Colors.green.shade700,
+            ),
           if (_hasValue(cart.promotionWalletAmount)) ...[
             const SizedBox(height: 8),
             Container(
@@ -148,10 +162,11 @@ class _CartBillingSectionState extends State<CartBillingSection> {
                   ),
                   _BillRow(
                     label: 'Payable Amount',
-                    value: cart.grandTotal,
+                    value: finalPayable <= 0 ? 'FREE' : finalPayable.toStringAsFixed(2),
                     labelBold: true,
                     valueColor: AppColors.secondaryBrand,
                     suffixLabel: '(Roundoff)',
+                    hideCurrencyOnFree: true,
                   ),
                 ],
               ),
@@ -160,9 +175,10 @@ class _CartBillingSectionState extends State<CartBillingSection> {
             const SizedBox(height: 8),
             _BillRow(
               label: 'Payable Amount',
-              value: cart.grandTotal,
+              value: finalPayable <= 0 ? 'FREE' : finalPayable.toStringAsFixed(2),
               isBold: true,
               valueColor: AppColors.secondaryBrand,
+              hideCurrencyOnFree: true,
             ),
           ],
         ],
@@ -181,9 +197,11 @@ class _BillRow extends StatelessWidget {
     this.isBold = false,
     this.labelBold = false,
     this.prefixPlus = false,
+    this.prefixMinus = false,
     this.valueColor,
     this.suffixLabel,
     this.trailing,
+    this.hideCurrencyOnFree = false,
   });
 
   final String label;
@@ -191,12 +209,16 @@ class _BillRow extends StatelessWidget {
   final bool isBold;
   final bool labelBold;
   final bool prefixPlus;
+  final bool prefixMinus;
   final Color? valueColor;
   final String? suffixLabel;
   final Widget? trailing;
+  final bool hideCurrencyOnFree;
 
   @override
   Widget build(BuildContext context) {
+    final showCurrency = !(hideCurrencyOnFree && value == 'FREE');
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -223,14 +245,14 @@ class _BillRow extends StatelessWidget {
               ),
             ),
           Text(
-            '${prefixPlus ? '+ ' : ''}₹ ${value ?? '0'}',
+            '${prefixPlus ? '+ ' : ''}${prefixMinus ? '- ' : ''}${showCurrency ? '₹ ' : ''}${value ?? '0'}',
             style: TextStyle(
               fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
               fontSize: 13,
               color: valueColor ?? (isBold ? AppColors.brand : null),
             ),
           ),
-          ?trailing,
+          if (trailing != null) trailing!,
         ],
       ),
     );

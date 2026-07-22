@@ -320,14 +320,14 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       final token = _local.accessToken;
       if (token == null || token.isEmpty) {
-        return Result.success('0/-');
+        return Result.success('0');
       }
       final balance = await _remote.fetchWalletBalance(accessToken: token);
       return Result.success(balance);
     } on Failure catch (e) {
       return Result.failure(e);
     } catch (_) {
-      return Result.success('0/-');
+      return Result.success('0');
     }
   }
 

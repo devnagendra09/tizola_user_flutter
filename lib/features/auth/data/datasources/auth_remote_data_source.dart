@@ -212,7 +212,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
   Future<String> fetchWalletBalance({required String accessToken}) async {
     final info = await fetchReferInfo(accessToken: accessToken);
-    return info.walletDisplay;
+    return info.walletAmount;
   }
 
   @override

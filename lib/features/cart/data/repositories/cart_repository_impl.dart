@@ -156,12 +156,16 @@ class CartRepositoryImpl implements CartRepository {
     required String paymentMode,
     String? tipAmount,
     String? deliveryType,
+    String? isWalletChecked,
+    String? usedWalletAmount,
   }) async {
     try {
       final data = await _remote.createOrder(
         paymentMode: paymentMode,
         tipAmount: tipAmount,
         deliveryType: deliveryType,
+        isWalletChecked: isWalletChecked,
+        usedWalletAmount: usedWalletAmount,
       );
       return Result.success(data);
     } on Failure catch (e) {

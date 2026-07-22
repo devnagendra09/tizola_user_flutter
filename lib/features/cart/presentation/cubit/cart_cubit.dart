@@ -1,6 +1,8 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/cache/hive_local_cache.dart';
+import '../../../../core/utils/result.dart';
+import '../../../auth/domain/repositories/auth_repository.dart';
 import '../../../location/domain/entities/delivery_location_entity.dart';
 import '../../../location/domain/repositories/location_repository.dart';
 import '../../domain/entities/cart_entity.dart';
@@ -8,7 +10,7 @@ import '../../domain/repositories/cart_repository.dart';
 import 'cart_state.dart';
 
 class CartCubit extends Cubit<CartState> {
-  CartCubit(this._cartRepository, this._locationRepository, this._hiveCache)
+  CartCubit(this._cartRepository, this._locationRepository, this._authRepository, this._hiveCache)
       : super(
           CartState(
             deliveryLocation: _locationRepository.savedDeliveryLocation,
@@ -17,6 +19,7 @@ class CartCubit extends Cubit<CartState> {
 
   final CartRepository _cartRepository;
   final LocationRepository _locationRepository;
+  final AuthRepository _authRepository;
   final HiveLocalCache _hiveCache;
 
   /// Memory + Hive, then API refresh.
@@ -57,30 +60,38 @@ class CartCubit extends Cubit<CartState> {
       await _loadTipAmounts();
     }
 
-    final couponToApply = state.pendingCouponCode ?? state.couponCodeInput.trim();
-    final tipForApi = tipAmountOverride ?? state.effectiveTipAmount;
-    final result = await _cartRepository.fetchCart(
-      couponCode: couponToApply.isEmpty ? null : couponToApply,
-      addressId: state.isSelfPickup ? null : state.deliveryLocation?.id,
-      tipAmount: hadItems ? tipForApi : null,
-      deliveryType: state.deliveryType,
-    );
+    final results = await Future.wait([
+      _cartRepository.fetchCart(
+        couponCode: (state.pendingCouponCode ?? state.couponCodeInput.trim()).isEmpty
+            ? null
+            : (state.pendingCouponCode ?? state.couponCodeInput.trim()),
+        addressId: state.isSelfPickup ? null : state.deliveryLocation?.id,
+        tipAmount: hadItems ? (tipAmountOverride ?? state.effectiveTipAmount) : null,
+        deliveryType: state.deliveryType,
+      ),
+      _authRepository.fetchWalletBalance(),
+    ]);
 
-    if (result.isFailure) {
+    final cartResult = results[0] as Result<CartEntity>;
+    final walletResult = results[1] as Result<String>;
+
+    if (cartResult.isFailure) {
       emit(
         state.copyWith(
           status: CartStatus.failure,
-          errorMessage: result.failure?.message,
+          errorMessage: cartResult.failure?.message,
           clearPendingCoupon: true,
         ),
       );
       return;
     }
 
-    final cart = result.data ?? const CartEntity();
+    final cart = cartResult.data ?? const CartEntity();
     if (cart.isEmpty) {
       await _hiveCache.clearCart();
-      emit(_emptyCartState());
+      emit(_emptyCartState().copyWith(
+        walletBalance: walletResult.data ?? '0',
+      ));
       return;
     }
 
@@ -94,6 +105,7 @@ class CartCubit extends Cubit<CartState> {
         clearPendingCoupon: true,
         clearError: true,
         isSelfPickup: supportsPickup && state.isSelfPickup,
+        walletBalance: walletResult.data ?? '0',
       ),
     );
     await _hiveCache.saveCart(cart);
@@ -296,6 +308,10 @@ class CartCubit extends Cubit<CartState> {
       ),
     );
     loadCart();
+  }
+
+  void toggleWallet(bool value) {
+    emit(state.copyWith(useWallet: value));
   }
 
   void disableSelfPickupOnExit() {

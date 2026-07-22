@@ -160,6 +160,8 @@ class _CartView extends StatelessWidget {
           orderType: state.paymentOrderType,
           tipAmount: state.effectiveTipAmount,
           deliveryType: state.deliveryType,
+          isWalletChecked: state.useWallet ? 'yes' : 'no',
+          usedWalletAmount: state.usedWalletAmount.toString(),
         ),
       ),
     );
@@ -357,9 +359,37 @@ class _CartView extends StatelessWidget {
                 ),
               ),
             ),
+          if ((double.tryParse(state.walletBalance) ?? 0) > 0)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Card(
+                elevation: 2,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: BorderSide(color: AppColors.brand.withOpacity(0.1)),
+                ),
+                child: CheckboxListTile(
+                  value: state.useWallet,
+                  onChanged: isBusy ? null : (v) => cubit.toggleWallet(v ?? false),
+                  title: const Text(
+                    'Use Wallet Balance',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: Text(
+                    'Available Balance: ₹ ${state.walletBalance}',
+                    style: const TextStyle(color: AppColors.brand),
+                  ),
+                  secondary: const Icon(Icons.account_balance_wallet, color: AppColors.brand),
+                  activeColor: AppColors.brand,
+                  controlAffinity: ListTileControlAffinity.leading,
+                ),
+              ),
+            ),
           CartBillingSection(
             cart: cart,
             displayTipAmount: state.effectiveTipAmount,
+            isWalletUsed: state.useWallet,
+            usedWalletAmount: state.usedWalletAmount,
           ),
         ],
       ),

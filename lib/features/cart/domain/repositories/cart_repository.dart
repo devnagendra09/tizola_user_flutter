@@ -37,6 +37,8 @@ abstract class CartRepository {
     required String paymentMode,
     String? tipAmount,
     String? deliveryType,
+    String? isWalletChecked,
+    String? usedWalletAmount,
   });
 
   Future<Result<void>> markRazorpayPaymentSuccessful({

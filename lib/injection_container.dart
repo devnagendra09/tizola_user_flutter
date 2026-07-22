@@ -171,7 +171,7 @@ Future<void> initDependencies() async {
   sl.registerLazySingleton(() => OrdersCubit(sl(), sl()));
   sl.registerLazySingleton(() => AccountCubit(sl(), sl()));
   sl.registerLazySingleton(() => WalletCubit(sl()));
-  sl.registerLazySingleton(() => CartCubit(sl(), sl(), sl()));
+  sl.registerLazySingleton(() => CartCubit(sl(), sl(), sl(), sl()));
   sl.registerFactory(() => SearchCubit(sl()));
   sl.registerLazySingleton(() => CategoryCubit(sl(), sl()));
   sl.registerFactory(() => RestaurantListCubit(sl(), sl()));

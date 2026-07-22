@@ -41,6 +41,8 @@ abstract class CartRemoteDataSource {
     required String paymentMode,
     String? tipAmount,
     String? deliveryType,
+    String? isWalletChecked,
+    String? usedWalletAmount,
   });
 
   Future<void> markRazorpayPaymentSuccessful({
@@ -289,6 +291,8 @@ class CartRemoteDataSourceImpl implements CartRemoteDataSource {
     required String paymentMode,
     String? tipAmount,
     String? deliveryType,
+    String? isWalletChecked,
+    String? usedWalletAmount,
   }) async {
     final params = _paramsBuilder.baseParams(includeSource: false);
     _paramsBuilder.addSessionCartId(params);
@@ -301,6 +305,13 @@ class CartRemoteDataSourceImpl implements CartRemoteDataSource {
     // Android PaymentOptionsFragment: tip_amount="" when not selfpick.
     if (!isSelfPick) {
       params['tip_amount'] = tipAmount ?? '';
+    }
+
+    if (isWalletChecked != null) {
+      params['is_wallet_checked'] = isWalletChecked;
+    }
+    if (usedWalletAmount != null) {
+      params['used_wallet_amount'] = usedWalletAmount;
     }
 
     final response = await _client.post('create_order', params);

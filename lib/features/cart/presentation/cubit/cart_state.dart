@@ -17,6 +17,8 @@ class CartState extends Equatable {
     this.customTipInput = '',
     this.showCustomTipField = false,
     this.tipAmounts = const [],
+    this.walletBalance = '0',
+    this.useWallet = false,
     this.errorMessage,
   });
 
@@ -32,6 +34,8 @@ class CartState extends Equatable {
   final String customTipInput;
   final bool showCustomTipField;
   final List<String> tipAmounts;
+  final String walletBalance;
+  final bool useWallet;
   final String? errorMessage;
 
   bool get isEmpty => cart.isEmpty;
@@ -54,7 +58,23 @@ class CartState extends Equatable {
 
   String? get paymentOrderType => isSelfPickup ? 'selfpick' : null;
 
-  String get payableAmount => '₹ ${cart.grandTotal ?? cart.subTotal ?? '0'}';
+  String get payableAmount {
+    final original = double.tryParse(numericPayableAmount) ?? 0;
+    if (!useWallet) return '₹ $original';
+    
+    final wallet = double.tryParse(walletBalance) ?? 0;
+    final finalAmount = (original - wallet).clamp(0, double.infinity);
+    return '₹ ${finalAmount.toStringAsFixed(2)}';
+  }
+
+  String get numericPayableAmount => cart.grandTotal ?? cart.subTotal ?? '0';
+
+  double get usedWalletAmount {
+    if (!useWallet) return 0;
+    final original = double.tryParse(numericPayableAmount) ?? 0;
+    final wallet = double.tryParse(walletBalance) ?? 0;
+    return wallet > original ? original : wallet;
+  }
 
   /// Checkout gate before payment (Android place-order pre-checks).
   String? get checkoutBlockReason {
@@ -79,6 +99,8 @@ class CartState extends Equatable {
     String? customTipInput,
     bool? showCustomTipField,
     List<String>? tipAmounts,
+    String? walletBalance,
+    bool? useWallet,
     String? errorMessage,
     bool clearError = false,
     bool clearPendingCoupon = false,
@@ -101,6 +123,8 @@ class CartState extends Equatable {
           : (customTipInput ?? this.customTipInput),
       showCustomTipField: showCustomTipField ?? this.showCustomTipField,
       tipAmounts: tipAmounts ?? this.tipAmounts,
+      walletBalance: walletBalance ?? this.walletBalance,
+      useWallet: useWallet ?? this.useWallet,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
     );
   }
@@ -117,6 +141,8 @@ class CartState extends Equatable {
         customTipInput,
         showCustomTipField,
         tipAmounts,
+        walletBalance,
+        useWallet,
         errorMessage,
       ];
 }

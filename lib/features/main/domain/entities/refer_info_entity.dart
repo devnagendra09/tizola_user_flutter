@@ -15,8 +15,10 @@ class ReferInfoEntity extends Equatable {
   final String referralCode;
   final String description;
 
-  String get walletDisplay => '$walletAmount/-';
-  String get earningsDisplay => '$totalEarnings/-';
+  String get walletDisplay => '₹$walletAmount/-';
+  String get earningsDisplay => '₹$totalEarnings/-';
+
+  double get cleanWalletAmount => double.tryParse(walletAmount) ?? 0;
 
   @override
   List<Object?> get props => [

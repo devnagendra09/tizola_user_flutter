@@ -19,6 +19,8 @@ class PaymentOptionsPage extends StatefulWidget {
     this.orderType,
     this.tipAmount,
     this.deliveryType,
+    this.isWalletChecked = 'no',
+    this.usedWalletAmount = '0',
   });
 
   final String restaurantId;
@@ -26,6 +28,8 @@ class PaymentOptionsPage extends StatefulWidget {
   final String? orderType;
   final String? tipAmount;
   final String? deliveryType;
+  final String isWalletChecked;
+  final String usedWalletAmount;
 
   @override
   State<PaymentOptionsPage> createState() => _PaymentOptionsPageState();
@@ -106,6 +110,8 @@ class _PaymentOptionsPageState extends State<PaymentOptionsPage> {
       paymentMode: option.value,
       tipAmount: widget.tipAmount,
       deliveryType: widget.deliveryType,
+      isWalletChecked: widget.isWalletChecked,
+      usedWalletAmount: widget.usedWalletAmount,
     );
 
     if (!mounted) return;
@@ -406,12 +412,26 @@ class _PaymentOptionsPageState extends State<PaymentOptionsPage> {
                   ),
                 ),
               ),
-              Text(
-                widget.payableAmount,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 15,
-                ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  if (widget.isWalletChecked == 'yes' && (double.tryParse(widget.usedWalletAmount) ?? 0) > 0)
+                    const Text(
+                      'Wallet applied',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.green,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  Text(
+                    widget.payableAmount.contains('0.00') ? 'FREE' : widget.payableAmount,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
